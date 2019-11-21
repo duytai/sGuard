@@ -1,0 +1,15 @@
+{
+  "name": "symEvm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "compile": "IN=sample.sol OUT=sample.sol.json ./scripts/compile.sh",
+    "dev": "npm run compile && ASM=$(cat contracts/sample.sol.json) node src/index.js"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "winston": "^3.2.1"
+  }
+}
