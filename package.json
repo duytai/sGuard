@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "IN=sample.sol OUT=sample.sol.json ./scripts/compile.sh",
-    "dev": "npm run compile && ASM=$(cat contracts/sample.sol.json) node src/index.js"
+    "dev": "npm run compile && COMPILED=$(cat contracts/sample.sol.json) node src/index.js"
   },
   "dependencies": {
     "lodash": "^4.17.15",
