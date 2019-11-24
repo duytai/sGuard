@@ -69,11 +69,7 @@ module.exports = {
   },
   CALLDATALOAD() {
   },
-  CALLDATASIZE({ stack }) {
-    stack.push({
-      kind: EVM.VARIABLE,
-    })
-  },
+  CALLDATASIZE() {},
   CALLDATACOPY() {
   },
   CODESIZE() {
@@ -112,18 +108,7 @@ module.exports = {
   },
   MLOAD() {
   },
-  MSTORE({ stack, memory }) {
-    const [offset, word] = stack.popN(2)
-    switch (offset.kind) {
-      case EVM.CONST: {
-        memory.write(hexToInt(offset.value), 32, word)
-        break
-      }
-      default: {
-        assert(false, `Unkown kind ${offset.kind}`)
-      }
-    }
-  },
+  MSTORE() {},
   MSTORE8() {
   },
   SLOAD() {
@@ -142,9 +127,7 @@ module.exports = {
   },
   JUMPDEST() {
   },
-  PUSH(state, value) {
-    state.stack.push(value)
-  },
+  PUSH() {},
   DUP() {
   },
   SWAP() {
