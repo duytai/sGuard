@@ -1,11 +1,24 @@
+const assert = require('assert')
+const { opcodes } = require('./evm')
+
 class Contract {
-  constructor(state) {
-    this.state = state
+  constructor(bin) {
+    this.bin = bin
   }
 
-  execute() {
-    const { blocks, context } = this.state
-    console.log(blocks[context.bid])
+  execute(pc = 0, stackSize = 0) {
+    const opcode = opcodes[this.bin[pc]]
+    if (!opcode) return
+    switch (opcode.name) {
+      case 'PUSH': {
+        pc += this.bin[pc] - 0x5f
+        stackSize += 1
+        return this.execute(pc + 1, stackSize)
+      }
+      default: {
+        assert(false, `unknown ${opcode.name}`)
+      }
+    }
   }
 }
 
