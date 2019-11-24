@@ -1,6 +1,3 @@
-const evm = require('./evm')
-const { logger } = require('./shared')
-
 class Program {
   constructor(state) {
     this.state = state

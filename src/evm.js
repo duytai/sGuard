@@ -1,7 +1,3 @@
-const assert = require('assert')
-const { hexToInt } = require('./shared')
-const { EVM } = require('./kind')
-
 module.exports = {
   STOP() {
   },

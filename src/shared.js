@@ -1,5 +1,4 @@
 const winston = require('winston')
-const { EVM } = require('./kind')
 
 const { createLogger, format, transports } = winston
 const { combine, timestamp, label, printf, prettyPrint } = format
@@ -15,10 +14,7 @@ module.exports = {
       if (value) {
         blocks[tag].push({
           name,
-          value: {
-            kind: EVM.CONST,
-            value,
-          },
+          value,
         })
       } else {
         blocks[tag].push({ name })
