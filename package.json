@@ -5,8 +5,8 @@
   "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "compile": "IN=sample.sol OUT=sample.sol.json ./scripts/compile.sh",
-    "dev": "npm run compile && COMPILED=$(cat contracts/sample.sol.json) node src/index.js"
+    "dev": "IN=sample.sol ./scripts/compile.sh && COMPILED=contracts/sample.sol.json node src/index.js",
+    "test": "IN=etherscan.sol ./scripts/compile.sh && COMPILED=contracts/etherscan.sol.json node src/index.js"
   },
   "dependencies": {
     "lodash": "^4.17.15",

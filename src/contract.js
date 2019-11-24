@@ -9,9 +9,9 @@ class Contract {
     this.bin = bin
     this.paths = []
     this.execute(0)
-    this.paths.forEach(p => {
-      this.log(p)
-    })
+    // this.paths.forEach(p => {
+      // this.log(p)
+    // })
   }
 
   shouldStop(visited) {
