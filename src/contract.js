@@ -9,6 +9,7 @@ class Contract {
     this.bin = bin
     this.paths = []
     this.execute(0)
+    logger.info(`TOTAL: ${this.paths.length}`)
     // this.paths.forEach(p => {
       // this.log(p)
     // })
@@ -25,7 +26,6 @@ class Contract {
       console.log(`${Number(pc).toString(16)} - ${opcode.name}`)
       console.log('------')
     })
-    logger.info(`TOTAL: ${this.paths.length}`)
   }
 
   execute(pc = 0, stack = [], path = [], visited = []) {
@@ -42,28 +42,32 @@ class Contract {
         const dataLen = this.bin[pc] - 0x5f
         const data = this.bin.slice(pc + 1, pc + 1 + dataLen)
         stack.push(data)
-        return this.execute(pc + 1 + dataLen, [...stack], [...path], [...visited])
+        this.execute(pc + 1 + dataLen, [...stack], [...path], [...visited])
+        return
       }
       case 'POP': {
         stack.pop()
-        return this.execute(pc + 1, [...stack], [...path], [...visited])
+        this.execute(pc + 1, [...stack], [...path], [...visited])
+        return
       }
       case 'JUMPI': {
+        visited.push(hash(stack))
         const [cond, label] = stack.splice(-ins) 
         const jumpdest = hexToInt(label)
-        visited.push(hash(stack))
         if (this.shouldStop(visited)) return
         this.execute(pc + 1, [...stack], [...path], [...visited])
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        return this.execute(jumpdest, [...stack], [...path], [...visited])
+        this.execute(jumpdest, [...stack], [...path], [...visited])
+        return
       }
       case 'JUMP': {
+        visited.push(hash(stack))
         const [label] = stack.splice(-ins)
         const jumpdest = hexToInt(label)
-        visited.push(hash(stack))
         if (this.shouldStop(visited)) return
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        return this.execute(jumpdest, [...stack], [...path], [...visited])
+        this.execute(jumpdest, [...stack], [...path], [...visited])
+        return
       }
       case 'SWAP': {
         const distance = this.bin[pc] - 0x8f
@@ -72,14 +76,16 @@ class Contract {
         assert(target >= 0)
         stack[target] = stack[stack.length - 1]
         stack[stack.length - 1] = tmp
-        return this.execute(pc + 1, [...stack], [...path], [...visited])
+        this.execute(pc + 1, [...stack], [...path], [...visited])
+        return
       }
       case 'DUP': {
         const distance = this.bin[pc] - 0x7f
         const target = stack.length - distance
         assert(target >= 0)
         stack.push(stack[target])
-        return this.execute(pc + 1, [...stack], [...path], [...visited])
+        this.execute(pc + 1, [...stack], [...path], [...visited])
+        return
       }
       case 'REVERT':
       case 'SELFDESTRUCT':
@@ -94,7 +100,8 @@ class Contract {
         range(outs).forEach(() => {
           stack.push(Buffer.from('00', 'hex'))
         })
-        return this.execute(pc + 1, [...stack], [...path], [...visited])
+        this.execute(pc + 1, [...stack], [...path], [...visited])
+        return
       }
     }
   }
