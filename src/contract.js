@@ -1,24 +1,49 @@
-const { range, uniq, map } = require('lodash')
+const { range, uniq, map, forEach } = require('lodash')
 const assert = require('assert')
 const hash = require('object-hash')
 const { opcodes } = require('./evm')
 const { hexToInt, logger } = require('./shared')
 
 class Contract {
-  constructor(bin) {
+  constructor(bin, asm) {
     this.bin = bin
-    const visited = range(0, this.bin.length)
-      .reduce((a, i) => (a[i] = false) || a, {})
-    this.execute(0, [], [], visited)
-    const unvisited = map(visited, (v, k) => ({ pc: k, visited: v }))
-      .filter(({ visited }) => !visited)
-      .map(({ pc }) => pc)
-    logger.info(`Unvisited: ${unvisited.length}`)
+    this.asm = asm
+    const jumpdests = this.findJumpdests()
+    console.log(jumpdests)
+  }
+
+  findJumpdests() {
+    // Filter out tagging
+    const tags = {}
+    const asm = this.asm.filter(({ name }) => name != 'tag')
+    forEach(this.asm, (opcode, idx) => {
+      if (opcode.name == 'tag') {
+        tags[opcode.value] = idx + 1
+      }
+    })
+
+    // Mapping
+    const counter = { pc: 0, idx: 0 }
+    const jumpdests = new Set() 
+    while (this.bin[counter.pc] && asm[counter.idx]) {
+      const opcode = opcodes[this.bin[counter.pc]]
+      if (opcode.name == 'PUSH') {
+        counter.pc += this.bin[counter.pc] - 0x5f
+        if (asm[counter.idx].name == 'PUSH [tag]') {
+          assert(tags[asm[counter.idx].value])
+          jumpdests.add(tags[asm[counter.idx].value])
+        }
+      }
+      counter.pc ++
+      counter.idx ++
+    }
+
+    return [...jumpdests]
   }
 
   execute(pc = 0, stack = [], path = [], visited = {}) {
     const opcode = opcodes[this.bin[pc]]
-    if (!opcode || visited[pc]) return
+    if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
     visited[pc] = true
