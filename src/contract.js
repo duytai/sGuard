@@ -1,4 +1,4 @@
-const { range, uniq } = require('lodash')
+const { range, uniq, map } = require('lodash')
 const assert = require('assert')
 const hash = require('object-hash')
 const { opcodes } = require('./evm')
@@ -10,17 +10,11 @@ class Contract {
     const visited = range(0, this.bin.length)
       .reduce((a, i) => (a[i] = false) || a, {})
     this.execute(0, [], [], visited)
-    console.log(visited)
+    const unvisited = map(visited, (v, k) => ({ pc: k, visited: v }))
+      .filter(({ visited }) => !visited)
+      .map(({ pc }) => pc)
+    logger.info(`Unvisited: ${unvisited.length}`)
   }
-
-  // log(path) {
-    // logger.info('--BEGIN--')
-    // path.forEach(({ stack, opcode, pc }) => {
-      // console.log(stack)
-      // console.log(`${Number(pc).toString(16)} - ${opcode.name}`)
-      // console.log('------')
-    // })
-  // }
 
   execute(pc = 0, stack = [], path = [], visited = {}) {
     const opcode = opcodes[this.bin[pc]]
