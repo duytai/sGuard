@@ -7,29 +7,33 @@ const { hexToInt, logger } = require('./shared')
 class Contract {
   constructor(bin) {
     this.bin = bin
-    this.execute(0)
+    const visited = range(0, this.bin.length)
+      .reduce((a, i) => (a[i] = false) || a, {})
+    this.execute(0, [], [], visited)
+    console.log(visited)
   }
 
-  log(path) {
-    logger.info('--BEGIN--')
-    path.forEach(({ stack, opcode, pc }) => {
-      console.log(stack)
-      console.log(`${Number(pc).toString(16)} - ${opcode.name}`)
-      console.log('------')
-    })
-  }
+  // log(path) {
+    // logger.info('--BEGIN--')
+    // path.forEach(({ stack, opcode, pc }) => {
+      // console.log(stack)
+      // console.log(`${Number(pc).toString(16)} - ${opcode.name}`)
+      // console.log('------')
+    // })
+  // }
 
-  execute(pc = 0, stack = [], path = [], visited = []) {
+  execute(pc = 0, stack = [], path = [], visited = {}) {
     const opcode = opcodes[this.bin[pc]]
-    if (!opcode || visited.includes(pc)) return
+    if (!opcode || visited[pc]) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
-    visited.push(pc)
+    visited[pc] = true
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
         const data = this.bin.slice(pc + 1, pc + 1 + dataLen)
         stack.push(data)
+        range(pc + 1, pc + 1 + dataLen).forEach(i => visited[i] = true)
         this.execute(pc + 1 + dataLen, [...stack], [...path], visited)
         return
       }
