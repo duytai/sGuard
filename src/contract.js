@@ -130,7 +130,47 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
       }
+      case 'CALLDATALOAD': {
+        stack.push(['symbol', name, stack.pop()])
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
+      case 'EQ': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(x[1].eq(y[1]) ? BN(1) : BN(0))
+        }
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
+      case 'AND': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(['const', x.and(y)])
+        }
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
+      case 'JUMPDEST': {
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
+      case 'LT': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(['const', x.lt(y) ? new BN(1) : new BN(0)])
+        }
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
       default: {
+        console.log(name)
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
           stack.push(['const', new BN(0)])
