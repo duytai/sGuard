@@ -120,8 +120,12 @@ class Contract {
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
         } else {
-          const r = y[1].shrn(x[1].toNumber())
-          stack.push(['const', r])
+          if (x[1].gten(256)) {
+            stack.push(['const', new BN(0)])
+          } else {
+            const r = y[1].shrn(x[1].toNumber())
+            stack.push(['const', r])
+          }
         }
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
