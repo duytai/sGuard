@@ -194,12 +194,26 @@ class Contract {
         } else {
           stack.push(['const', x.sub(y).toTwos(256)])
         }
-        this.prettifyStack(stack)
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
+      case 'CALL': {
+        const [
+          gasLimit,
+          toAddress,
+          value,
+          inOffset,
+          inLength,
+          outOffset,
+          outLength,
+        ] = stack.splice(-7).reverse()
+        stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
       default: {
         console.log(name)
+        console.log(ins)
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
           stack.push(['const', new BN(0)])
