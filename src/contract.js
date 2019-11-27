@@ -70,6 +70,7 @@ class Contract {
       case 'RETURN':
       case 'STOP':
       case 'INVALID': {
+        console.log(stack)
         return
       }
       case 'CALLVALUE':
@@ -92,8 +93,8 @@ class Contract {
       case 'EXTCODESIZE':
       case 'EXTCODEHASH':
       case 'BLOCKHASH': {
-        console.log(stack)
-        console.log(stack.pop())
+        stack.push(['symbol', 'blockhash', stack.pop()])
+        this.execute(pc + 1, [...stack], [...path], visited)
         return
       }
       default: {
