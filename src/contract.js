@@ -70,7 +70,6 @@ class Contract {
       case 'RETURN':
       case 'STOP':
       case 'INVALID': {
-        console.log(stack)
         return
       }
       case 'CALLVALUE':
@@ -98,19 +97,31 @@ class Contract {
         return
       }
       case 'MSTORE': {
-        const [memOffset, memValue] = stack.slice(-2)
+        const [memOffset, memValue] = stack.slice(-2).reverse()
         assert(memOffset[0] == 'const')
-        assert(memValue[0] == 'const')
-        console.log(stack)
-        console.log(memOffset)
-        console.log(memValue)
-        process.exit()
+        const offset = hexToInt(memOffset[1])
+        const value = hexToInt(memValue[1])
+        memory[offset] = memValue
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
+      case 'ISZERO': {
+        const item = stack.pop()
+        if (item.type == 'const') {
+          if (hexToInt(item.value) == 0) {
+            stack.push(Buffer.from([1]))
+          } else {
+            stack.push(Buffer.from([0]))
+          }
+        } else {
+          stack.push(['symbol', name, item])
+        }
         return
       }
       default: {
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
-          stack.push(['const', Buffer.from('00', 'hex')])
+          stack.push(['const', Buffer.from([0])])
         })
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
