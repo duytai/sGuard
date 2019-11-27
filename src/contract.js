@@ -20,7 +20,7 @@ class Contract {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
         const data = this.bin.slice(pc + 1, pc + 1 + dataLen)
-        stack.push({ type: 'const', value: data })
+        stack.push(['const', data])
         range(pc + 1, pc + 1 + dataLen).forEach(i => visited[i] = true)
         this.execute(pc + 1 + dataLen, [...stack], [...path], visited)
         return
@@ -32,8 +32,8 @@ class Contract {
       }
       case 'JUMPI': {
         const [cond, label] = stack.splice(-ins) 
-        assert(label.type == 'const')
-        const jumpdest = hexToInt(label.value)
+        assert(label[0] == 'const')
+        const jumpdest = hexToInt(label[1])
         this.execute(pc + 1, [...stack], [...path], visited)
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
         this.execute(jumpdest, [...stack], [...path], visited)
@@ -41,8 +41,8 @@ class Contract {
       }
       case 'JUMP': {
         const [label] = stack.splice(-ins)
-        assert(label.type == 'const')
-        const jumpdest = hexToInt(label.value)
+        assert(label[0] == 'const')
+        const jumpdest = hexToInt(label[1])
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
         this.execute(jumpdest, [...stack], [...path], visited)
         return
@@ -85,21 +85,21 @@ class Contract {
       case 'GASLIMIT':
       case 'CALLDATASIZE':
       case 'RETURNDATASIZE': {
-        stack.push({ type: 'symbol', value: name })
+        stack.push(['symbol', name])
         this.execute(pc + 1, [...stack], [...path], visited)
         return
       }
       case 'EXTCODESIZE':
       case 'EXTCODEHASH':
       case 'BLOCKHASH': {
-        console.log(name)
         console.log(stack)
+        console.log(stack.pop())
         return
       }
       default: {
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
-          stack.push({ type: 'const', value: Buffer.from('00', 'hex') })
+          stack.push(['const', Buffer.from('00', 'hex')])
         })
         this.execute(pc + 1, [...stack], [...path], visited)
         return
