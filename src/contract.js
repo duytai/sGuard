@@ -1,8 +1,8 @@
 const { range, uniq, map, forEach, keys } = require('lodash')
+const BN = require('bn.js')
 const assert = require('assert')
-const hash = require('object-hash')
 const { opcodes } = require('./evm')
-const { hexToInt, logger } = require('./shared')
+const { logger } = require('./shared')
 
 class Contract {
   constructor(bin, asm) {
@@ -19,8 +19,8 @@ class Contract {
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
-        const data = this.bin.slice(pc + 1, pc + 1 + dataLen)
-        stack.push(['const', data])
+        const data = this.bin.slice(pc + 1, pc + 1 + dataLen).toString('hex')
+        stack.push(['const', new BN(data, 16)])
         range(pc + 1, pc + 1 + dataLen).forEach(i => visited[i] = true)
         this.execute(pc + 1 + dataLen, [...stack], [...path], {...memory}, visited)
         return
@@ -33,7 +33,7 @@ class Contract {
       case 'JUMPI': {
         const [cond, label] = stack.splice(-ins) 
         assert(label[0] == 'const')
-        const jumpdest = hexToInt(label[1])
+        const jumpdest = label[1].toNumber()
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
         this.execute(jumpdest, [...stack], [...path], {...memory}, visited)
@@ -42,7 +42,7 @@ class Contract {
       case 'JUMP': {
         const [label] = stack.splice(-ins)
         assert(label[0] == 'const')
-        const jumpdest = hexToInt(label[1])
+        const jumpdest = label[1].toNumber()
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
         this.execute(jumpdest, [...stack], [...path], {...memory}, visited)
         return
@@ -99,29 +99,26 @@ class Contract {
       case 'MSTORE': {
         const [memOffset, memValue] = stack.slice(-2).reverse()
         assert(memOffset[0] == 'const')
-        const offset = hexToInt(memOffset[1])
-        const value = hexToInt(memValue[1])
+        const offset = memOffset[1].toNumber()
+        const value = memValue[1].toNumber()
         memory[offset] = memValue
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
       }
       case 'ISZERO': {
-        const item = stack.pop()
-        if (item.type == 'const') {
-          if (hexToInt(item.value) == 0) {
-            stack.push(Buffer.from([1]))
-          } else {
-            stack.push(Buffer.from([0]))
-          }
+        const x = stack.pop()
+        if (x[0] == 'const') {
+          stack.push(x[1].isZero() ? 1 : 0)
         } else {
-          stack.push(['symbol', name, item])
+          stack.push(['symbol', name, x])
         }
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
       }
       default: {
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
-          stack.push(['const', Buffer.from([0])])
+          stack.push(['const', new BN(0)])
         })
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
