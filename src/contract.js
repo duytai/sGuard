@@ -167,7 +167,7 @@ class Contract {
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
         } else {
-          stack.push(['const', x.lt(y) ? new BN(1) : new BN(0)])
+          stack.push(['const', x[1].lt(y[1]) ? new BN(1) : new BN(0)])
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
@@ -177,7 +177,7 @@ class Contract {
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
         } else {
-          stack.push(['const', x.mul(y).mod(TWO_POW256)])
+          stack.push(['const', x[1].mul(y[1]).mod(TWO_POW256)])
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
@@ -192,7 +192,17 @@ class Contract {
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
         } else {
-          stack.push(['const', x.sub(y).toTwos(256)])
+          stack.push(['const', x[1].sub(y[1]).toTwos(256)])
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
+      case 'ADD': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
@@ -207,6 +217,8 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        this.prettifyStack([toAddress])
+        this.prettifyStack([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
