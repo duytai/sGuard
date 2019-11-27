@@ -207,6 +207,20 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
+      case 'DIV': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          if (y[1].isZero()) {
+            stack.push(y)
+          } else {
+            stack.push(x[1].div(y[1]))
+          }
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
