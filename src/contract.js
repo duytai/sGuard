@@ -115,6 +115,17 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
         return
       }
+      case 'SHR': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          const r = y[1].shrn(x[1].toNumber())
+          stack.push(['const', r])
+        }
+        this.execute(pc + 1, [...stack], [...path], {...memory}, visited)
+        return
+      }
       default: {
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
