@@ -8,7 +8,6 @@ class Contract {
   constructor(bin, asm) {
     this.bin = bin
     this.asm = asm
-    this.execute(0)
   }
 
   execute(pc = 0, stack = [], path = [], visited = {}) {
