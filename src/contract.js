@@ -2,7 +2,7 @@ const { range, uniq, map, forEach, keys } = require('lodash')
 const BN = require('bn.js')
 const assert = require('assert')
 const { opcodes } = require('./evm')
-const { logger } = require('./shared')
+const { logger, prettify } = require('./shared')
 const { evaluate } = require('./memory')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -11,10 +11,6 @@ class Contract {
   constructor(bin, asm) {
     this.bin = bin
     this.asm = asm
-  }
-
-  prettifyStack(stack) {
-    stack.forEach(st => console.log(JSON.stringify(st)))
   }
 
   execute(pc = 0, stack = [], path = [], memory = [], storage = [], visited = {}) {
@@ -110,8 +106,7 @@ class Contract {
         return
       }
       case 'MLOAD': {
-        evaluate(memory)
-        stack.push(['symbol', name, stack.pop()])
+        stack.push(evaluate(memory, ['symbol', name, stack.pop()]))
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
@@ -318,12 +313,6 @@ class Contract {
           outLength,
         ] = stack.splice(-7).reverse()
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
-        console.log('--MEMOR--')
-        this.prettifyStack(memory)
-        console.log('--STORA--')
-        this.prettifyStack(storage)
-        console.log('--WEI--')
-        this.prettifyStack([value])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
