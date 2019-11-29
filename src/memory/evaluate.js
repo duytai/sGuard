@@ -3,6 +3,9 @@ const assert = require('assert')
 const { prettify } = require('../shared')
 
 const evaluate = (traces, symbol) => {
+  prettify(traces)
+  prettify([symbol])
+  console.log('++++')
   const memory = {} 
 
   traces.forEach(([type, name, ...params]) => {

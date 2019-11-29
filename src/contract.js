@@ -19,6 +19,10 @@ class Contract {
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
     visited[pc] = true
+    if (pc == 91) {
+      console.log('---stack----')
+      prettify(stack)
+    }
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
@@ -167,7 +171,7 @@ class Contract {
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
         } else {
-          stack.push(['const', x.and(y)])
+          stack.push(['const', x[1].and(y[1])])
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
@@ -312,6 +316,8 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        console.log(`--WEI--`)
+        prettify(value)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
