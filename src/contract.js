@@ -222,7 +222,6 @@ class Contract {
         return
       }
       case 'SDIV': {
-        console.log(name)
         const [x, y] = stack.splice(-2).reverse()
         if (x[0] != 'const' || y[0] != 'const') {
           stack.push(['symbol', name, x, y])
@@ -239,6 +238,20 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
+      case 'MOD': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          if (y[1].isZero()) {
+            stack.push(y)
+          } else {
+            stack.push(x[1].mod(y[1]))
+          }
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
@@ -249,17 +262,12 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
-        console.log('--ADDRESS--')
-        this.prettifyStack([toAddress])
-        console.log('--WEI---')
-        this.prettifyStack([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
       default: {
         console.log(name)
-        console.log(ins)
         stack = stack.slice(0, stack.length - ins)
         range(outs).forEach(() => {
           stack.push(['const', new BN(0)])
