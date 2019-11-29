@@ -1,3 +1,4 @@
+const BN = require('bn.js')
 const assert = require('assert')
 const { prettify } = require('../shared')
 
@@ -14,9 +15,7 @@ const evaluate = (traces, symbol) => {
     case 'MLOAD': {
       const address = symbol[2]
       assert(address[0] == 'const')
-      const value = memory[address[1].toNumber()]
-      assert(!!value)
-      return value
+      return memory[address[1].toNumber()] || ['const', new BN(0)]
     }
   }
   return symbol
