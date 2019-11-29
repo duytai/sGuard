@@ -3,6 +3,7 @@ const BN = require('bn.js')
 const assert = require('assert')
 const { opcodes } = require('./evm')
 const { logger } = require('./shared')
+const { evaluate } = require('./memory')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 
@@ -109,6 +110,7 @@ class Contract {
         return
       }
       case 'MLOAD': {
+        evaluate(memory)
         stack.push(['symbol', name, stack.pop()])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
