@@ -273,6 +273,20 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
+      case 'SMOD': {
+        const [x, y, z] = stack.splice(-3).reverse()
+        if (x[0] != 'const' || y[0] != 'const' || z[0] != 'const') {
+          stack.push(['symbol', name, x, y, z])
+        } else {
+          if (z[1].isZero()) {
+            stack.push(z)
+          } else {
+            stack.push(['const', x.add(y).mod(z)])
+          }
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
