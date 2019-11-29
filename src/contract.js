@@ -215,7 +215,7 @@ class Contract {
           if (y[1].isZero()) {
             stack.push(y)
           } else {
-            stack.push(x[1].div(y[1]))
+            stack.push(['const', x[1].div(y[1])])
           }
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
@@ -232,7 +232,7 @@ class Contract {
             const a = x[1].fromTwos(256)
             const b = y[1].fromTwos(256)
             const r = a.div(b).toTwos(256)
-            stack.push(r)
+            stack.push(['const', r])
           }
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
@@ -246,7 +246,28 @@ class Contract {
           if (y[1].isZero()) {
             stack.push(y)
           } else {
-            stack.push(x[1].mod(y[1]))
+            stack.push(['const', x[1].mod(y[1])])
+          }
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
+      case 'SMOD': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          if (y[1].isZero()) {
+            stack.push(y)
+          } else {
+            const a = x[1].fromTwos(256)
+            const b = y[1].fromTwos(256)
+            let r = a.abs().mod(b.abs())
+            if (a.isNeg()) {
+              r = r.ineg()
+            }
+            r = r.toTwos(256)
+            stack.push(['const', r])
           }
         }
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
