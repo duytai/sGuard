@@ -299,6 +299,12 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
+      case 'SHA3': {
+        const [x, y] = stack.splice(-2).reverse()
+        stack.push(['symbol', name, ['symbol', 'MLOAD', x, y]])
+        this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
