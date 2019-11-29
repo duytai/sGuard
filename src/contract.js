@@ -221,6 +221,24 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
         return
       }
+      case 'SDIV': {
+        console.log(name)
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          if (y[1].isZero()) {
+            stack.push(y)
+          } else {
+            const a = x[1].fromTwos(256)
+            const b = y[1].fromTwos(256)
+            const r = a.div(b).toTwos(256)
+            stack.push(r)
+          }
+        }
+        this.execute(pc + 1, [...stack], [...path], [...memory], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
@@ -231,7 +249,9 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        console.log('--ADDRESS--')
         this.prettifyStack([toAddress])
+        console.log('--WEI---')
         this.prettifyStack([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], visited)
