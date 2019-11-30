@@ -3,6 +3,7 @@ const BN = require('bn.js')
 const assert = require('assert')
 const { opcodes } = require('./evm')
 const { logger, prettify } = require('./shared')
+const { analyze } = require('./analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -335,8 +336,7 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
-        console.log(`--WEI--`)
-        prettify([value])
+        analyze(value, traces)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         break
       }
