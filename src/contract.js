@@ -1,4 +1,4 @@
-const { range, uniq, map, forEach, keys } = require('lodash')
+const { range, reverse } = require('lodash')
 const BN = require('bn.js')
 const assert = require('assert')
 const { opcodes } = require('./evm')
@@ -105,12 +105,14 @@ class Contract {
       }
       case 'MSTORE': {
         const [memOffset, memValue] = stack.splice(-2).reverse()
-        memory.push(['symbol', name, memOffset, memValue])
+        const size = ['const', new BN(32)]
+        memory.push(['symbol', name, memOffset, memValue, size])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
       case 'MLOAD': {
-        stack.push(evaluate(memory, ['symbol', name, stack.pop()]))
+        // stack.push(evaluate(memory, ['symbol', name, stack.pop()]))
+        stack.push(['symbol', name, stack.pop()])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
@@ -121,8 +123,7 @@ class Contract {
         return
       }
       case 'SLOAD': {
-        const x = stack.pop()
-        stack.push(['symbol', name, x])
+        stack.push(['symbol', name, stack.pop()])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
@@ -306,6 +307,21 @@ class Contract {
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
       }
+      case 'CODESIZE': {
+        stack.push(['const', new BN(this.bin.length)])
+        this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
+        return
+      }
+      case 'CODECOPY': {
+        const [memOffset, codeOffset, codeLen] = stack.splice(-3).reverse()
+        assert(codeOffset[0] == 'const')
+        assert(codeLen[0] == 'const')
+        const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
+        const value = ['const', new BN(code.toString(16), 'hex')]
+        memory.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+        this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
+        return
+      }
       case 'CALL': {
         const [
           gasLimit,
@@ -317,7 +333,7 @@ class Contract {
           outLength,
         ] = stack.splice(-7).reverse()
         console.log(`--WEI--`)
-        prettify(value)
+        prettify([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...memory], [...storage], visited)
         return
