@@ -40,9 +40,18 @@ class Contract {
         const [cond, label] = stack.splice(-ins) 
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+        if (cond[0] == 'const') {
+          if (!cond[1].isZero()) {
+            assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+            this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+          } else {
+            this.execute(pc + 1, [...stack], [...path], [...traces], visited)
+          }
+        } else {
+          this.execute(pc + 1, [...stack], [...path], [...traces], visited)
+          assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+          this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+        }
         return
       }
       case 'JUMP': {
@@ -331,7 +340,7 @@ class Contract {
           outLength,
         ] = stack.splice(-7).reverse()
         console.log(`--WEI--`)
-        // prettify([value])
+        prettify([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
