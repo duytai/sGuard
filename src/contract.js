@@ -16,25 +16,22 @@ class Contract {
     this.asm = asm
   }
 
-  execute(pc = 0, stack = [], path = [], traces = [], visited = {}) {
+  execute(pc = 0, stack = [], path = [], traces = []) {
     const opcode = opcodes[this.bin[pc]]
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
-    visited[pc] = true
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
         const data = this.bin.slice(pc + 1, pc + 1 + dataLen).toString('hex')
         stack.push(['const', new BN(data, 16)])
-        range(pc + 1, pc + 1 + dataLen).forEach(i => visited[i] = true)
-        this.execute(pc + 1 + dataLen, [...stack], [...path], [...traces], visited)
-        return
+        pc += dataLen
+        break
       }
       case 'POP': {
         stack.pop()
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'JUMPI': {
         const [cond, label] = stack.splice(-ins) 
@@ -43,14 +40,22 @@ class Contract {
         if (cond[0] == 'const') {
           if (!cond[1].isZero()) {
             assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-            this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+            process.nextTick(() => {
+              this.execute(jumpdest, [...stack], [...path], [...traces])
+            })
           } else {
-            this.execute(pc + 1, [...stack], [...path], [...traces], visited)
+            process.nextTick(() => {
+              this.execute(pc + 1, [...stack], [...path], [...traces])
+            })
           }
         } else {
-          this.execute(pc + 1, [...stack], [...path], [...traces], visited)
+          process.nextTick(() => {
+            this.execute(pc + 1, [...stack], [...path], [...traces])
+          })
           assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-          this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+          process.nextTick(() => {
+            this.execute(jumpdest, [...stack], [...path], [...traces])
+          })
         }
         return
       }
@@ -59,7 +64,9 @@ class Contract {
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        this.execute(jumpdest, [...stack], [...path], [...traces], visited)
+        process.nextTick(() => {
+          this.execute(jumpdest, [...stack], [...path], [...traces])
+        })
         return
       }
       case 'SWAP': {
@@ -69,16 +76,14 @@ class Contract {
         assert(target >= 0)
         stack[target] = stack[stack.length - 1]
         stack[stack.length - 1] = tmp
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'DUP': {
         const distance = this.bin[pc] - 0x7f
         const target = stack.length - distance
         assert(target >= 0)
         stack.push(stack[target])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'REVERT':
       case 'SELFDESTRUCT':
@@ -101,38 +106,32 @@ class Contract {
       case 'CALLDATASIZE':
       case 'RETURNDATASIZE': {
         stack.push(['symbol', name])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'EXTCODESIZE':
       case 'EXTCODEHASH':
       case 'BLOCKHASH': {
         stack.push(['symbol', 'blockhash', stack.pop()])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'MSTORE': {
         const [memOffset, memValue] = stack.splice(-2).reverse()
         const size = ['const', new BN(32)]
         traces.push(['symbol', name, memOffset, memValue, size])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'MLOAD': {
         stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SSTORE': {
         const [x, y] = stack.splice(-2).reverse()
         traces.push(['symbol', name, x, y])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SLOAD': {
         stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'ISZERO': {
         const x = stack.pop()
@@ -141,8 +140,7 @@ class Contract {
         } else {
           stack.push(['symbol', name, x])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SHR': {
         const [x, y] = stack.splice(-2).reverse()
@@ -156,13 +154,11 @@ class Contract {
             stack.push(['const', r])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'CALLDATALOAD': {
         stack.push(['symbol', name, stack.pop()])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'EQ': {
         const [x, y] = stack.splice(-2).reverse()
@@ -171,8 +167,7 @@ class Contract {
         } else {
           stack.push(x[1].eq(y[1]) ? BN(1) : BN(0))
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'AND': {
         const [x, y] = stack.splice(-2).reverse()
@@ -181,12 +176,10 @@ class Contract {
         } else {
           stack.push(['const', x[1].and(y[1])])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'JUMPDEST': {
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'LT': {
         const [x, y] = stack.splice(-2).reverse()
@@ -195,8 +188,7 @@ class Contract {
         } else {
           stack.push(['const', x[1].lt(y[1]) ? new BN(1) : new BN(0)])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'MUL': {
         const [x, y] = stack.splice(-2).reverse()
@@ -205,8 +197,7 @@ class Contract {
         } else {
           stack.push(['const', x[1].mul(y[1]).mod(TWO_POW256)])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SUB': {
         const [x, y] = stack.splice(-2).reverse()
@@ -215,8 +206,7 @@ class Contract {
         } else {
           stack.push(['const', x[1].sub(y[1]).toTwos(256)])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'ADD': {
         const [x, y] = stack.splice(-2).reverse()
@@ -225,8 +215,7 @@ class Contract {
         } else {
           stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'DIV': {
         const [x, y] = stack.splice(-2).reverse()
@@ -239,8 +228,7 @@ class Contract {
             stack.push(['const', x[1].div(y[1])])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SDIV': {
         const [x, y] = stack.splice(-2).reverse()
@@ -256,8 +244,7 @@ class Contract {
             stack.push(['const', r])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'MOD': {
         const [x, y] = stack.splice(-2).reverse()
@@ -270,8 +257,7 @@ class Contract {
             stack.push(['const', x[1].mod(y[1])])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SMOD': {
         const [x, y] = stack.splice(-2).reverse()
@@ -291,8 +277,7 @@ class Contract {
             stack.push(['const', r])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SMOD': {
         const [x, y, z] = stack.splice(-3).reverse()
@@ -305,19 +290,16 @@ class Contract {
             stack.push(['const', x.add(y).mod(z)])
           }
         }
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'SHA3': {
         const [x, y] = stack.splice(-2).reverse()
         stack.push(['symbol', name, ['symbol', 'MLOAD', x, y]])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'CODESIZE': {
         stack.push(['const', new BN(this.bin.length)])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'CODECOPY': {
         const [memOffset, codeOffset, codeLen] = stack.splice(-3).reverse()
@@ -326,8 +308,7 @@ class Contract {
         const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
         const value = ['const', new BN(code.toString(16), 16)]
         traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       case 'CALL': {
         const [
@@ -342,8 +323,7 @@ class Contract {
         console.log(`--WEI--`)
         prettify([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
       default: {
         console.log(name)
@@ -351,10 +331,12 @@ class Contract {
         range(outs).forEach(() => {
           stack.push(['const', new BN(0)])
         })
-        this.execute(pc + 1, [...stack], [...path], [...traces], visited)
-        return
+        break
       }
     }
+    process.nextTick(() => {
+      this.execute(pc + 1, [...stack], [...path], [...traces])
+    })
   }
 }
 
