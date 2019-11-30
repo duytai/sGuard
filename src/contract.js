@@ -114,18 +114,18 @@ class Contract {
         return
       }
       case 'MLOAD': {
-        stack.push(['symbol', name, stack.pop()])
+        stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
       }
       case 'SSTORE': {
         const [x, y] = stack.splice(-2).reverse()
-        storage.push(['symbol', name, x, y])
+        traces.push(['symbol', name, x, y])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
       }
       case 'SLOAD': {
-        stack.push(['symbol', name, stack.pop()])
+        stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
       }
