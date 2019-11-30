@@ -22,10 +22,6 @@ class Contract {
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
     visited[pc] = true
-    if (pc == 91) {
-      console.log('---stack----')
-      prettify(stack)
-    }
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
@@ -132,7 +128,7 @@ class Contract {
       case 'ISZERO': {
         const x = stack.pop()
         if (x[0] == 'const') {
-          stack.push(x[1].isZero() ? 1 : 0)
+          stack.push(['const', x[1].isZero() ? new BN(1) : new BN(0)])
         } else {
           stack.push(['symbol', name, x])
         }
@@ -319,7 +315,7 @@ class Contract {
         assert(codeOffset[0] == 'const')
         assert(codeLen[0] == 'const')
         const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
-        const value = ['const', new BN(code.toString(16), 'hex')]
+        const value = ['const', new BN(code.toString(16), 16)]
         traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
@@ -335,7 +331,7 @@ class Contract {
           outLength,
         ] = stack.splice(-7).reverse()
         console.log(`--WEI--`)
-        prettify([value])
+        // prettify([value])
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         this.execute(pc + 1, [...stack], [...path], [...traces], visited)
         return
