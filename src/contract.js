@@ -5,6 +5,7 @@ const { opcodes } = require('./evm')
 const { logger, prettify } = require('./shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
+const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
 /*
  * MSTORE: loc, value, len
  * MLOAD: loc, position in traces in traces
@@ -139,6 +140,20 @@ class Contract {
           stack.push(['const', x[1].isZero() ? new BN(1) : new BN(0)])
         } else {
           stack.push(['symbol', name, x])
+        }
+        break
+      }
+      case 'SHL': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          if (x[1].gten(256)) {
+            stack.push(['const', new BN(0)])
+          } else {
+            const r = y[1].shln(x[1].toNumber()).iand(MAX_INTEGER)
+            stack.push(['const', r])
+          }
         }
         break
       }
