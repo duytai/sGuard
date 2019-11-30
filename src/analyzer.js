@@ -9,8 +9,13 @@ const find = (symbol, cond) => {
   )
 }
 
+const analyzeStorage = (symbol, traces) => {
+  const [type, name, ...params] = symbol
+  const [address, position] = params
+  console.log(position)
+}
+
 const analyze = (symbol, traces) => {
-  console.log(symbol)
   const [type, name, ...params] = symbol 
   switch (type) {
     case 'const': {
@@ -22,6 +27,8 @@ const analyze = (symbol, traces) => {
       if (foundSymbols.length > 0) {
         logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
       }
+      const sloads = find(symbol, ([type, name]) => type == 'symbol' && name == 'SLOAD')
+      sloads.forEach(sload => analyzeStorage(sload, traces))
       break
     }
   }

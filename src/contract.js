@@ -9,7 +9,7 @@ const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
 /*
  * MSTORE: loc, value, len
- * MLOAD: loc, position in traces in traces
+ * MLOAD: loc, len, position in traces in traces
  * */
 
 class Contract {
@@ -123,7 +123,8 @@ class Contract {
         break
       }
       case 'MLOAD': {
-        stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
+        const size = ['const', new BN(32)]
+        stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces)]])
         break
       }
       case 'SSTORE': {
@@ -132,7 +133,7 @@ class Contract {
         break
       }
       case 'SLOAD': {
-        stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length - 1)]])
+        stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length)]])
         break
       }
       case 'ISZERO': {
@@ -310,7 +311,7 @@ class Contract {
       }
       case 'SHA3': {
         const [x, y] = stack.splice(-2).reverse()
-        stack.push(['symbol', name, ['symbol', 'MLOAD', x, y]])
+        stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, ['const', new BN(traces.length)]]])
         break
       }
       case 'CODESIZE': {
