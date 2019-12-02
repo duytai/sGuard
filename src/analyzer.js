@@ -1,3 +1,4 @@
+const assert = require('assert')
 const { prettify, logger } = require('./shared')
 
 const find = (symbol, cond) => {
@@ -10,9 +11,13 @@ const find = (symbol, cond) => {
 }
 
 const analyzeStorage = (symbol, traces) => {
+  prettify([symbol])
+  console.log('---')
   const [type, name, ...params] = symbol
   const [address, position] = params
-  console.log(position)
+  assert(position[0] == 'const')
+  const applicableTraces = traces.slice(0, position[1].toNumber())
+  prettify(applicableTraces)
 }
 
 const analyze = (symbol, traces) => {
