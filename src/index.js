@@ -9,7 +9,9 @@ const compiled = fs.readFileSync(process.env.COMPILED, 'utf8')
 
 forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const bin = Buffer.from(contractJson['bin-runtime'], 'hex')
-  const asm = contractJson.asm['.data']['0']['.code']
-  const contract = new Contract(bin, asm)
-  contract.execute()
+  if (contractJson.asm) {
+    const asm = contractJson.asm['.data']['0']['.code']
+    const contract = new Contract(bin, asm)
+    contract.execute()
+  }
 })

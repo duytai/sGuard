@@ -18,11 +18,13 @@ class Contract {
     this.asm = asm
   }
 
-  execute(pc = 0, stack = [], path = [], traces = []) {
+  execute(pc = 0, stack = [], path = [], traces = [], visited = []) {
     const opcode = opcodes[this.bin[pc]]
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
+    if (visited.includes(pc)) return
+    visited.push(pc)
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
@@ -43,20 +45,20 @@ class Contract {
           if (!cond[1].isZero()) {
             assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
             process.nextTick(() => {
-              this.execute(jumpdest, [...stack], [...path], [...traces])
+              this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
             })
           } else {
             process.nextTick(() => {
-              this.execute(pc + 1, [...stack], [...path], [...traces])
+              this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
             })
           }
         } else {
           process.nextTick(() => {
-            this.execute(pc + 1, [...stack], [...path], [...traces])
+            this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
           })
           assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
           process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces])
+            this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
           })
         }
         return
@@ -67,7 +69,7 @@ class Contract {
         const jumpdest = label[1].toNumber()
         assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
         process.nextTick(() => {
-          this.execute(jumpdest, [...stack], [...path], [...traces])
+          this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
         })
         return
       }
@@ -323,7 +325,7 @@ class Contract {
         assert(codeOffset[0] == 'const')
         assert(codeLen[0] == 'const')
         const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
-        const value = ['const', new BN(code.toString(16), 16)]
+        const value = ['const', new BN(code.toString('hex'), 16)]
         traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
         break
       }
@@ -337,6 +339,7 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        console.log('>> CALL')
         analyze(value, traces)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         break
@@ -351,7 +354,7 @@ class Contract {
       }
     }
     process.nextTick(() => {
-      this.execute(pc + 1, [...stack], [...path], [...traces])
+      this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
     })
   }
 }
