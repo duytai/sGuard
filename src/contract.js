@@ -124,7 +124,7 @@ class Contract {
       }
       case 'MLOAD': {
         const size = ['const', new BN(32)]
-        stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces)]])
+        stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces.length)]])
         break
       }
       case 'SSTORE': {

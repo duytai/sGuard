@@ -5,7 +5,11 @@ const { createLogger, format, transports } = winston
 const { combine, timestamp, label, printf, prettyPrint } = format
 
 const prettify = values => {
-  values.forEach(v => console.log(JSON.stringify(v)))
+  const format = ([type, name, ...params]) => {
+    if (type == 'const') return name.toString(16) 
+    return `${name}(${params.map(p => format(p)).join(',')})`
+  }
+  values.forEach(v => console.log(format(v)))
 }
 /*
  * Initialize logger 

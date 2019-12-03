@@ -11,20 +11,22 @@ const find = (symbol, cond) => {
 }
 
 const analyzeStorage = (symbol, traces) => {
-  prettify([symbol])
-  console.log('---')
   const [type, name, ...params] = symbol
   const [address, position] = params
   assert(position[0] == 'const')
   const applicableTraces = traces.slice(0, position[1].toNumber())
-  prettify(applicableTraces)
+  // prettify(applicableTraces)
 }
 
 const analyze = (symbol, traces) => {
+  prettify(traces)
+  console.log('+++')
+  prettify([symbol])
+  console.log('---')
   const [type, name, ...params] = symbol 
   switch (type) {
     case 'const': {
-      logger.info(`No dependency since wei is ${JSON.stringify(value)}`)
+      logger.info(`No dependency since wei is ${JSON.stringify(symbol)}`)
       break
     }
     case 'symbol': {
