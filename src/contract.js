@@ -10,6 +10,7 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
 /*
  * MSTORE: loc, value, len
  * MLOAD: loc, len, position in traces in traces
+ * TODO: stop condition and JUMP address
  * */
 
 class Contract {
@@ -67,10 +68,13 @@ class Contract {
         const [label] = stack.splice(-ins)
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
-        assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        process.nextTick(() => {
-          this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
-        })
+        if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
+          process.nextTick(() => {
+            this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
+          })
+        } else {
+          logger.info(`WARNING: ${name}`)
+        }
         return
       }
       case 'SWAP': {
@@ -339,7 +343,6 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
-        console.log('>> CALL')
         analyze(value, traces)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         break
