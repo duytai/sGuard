@@ -8,6 +8,14 @@ const {
   isSymbol,
 } = require('./shared')
 
+const format = ([type, name, ...params]) => {
+  if (type == 'const') return name.toString(16) 
+  if (!params.length) return name
+  return `${name}(${params.map(p => format(p)).join(',')})`
+}
+
+const equal = (s1, s2) => format(s1) == format(s2)
+
 const find = (symbol, cond) => {
   const [type, name, ...params] = symbol
   if (cond(symbol)) return [symbol]
@@ -15,6 +23,21 @@ const find = (symbol, cond) => {
     (agg, symbol) => [...agg, ...find(symbol, cond)],
     [],
   )
+}
+
+const match = (symbol, pathNames= []) => {
+  const pathLen = pathNames.length
+  const ret = []
+  while (pathNames.length) {
+    if (symbol[1] == pathNames.shift()) {
+      ret.push(symbol)
+      symbol = symbol[2]
+    } else {
+      break
+    }
+  }
+  if (pathLen != ret.length) return []
+  return ret
 }
 
 const buildDependencyTree = (node, traces) => {
@@ -29,7 +52,7 @@ const buildDependencyTree = (node, traces) => {
     case 'SLOAD': {
       const [loadOffset, traceSize] = params
       assert(isConst(traceSize))
-      /* Data is saved at specific location */
+      /* Data is saved at const location */
       if (isConst(loadOffset)) {
         const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
         for (let i = 0; i < validTraces.length; i ++) {
@@ -47,11 +70,37 @@ const buildDependencyTree = (node, traces) => {
           }
         }
       } else {
+        /* Data is saved at symbolic location */
+        const matches = match(loadOffset, ['ADD', 'SHA3', 'MLOAD'])
+        assert(matches.length)
+        const [type, name, ...params] = matches.pop()
+        assert(isConstWithValue(params[0], 0x00))
+        assert(isConstWithValue(params[1], 0x20))
+        assert(isConst(params[2]))
+        const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
+        const [loadSignature] = validTraces
+        /* Search for similar SSTORE */
+        validTraces.forEach((trace, idx) => {
+          const [type, name, ...params] = trace
+          const [storeOffset, value, traceSize] = params
+          if (name == 'SSTORE') {
+            const matches = match(storeOffset, ['ADD', 'SHA3', 'MLOAD'])
+            if (matches.length) {
+              const storeSignature = validTraces[idx + 1] 
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            }
+          }
+        })
       }
       break
     }
     default: {
-      const symbols = find(me, ([type, name]) => type == 'symbol' && ['SLOAD', 'MLOAD'].includes(name))
+      const symbols = find(me, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
       symbols.forEach(symbol => {
         const newNode = { me: symbol, childs: [] }
         buildDependencyTree(newNode, traces)
