@@ -4,6 +4,8 @@ const {
   prettify,
   logger,
   isConstWithValue,
+  isConst,
+  isSymbol,
 } = require('./shared')
 
 const find = (symbol, cond) => {
@@ -13,6 +15,30 @@ const find = (symbol, cond) => {
     (agg, symbol) => [...agg, ...find(symbol, cond)],
     [],
   )
+}
+
+const buildDependencyTree = (node, traces) => {
+  const { me, childs } = node
+  assert(isSymbol(me))
+  assert(!childs.length)
+  switch (me[1]) {
+    case 'MLOAD': {
+      break
+    }
+    case 'SLOAD': {
+      console.log('>>SLOAD')
+      prettify([me])
+      break
+    }
+    default: {
+      const symbols = find(me, ([type, name]) => type == 'symbol' && ['SLOAD', 'MLOAD'].includes(name))
+      symbols.forEach(symbol => {
+        const newNode = { me: symbol, childs: [] }
+        buildDependencyTree(newNode, traces)
+        childs.push(newNode)
+      })
+    }
+  }
 }
 
 const analyze = (symbol, traces) => {
@@ -28,8 +54,8 @@ const analyze = (symbol, traces) => {
       if (foundSymbols.length > 0) {
         logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
       } else {
-        console.log('////BEFORE')
-        prettify([symbol])
+        const root = { me: symbol, childs: [] }
+        buildDependencyTree(root, traces)
       }
       break
     }

@@ -12,6 +12,7 @@ const prettify = values => {
   }
   values.forEach(v => console.log(format(v)))
 }
+
 /*
  * Initialize logger 
  * */
