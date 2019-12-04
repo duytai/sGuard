@@ -234,6 +234,15 @@ class Contract {
         }
         break
       }
+      case 'GT': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(['const', x[1].gt(y[1]) ? new BN(1) : new BN(0)])
+        }
+        break
+      }
       case 'MUL': {
         const [x, y] = stack.splice(-2).reverse()
         if (x[0] != 'const' || y[0] != 'const') {
