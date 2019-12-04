@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { reverse } = require('lodash')
+const { reverse, last } = require('lodash')
 const {
   prettify,
   logger,
@@ -25,19 +25,11 @@ const find = (symbol, cond) => {
   )
 }
 
-const match = (symbol, pathNames= []) => {
-  const pathLen = pathNames.length
-  const ret = []
-  while (pathNames.length) {
-    if (symbol[1] == pathNames.shift()) {
-      ret.push(symbol)
-      symbol = symbol[2]
-    } else {
-      break
-    }
-  }
-  if (pathLen != ret.length) return []
-  return ret
+const match = (symbol, pathNames) => {
+  if (!pathNames.length) return []
+  if (pathNames.shift() != symbol[1]) return []
+  const params = symbol.slice(2)
+  return [symbol, ...params.reduce((agg, n) => [...agg, ...match(n, [...pathNames])], [])]
 }
 
 const buildDependencyTree = (node, traces) => {
