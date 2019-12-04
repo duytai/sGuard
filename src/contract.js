@@ -1,4 +1,4 @@
-const { range, reverse } = require('lodash')
+const { range, reverse, keys, pickBy, last } = require('lodash')
 const BN = require('bn.js')
 const assert = require('assert')
 const { opcodes } = require('./evm')
@@ -17,6 +17,27 @@ class Contract {
   constructor(bin, asm) {
     this.bin = bin
     this.asm = asm
+  }
+
+  findForbiddenJumpdests(path) {
+    const forbiddenJumpdests = new Set() 
+    const { pc: jumpi } = last(path)
+    const pcs = path.map(({ pc }) => pc)
+    const indexes = keys(pickBy(pcs, pc => pc == jumpi)).map(i => parseInt(i))
+    if (indexes.length > 2) {
+      const subPaths = []
+      for (let i = 0; i < indexes.length - 1; i ++) {
+        subPaths.push(pcs.slice(indexes[i], indexes[i + 1]))
+      }
+      for (let i = 0; i < subPaths.length - 1; i ++) {
+        for (let j = i + 1; j < subPaths.length; j ++) {
+          if (subPaths[i].join('') == subPaths[j].join('')) {
+            forbiddenJumpdests.add(subPaths[i][1])
+          }
+        }
+      }
+    }
+    return [...forbiddenJumpdests]
   }
 
   execute(pc = 0, stack = [], path = [], traces = []) {
@@ -52,13 +73,18 @@ class Contract {
             })
           }
         } else {
-          process.nextTick(() => {
-            this.execute(pc + 1, [...stack], [...path], [...traces])
-          })
-          assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-          process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces])
-          })
+          const forbiddenJumpdests = this.findForbiddenJumpdests(path)
+          if (!forbiddenJumpdests.includes(pc + 1)) {
+            process.nextTick(() => {
+              this.execute(pc + 1, [...stack], [...path], [...traces])
+            })
+          }
+          if (!forbiddenJumpdests.includes(jumpdest)) {
+            assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+            process.nextTick(() => {
+              this.execute(jumpdest, [...stack], [...path], [...traces])
+            })
+          }
         }
         return
       }
