@@ -120,6 +120,8 @@ const prettifyTree = (root, level = 0) => {
 
 const analyze = (symbol, traces) => {
   prettify(traces)
+  prettify([symbol])
+  console.log('----')
   const [type, name, ...params] = symbol 
   switch (type) {
     case 'const': {
