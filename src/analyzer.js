@@ -47,9 +47,9 @@ const buildDependencyTree = (node, traces) => {
       assert(isConstWithValue(loadParams[0], 0x40))
       assert(isConstWithValue(loadParams[1], 0x20))
       assert(isConst(loadParams[2]))
-      const validTraces = reverse(traces.slice(0, loadParams[2][1].toNumber()))
-      console.log('---validTraces---')
-      prettify(validTraces)
+      const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+      validTraces.forEach((trace, idx) => {
+      })
       break
     }
     case 'SLOAD': {
@@ -87,18 +87,15 @@ const buildDependencyTree = (node, traces) => {
           const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const [type, name, ...params] = trace
-            const [storeOffset, value, traceSize] = params
-            if (name == 'SSTORE') {
-              const arrayMatches = match(storeOffset, ['ADD', 'SHA3', 'MLOAD'])
-              if (arrayMatches.length) {
-                const storeSignature = validTraces[idx + 1] 
-                assert(storeSignature)
-                if (equal(loadSignature, storeSignature)) {
-                  const newNode = { me: value, childs: [] }
-                  buildDependencyTree(newNode, traces)
-                  childs.push(newNode)
-                }
+            const arrayMatches = match(trace, ['SSTORE', 'ADD', 'SHA3', 'MLOAD'])
+            if (arrayMatches.length) {
+              const storeSignature = validTraces[idx + 1] 
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
               }
             }
           })
