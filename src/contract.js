@@ -92,13 +92,10 @@ class Contract {
         const [label] = stack.splice(-ins)
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
-        if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-          process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces])
-          })
-        } else {
-          logger.info(`WARNING: ${name}`)
-        }
+        assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+        process.nextTick(() => {
+          this.execute(jumpdest, [...stack], [...path], [...traces])
+        })
         return
       }
       case 'SWAP': {
