@@ -82,7 +82,7 @@ const buildDependencyTree = (node, traces) => {
             const [storeOffset, value, traceSize] = params
             if (isConst(storeOffset)) {
               if (storeOffset[1].toNumber() == loadOffset[1].toNumber()) {
-                const newNode = { me: trace, childs: [] }
+                const newNode = { me: value, childs: [] }
                 buildDependencyTree(newNode, traces)
                 childs.push(newNode)
               }
