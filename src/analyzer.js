@@ -8,17 +8,15 @@ const {
 
 const find = (symbol, cond) => {
   const [type, name, ...params] = symbol
+  if (cond(symbol)) return [symbol]
   return params.reduce(
     (agg, symbol) => [...agg, ...find(symbol, cond)],
-    cond(symbol) ? [symbol] : []
+    [],
   )
 }
 
 const analyze = (symbol, traces) => {
   prettify(traces)
-  console.log('+++')
-  prettify([symbol])
-  console.log('---')
   const [type, name, ...params] = symbol 
   switch (type) {
     case 'const': {
