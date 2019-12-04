@@ -49,7 +49,8 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(!isConst(loadOffset))
       const arrayMatches = match(loadOffset, ['ADD', 'MLOAD'])
-      const [type, name, ...loadParams] = arrayMatches.pop()
+      const loadSignature = arrayMatches.pop()
+      const [type, name, ...loadParams] = loadSignature
       assert(isConstWithValue(loadParams[0], 0x40))
       assert(isConstWithValue(loadParams[1], 0x20))
       assert(isConst(loadParams[2]))
@@ -57,18 +58,14 @@ const buildDependencyTree = (node, traces) => {
       validTraces.forEach((trace, idx) => {
         const arrayMatches = match(trace, ['MSTORE', 'MLOAD'])
         if (arrayMatches.length) {
+          const storeSignature = arrayMatches[1]
+          if (equal(loadSignature, storeSignature)) {
+            const [type, name, storeOffset, value] = trace
+            const newNode = { me: value, childs: [] }
+            buildDependencyTree(newNode, traces)
+            childs.push(newNode)
+          }
         }
-        // const arrayMatches = match(trace, ['SSTORE', 'ADD', 'SHA3', 'MLOAD'])
-        // if (arrayMatches.length) {
-          // const storeSignature = validTraces[idx + 1]
-          // assert(storeSignature)
-          // if (equal(loadSignature, storeSignature)) {
-            // const [type, name, storeOffset, value] = trace
-            // const newNode = { me: value, childs: [] }
-            // buildDependencyTree(newNode, traces)
-            // childs.push(newNode)
-          // }
-        // }
       })
       break
     }
