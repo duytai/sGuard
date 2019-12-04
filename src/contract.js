@@ -332,7 +332,7 @@ class Contract {
         }
         break
       }
-      case 'SMOD': {
+      case 'ADDMOD': {
         const [x, y, z] = stack.splice(-3).reverse()
         if (x[0] != 'const' || y[0] != 'const' || z[0] != 'const') {
           stack.push(['symbol', name, x, y, z])
@@ -361,6 +361,26 @@ class Contract {
         const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
         const value = ['const', new BN(code.toString('hex'), 16)]
         traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+        break
+      }
+      case 'EXP': {
+        const [base, exponent] = stack.splice(-2).reverse()
+        if (exponent[0] == 'const' && exponent[1].isZero()) {
+          stack.push(['const', new BN(1)])
+        } else if (base[0] == 'const' && base[1].isZero()) {
+          stack.push(['const', new BN(0)])
+        } else {
+          if (base[0] != 'const' || exponent[0] != 'const') {
+            stack.push(['symbol', name, base, component])
+          } else {
+            const byteLength = exponent[1].byteLength()
+            assert(byteLength >= 1 && byteLength <= 32)
+            const m = BN.red(TWO_POW256)
+            const redBase = base[1].toRed(m)
+            const r = redBase.redPow(exponent[1])
+            stack.push(['const', r.fromRed()])
+          }
+        }
         break
       }
       case 'CALL': {
