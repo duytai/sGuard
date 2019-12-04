@@ -383,6 +383,26 @@ class Contract {
         }
         break
       }
+      case 'NOT': {
+        const x = stack.pop()
+        if (x[0] != 'const') {
+          stack.push(['symbol', name, x])
+        } else {
+          const r = x[1].notn(256)
+          stack.push(['const', r])
+        }
+        break
+      }
+      case 'OR': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          const r = x[1].or(y[1])
+          stack.push(['const', r])
+        }
+        break
+      }
       case 'CALL': {
         const [
           gasLimit,
