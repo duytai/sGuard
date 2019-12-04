@@ -63,7 +63,6 @@ const buildDependencyTree = (node, traces) => {
         }
       } else {
         /* Data is saved at symbolic location */
-        /* Array Type */
         const arrayMatches = match(loadOffset, ['ADD', 'SHA3', 'MLOAD'])
         const mappingMatches = match(loadOffset, ['SHA3', 'MLOAD'])
         assert(arrayMatches.length || mappingMatches.length)
@@ -81,6 +80,31 @@ const buildDependencyTree = (node, traces) => {
             if (name == 'SSTORE') {
               const arrayMatches = match(storeOffset, ['ADD', 'SHA3', 'MLOAD'])
               if (arrayMatches.length) {
+                const storeSignature = validTraces[idx + 1] 
+                assert(storeSignature)
+                if (equal(loadSignature, storeSignature)) {
+                  const newNode = { me: value, childs: [] }
+                  buildDependencyTree(newNode, traces)
+                  childs.push(newNode)
+                }
+              }
+            }
+          })
+        }
+        if (mappingMatches.length) {
+          const [type, name, ...params] = mappingMatches.pop()
+          assert(isConstWithValue(params[0], 0x00))
+          assert(isConstWithValue(params[1], 0x40))
+          assert(isConst(params[2]))
+          const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
+          const [loadSignature] = validTraces
+          /* Search for similar SSTORE */
+          validTraces.forEach((trace, idx) => {
+            const [type, name, ...params] = trace
+            const [storeOffset, value, traceSize] = params
+            if (name == 'SSTORE') {
+              const mappingMatches = match(storeOffset, ['SHA3', 'MLOAD'])
+              if (mappingMatches.length) {
                 const storeSignature = validTraces[idx + 1] 
                 assert(storeSignature)
                 if (equal(loadSignature, storeSignature)) {
