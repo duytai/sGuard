@@ -1,16 +1,18 @@
 const assert = require('assert')
 const winston = require('winston')
+const { range } = require('lodash')
 
 const { createLogger, format, transports } = winston
 const { combine, timestamp, label, printf, prettyPrint } = format
 
-const prettify = values => {
+const prettify = (values, spaceLen = 0) => {
   const format = ([type, name, ...params]) => {
     if (type == 'const') return name.toString(16) 
     if (!params.length) return name
     return `${name}(${params.map(p => format(p)).join(',')})`
   }
-  values.forEach(v => console.log(format(v)))
+  const space = range(0, spaceLen).map(i => ' ').join('') || ''
+  values.forEach(v => console.log(`${space}${format(v)}`))
 }
 
 /*
