@@ -233,7 +233,7 @@ class Contract {
       case 'ADD': {
         const [x, y] = stack.splice(-2).reverse()
         if (x[0] != 'const' || y[0] != 'const') {
-          stack.push(['symbol', name, x, y])
+          stack.push(['symbol', name, y, x])
         } else {
           stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
         }
