@@ -19,12 +19,11 @@ class Contract {
     this.asm = asm
   }
 
-  execute(pc = 0, stack = [], path = [], traces = [], visited = []) {
+  execute(pc = 0, stack = [], path = [], traces = []) {
     const opcode = opcodes[this.bin[pc]]
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
-    visited.push(pc)
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
@@ -45,20 +44,20 @@ class Contract {
           if (!cond[1].isZero()) {
             assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
             process.nextTick(() => {
-              this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
+              this.execute(jumpdest, [...stack], [...path], [...traces])
             })
           } else {
             process.nextTick(() => {
-              this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
+              this.execute(pc + 1, [...stack], [...path], [...traces])
             })
           }
         } else {
           process.nextTick(() => {
-            this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
+            this.execute(pc + 1, [...stack], [...path], [...traces])
           })
           assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
           process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
+            this.execute(jumpdest, [...stack], [...path], [...traces])
           })
         }
         return
@@ -69,7 +68,7 @@ class Contract {
         const jumpdest = label[1].toNumber()
         if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
           process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces], [...visited])
+            this.execute(jumpdest, [...stack], [...path], [...traces])
           })
         } else {
           logger.info(`WARNING: ${name}`)
@@ -356,7 +355,7 @@ class Contract {
       }
     }
     process.nextTick(() => {
-      this.execute(pc + 1, [...stack], [...path], [...traces], [...visited])
+      this.execute(pc + 1, [...stack], [...path], [...traces])
     })
   }
 }
