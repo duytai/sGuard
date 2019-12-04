@@ -26,10 +26,17 @@ const find = (symbol, cond) => {
 }
 
 const match = (symbol, pathNames) => {
-  if (!pathNames.length) return []
-  if (pathNames.shift() != symbol[1]) return []
-  const params = symbol.slice(2)
-  return [symbol, ...params.reduce((agg, n) => [...agg, ...match(n, [...pathNames])], [])]
+  const internalMatch = (symbol, pathNames) => {
+    if (!pathNames.length) return []
+    if (pathNames.shift() != symbol[1]) return []
+    const params = symbol.slice(2)
+    return [symbol, ...params.reduce((agg, n) => [...agg, ...internalMatch(n, [...pathNames])], [])]
+  }
+  const pathLen = pathNames.length
+  const ret = internalMatch(symbol, pathNames)
+  assert(ret.length <= pathLen)
+  if (ret.length < pathLen) return []
+  return ret
 }
 
 const buildDependencyTree = (node, traces) => {
@@ -42,13 +49,26 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(!isConst(loadOffset))
       const arrayMatches = match(loadOffset, ['ADD', 'MLOAD'])
-      assert(arrayMatches.length == 2)
       const [type, name, ...loadParams] = arrayMatches.pop()
       assert(isConstWithValue(loadParams[0], 0x40))
       assert(isConstWithValue(loadParams[1], 0x20))
       assert(isConst(loadParams[2]))
       const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
       validTraces.forEach((trace, idx) => {
+        const arrayMatches = match(trace, ['MSTORE', 'MLOAD'])
+        if (arrayMatches.length) {
+        }
+        // const arrayMatches = match(trace, ['SSTORE', 'ADD', 'SHA3', 'MLOAD'])
+        // if (arrayMatches.length) {
+          // const storeSignature = validTraces[idx + 1]
+          // assert(storeSignature)
+          // if (equal(loadSignature, storeSignature)) {
+            // const [type, name, storeOffset, value] = trace
+            // const newNode = { me: value, childs: [] }
+            // buildDependencyTree(newNode, traces)
+            // childs.push(newNode)
+          // }
+        // }
       })
       break
     }
@@ -78,7 +98,6 @@ const buildDependencyTree = (node, traces) => {
         const mappingMatches = match(loadOffset, ['SHA3', 'MLOAD'])
         assert(arrayMatches.length || mappingMatches.length)
         if (arrayMatches.length) {
-          assert(arrayMatches.length == 3)
           const [type, name, ...params] = arrayMatches.pop()
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x20))
@@ -101,7 +120,6 @@ const buildDependencyTree = (node, traces) => {
           })
         }
         if (mappingMatches.length) {
-          assert(mappingMatches.length == 2)
           const [type, name, ...params] = mappingMatches.pop()
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x40))
