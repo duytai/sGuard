@@ -24,7 +24,6 @@ class Contract {
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
-    if (visited.includes(pc)) return
     visited.push(pc)
     switch (name) {
       case 'PUSH': {
