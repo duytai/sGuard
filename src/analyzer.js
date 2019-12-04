@@ -110,18 +110,15 @@ const buildDependencyTree = (node, traces) => {
           const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const [type, name, ...params] = trace
-            const [storeOffset, value, traceSize] = params
-            if (name == 'SSTORE') {
-              const mappingMatches = match(storeOffset, ['SHA3', 'MLOAD'])
-              if (mappingMatches.length) {
-                const storeSignature = validTraces[idx + 1] 
-                assert(storeSignature)
-                if (equal(loadSignature, storeSignature)) {
-                  const newNode = { me: value, childs: [] }
-                  buildDependencyTree(newNode, traces)
-                  childs.push(newNode)
-                }
+            const arrayMatches = match(trace, ['SSTORE', 'SHA3', 'MLOAD'])
+            if (arrayMatches.length) {
+              const storeSignature = validTraces[idx + 1] 
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
               }
             }
           })
