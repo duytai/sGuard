@@ -34,11 +34,22 @@ const match = (symbol, pathNames) => {
 
 const buildDependencyTree = (node, traces) => {
   const { me, childs } = node
-  assert(isSymbol(me))
   assert(!childs.length)
   const [type, name, ...params] = me
   switch (name) {
     case 'MLOAD': {
+      const [loadOffset, dataLen, traceSize] = params
+      assert(isConst(traceSize))
+      assert(!isConst(loadOffset))
+      const arrayMatches = match(loadOffset, ['ADD', 'MLOAD'])
+      assert(arrayMatches.length == 2)
+      const [type, name, ...loadParams] = arrayMatches.pop()
+      assert(isConstWithValue(loadParams[0], 0x40))
+      assert(isConstWithValue(loadParams[1], 0x20))
+      assert(isConst(loadParams[2]))
+      const validTraces = reverse(traces.slice(0, loadParams[2][1].toNumber()))
+      console.log('---validTraces---')
+      prettify(validTraces)
       break
     }
     case 'SLOAD': {
@@ -67,6 +78,7 @@ const buildDependencyTree = (node, traces) => {
         const mappingMatches = match(loadOffset, ['SHA3', 'MLOAD'])
         assert(arrayMatches.length || mappingMatches.length)
         if (arrayMatches.length) {
+          assert(arrayMatches.length == 3)
           const [type, name, ...params] = arrayMatches.pop()
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x20))
@@ -92,6 +104,7 @@ const buildDependencyTree = (node, traces) => {
           })
         }
         if (mappingMatches.length) {
+          assert(mappingMatches.length == 2)
           const [type, name, ...params] = mappingMatches.pop()
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x40))
