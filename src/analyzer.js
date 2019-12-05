@@ -74,6 +74,21 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
+      /*
+       * For static address, storage location is statically assigned
+       * We can not deconstruct variable location 
+       * Example:
+       * uint[10] balances;
+       * uint[10] photos;
+       * {
+       *   balances[0] = block.number;
+       *   photos[0] = block.timestamp;
+       *   msg.sender.send(balances[9] + photos[9]);
+       * }
+       * */
+      /*
+       * Primitive types
+       * */
       break
     }
     default: {
