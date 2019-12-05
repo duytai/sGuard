@@ -52,7 +52,7 @@ const buildDependencyTree = (node, traces) => {
       assert(!isConst(loadOffset))
       const arrayMatches = match(me, 'MLOAD:0/ADD:1/MLOAD')
       if (arrayMatches.length) {
-        const loadSignature = arrayMatches.pop()
+        const loadSignature = last(arrayMatches)
         const [type, name, ...loadParams] = loadSignature
         assert(isConstWithValue(loadParams[0], 0x40))
         assert(isConstWithValue(loadParams[1], 0x20))
@@ -74,21 +74,89 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
-      /*
-       * For static address, storage location is statically assigned
-       * We can not deconstruct variable location 
-       * Example:
-       * uint[10] balances;
-       * uint[10] photos;
-       * {
-       *   balances[0] = block.number;
-       *   photos[0] = block.timestamp;
-       *   msg.sender.send(balances[9] + photos[9]);
-       * }
-       * */
-      /*
-       * Primitive types
-       * */
+      const [loadOffset, traceSize] = me.slice(2) 
+      assert(isConst(traceSize))
+      if (isConst(loadOffset)) {
+        /*
+         * For static address, storage location is statically assigned
+         * We can not deconstruct variable location 
+         * Example:
+         * uint[10] balances;
+         * uint[10] photos;
+         * {
+         *   balances[0] = block.number;
+         *   photos[0] = block.timestamp;
+         *   msg.sender.send(balances[9] + photos[9]);
+         * }
+         * We can not distinguish between photos and balances. However a variable is primitive type
+         * or indexAccess of load and store is the same then we can detect
+         * */
+        const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+        for (let i = 0; i < validTraces.length; i ++) {
+          const trace = validTraces[i]
+          const [type, name, ...params] = trace
+          if (name == 'SSTORE') {
+            const [storeOffset, value, traceSize] = params
+            if (isConst(storeOffset)) {
+              if (storeOffset[1].toNumber() == loadOffset[1].toNumber()) {
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            }
+          }
+        }
+      } else {
+        /*
+         * For dynamic address 
+         * */
+        const arrayMatches = match(me, 'SLOAD:0/ADD:0/SHA3:0/MLOAD')
+        if (arrayMatches.length) {
+          const [type, name, ...params] = last(arrayMatches)
+          assert(isConstWithValue(params[0], 0x00))
+          assert(isConstWithValue(params[1], 0x20))
+          assert(isConst(params[2]))
+          const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
+          const [loadSignature] = validTraces
+          /* Search for similar SSTORE */
+          validTraces.forEach((trace, idx) => {
+            const arrayMatches = match(trace, 'SSTORE:0/ADD:0/SHA3:0/MLOAD')
+            if (arrayMatches.length) {
+              const storeSignature = validTraces[idx + 1]
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            }
+          })
+        }
+        const mappingMatches = match(me, 'SLOAD:0/SHA3:0/MLOAD')
+        if (mappingMatches.length) {
+          const [type, name, ...params] = mappingMatches.pop()
+          assert(isConstWithValue(params[0], 0x00))
+          assert(isConstWithValue(params[1], 0x40))
+          assert(isConst(params[2]))
+          const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
+          const [loadSignature] = validTraces
+          /* Search for similar SSTORE */
+          validTraces.forEach((trace, idx) => {
+            const mappingMatches = match(trace, 'SSTORE:0/SHA3:0/MLOAD')
+            if (mappingMatches.length) {
+              const storeSignature = validTraces[idx + 1]
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            }
+          })
+        }
+      }
       break
     }
     default: {
