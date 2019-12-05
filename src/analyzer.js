@@ -25,7 +25,7 @@ const find = (symbol, cond) => {
   )
 }
 
-const match = (symbol, pathNames) => {
+const match = (symbol, xpath) => {
   const internalMatch = (symbol, pathNames) => {
     if (!pathNames.length) return []
     const [name, paramIndex] = pathNames.shift().split(':')
@@ -34,10 +34,10 @@ const match = (symbol, pathNames) => {
     if (paramIndex) return [symbol, ...internalMatch(params[parseInt(paramIndex)], [...pathNames])]
     return [symbol, ...params.reduce((agg, n) => [...agg, ...internalMatch(n, [...pathNames])], [])]
   }
-  const pathLen = pathNames.length
-  const ret = internalMatch(symbol, pathNames)
-  assert(ret.length <= pathLen)
-  if (ret.length < pathLen) return []
+  const pathNames = xpath.split('/')
+  const ret = internalMatch(symbol, [...pathNames])
+  assert(ret.length <= pathNames.length)
+  if (ret.length < pathNames.length) return []
   return ret
 }
 
@@ -50,30 +50,27 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
-      const arrayMatches = match(me, ['MLOAD:0/ADD:1/MLOAD'])
-      console.log('>>>>>>MATCHES')
-      prettify(arrayMatches)
-      // if (arrayMatches.length) {
-        // const loadSignature = arrayMatches.pop()
-        // const [type, name, ...loadParams] = loadSignature
-        // assert(isConstWithValue(loadParams[0], 0x40))
-        // assert(isConstWithValue(loadParams[1], 0x20))
-        // assert(isConst(loadParams[2]))
-        // const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-        // validTraces.forEach((trace, idx) => {
-          // const arrayMatches = match(trace, ['MSTORE', 'ADD', 'MLOAD'])
-          // if (arrayMatches.length) {
-            // const storeSignature = last(arrayMatches)
-            // if (equal(loadSignature, storeSignature)) {
-              // console.log('FOUND')
-              // const [type, name, storeOffset, value] = trace
-              // const newNode = { me: value, childs: [] }
-              // buildDependencyTree(newNode, traces)
-              // childs.push(newNode)
-            // }
-          // }
-        // })
-      // }
+      const arrayMatches = match(me, 'MLOAD:0/ADD:1/MLOAD')
+      if (arrayMatches.length) {
+        const loadSignature = arrayMatches.pop()
+        const [type, name, ...loadParams] = loadSignature
+        assert(isConstWithValue(loadParams[0], 0x40))
+        assert(isConstWithValue(loadParams[1], 0x20))
+        assert(isConst(loadParams[2]))
+        const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+        validTraces.forEach((trace, idx) => {
+          const arrayMatches = match(trace, 'MSTORE:0/ADD:1/MLOAD')
+          if (arrayMatches.length) {
+            const storeSignature = last(arrayMatches)
+            if (equal(loadSignature, storeSignature)) {
+              const [type, name, storeOffset, value] = trace
+              const newNode = { me: value, childs: [] }
+              buildDependencyTree(newNode, traces)
+              childs.push(newNode)
+            }
+          }
+        })
+      }
       break
     }
     case 'SLOAD': {
