@@ -185,6 +185,32 @@ const buildDependencyTree = (node, traces) => {
             }
           })
         }
+        /*
+         * For dynamic mapping, but local storage (storage keyword in function)
+         * */
+        const localStorageMappingMatches = match(me, 'SLOAD:0/ADD:1/SHA3:0/MLOAD')
+        if (localStorageMappingMatches.length) {
+          const [type, name, ...params] = last(localStorageMappingMatches)
+          assert(isConstWithValue(params[0], 0x00))
+          assert(isConstWithValue(params[1], 0x40))
+          assert(isConst(params[2]))
+          const loadSignature = last(localStorageMappingMatches)
+          const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+          /* Search for similar SSTORE */
+          validTraces.forEach((trace, idx) => {
+            const localStorageMappingMatches = match(trace, 'SSTORE:0/ADD:1/SHA3:0/MLOAD')
+            if (localStorageMappingMatches.length) {
+              const storeSignature = last(localStorageMappingMatches)
+              assert(storeSignature)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            }
+          })
+        }
       }
       break
     }
