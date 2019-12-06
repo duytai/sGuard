@@ -13,9 +13,13 @@ const format = ([type, name, ...params]) => {
   if (!params.length) return name
   return `${name}(${params.map(p => format(p)).join(',')})`
 }
-
+/*
+ * Compare two symbols
+ * */
 const equal = (s1, s2) => format(s1) == format(s2)
-
+/*
+ * Traverse the symbol and return only matched symbol 
+ * */
 const find = (symbol, cond) => {
   const [type, name, ...params] = symbol
   if (cond(symbol)) return [symbol]
@@ -24,7 +28,10 @@ const find = (symbol, cond) => {
     [],
   )
 }
-
+/*
+ * Traverse the symbol and return their posible paths which
+ * do not includes const at the end
+ * */
 const traverse = (symbol, path = [], indexes = [], paths = []) => {
   const [type, name, ...params] = symbol
   if (type == 'const')  {
@@ -51,34 +58,37 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
-      const arrayPaths = traverse(me)
-      console.log(`matches: ${arrayPaths.length}`)
-      arrayPaths.forEach(({ path, key }) => {
-        console.log('---P---')
-        prettify(path)
-        console.log(key)
+      const allMatches = traverse(me).filter(({ key, path }) => {
+        if (path.length < 2) return false
+        return first(path)[1] == 'MLOAD' && last(path)[1] == 'MLOAD'
       })
-      // const arrayMatches = exactMatch(me, 'MLOAD:0/ADD:1/MLOAD')
-      // if (arrayMatches.length) {
-        // const loadSignature = last(arrayMatches)
-        // const [type, name, ...loadParams] = loadSignature
-        // assert(isConstWithValue(loadParams[0], 0x40))
-        // assert(isConstWithValue(loadParams[1], 0x20))
-        // assert(isConst(loadParams[2]))
-        // const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-        // validTraces.forEach((trace, idx) => {
-          // const arrayMatches = exactMatch(trace, 'MSTORE:0/ADD:1/MLOAD')
-          // if (arrayMatches.length) {
-            // const storeSignature = last(arrayMatches)
-            // if (equal(loadSignature, storeSignature)) {
-              // const [type, name, storeOffset, value] = trace
-              // const newNode = { me: value, childs: [] }
-              // buildDependencyTree(newNode, traces)
-              // childs.push(newNode)
-            // }
-          // }
-        // })
-      // }
+      allMatches.forEach(({ key: loadKey, path })=> {
+        if (path.length) {
+          const matchLen = path.length 
+          const loadSignature = last(path)
+          const [type, name, ...loadParams] = loadSignature
+          assert(isConstWithValue(loadParams[0], 0x40))
+          assert(isConstWithValue(loadParams[1], 0x20))
+          assert(isConst(loadParams[2]))
+          const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+          validTraces.forEach((trace, idx) => {
+            const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
+              if (path.length < 2) return false
+              if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
+              return loadKey == storeKey 
+            })
+            allMatches.forEach(({ key: storeKey, path }) => {
+              const storeSignature = last(path)
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            })
+          })
+        }
+      })
       break
     }
     case 'SLOAD': {
