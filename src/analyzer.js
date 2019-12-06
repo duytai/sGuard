@@ -25,7 +25,7 @@ const find = (symbol, cond) => {
   )
 }
 
-const match = (symbol, xpath) => {
+const exactMatch = (symbol, xpath) => {
   const internalMatch = (symbol, pathNames) => {
     if (!pathNames.length) return []
     const [name, paramIndex] = pathNames.shift().split(':')
@@ -41,6 +41,9 @@ const match = (symbol, xpath) => {
   return ret
 }
 
+const traverse = (symbol) => {
+}
+
 const buildDependencyTree = (node, traces) => {
   const { me, childs } = node
   assert(!childs.length)
@@ -50,7 +53,7 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
-      const arrayMatches = match(me, 'MLOAD:0/ADD:1/MLOAD')
+      const arrayMatches = exactMatch(me, 'MLOAD:0/ADD:1/MLOAD')
       if (arrayMatches.length) {
         const loadSignature = last(arrayMatches)
         const [type, name, ...loadParams] = loadSignature
@@ -59,7 +62,7 @@ const buildDependencyTree = (node, traces) => {
         assert(isConst(loadParams[2]))
         const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
         validTraces.forEach((trace, idx) => {
-          const arrayMatches = match(trace, 'MSTORE:0/ADD:1/MLOAD')
+          const arrayMatches = exactMatch(trace, 'MSTORE:0/ADD:1/MLOAD')
           if (arrayMatches.length) {
             const storeSignature = last(arrayMatches)
             if (equal(loadSignature, storeSignature)) {
@@ -74,6 +77,7 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
+      traverse(me)
       const [loadOffset, traceSize] = me.slice(2) 
       assert(isConst(traceSize))
       if (isConst(loadOffset)) {
@@ -110,7 +114,7 @@ const buildDependencyTree = (node, traces) => {
         /*
          * For dynamic array 
          * */
-        const arrayMatches = match(me, 'SLOAD:0/ADD:0/SHA3:0/MLOAD')
+        const arrayMatches = exactMatch(me, 'SLOAD:0/ADD:0/SHA3:0/MLOAD')
         if (arrayMatches.length) {
           const [type, name, ...params] = last(arrayMatches)
           assert(isConstWithValue(params[0], 0x00))
@@ -120,7 +124,7 @@ const buildDependencyTree = (node, traces) => {
           const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const arrayMatches = match(trace, 'SSTORE:0/ADD:0/SHA3:0/MLOAD')
+            const arrayMatches = exactMatch(trace, 'SSTORE:0/ADD:0/SHA3:0/MLOAD')
             if (arrayMatches.length) {
               const storeSignature = validTraces[idx + 1]
               assert(storeSignature)
@@ -136,7 +140,7 @@ const buildDependencyTree = (node, traces) => {
         /*
          * For dynamic mapping
          * */
-        const mappingMatches = match(me, 'SLOAD:0/SHA3:0/MLOAD')
+        const mappingMatches = exactMatch(me, 'SLOAD:0/SHA3:0/MLOAD')
         if (mappingMatches.length) {
           const [type, name, ...params] = mappingMatches.pop()
           assert(isConstWithValue(params[0], 0x00))
@@ -146,7 +150,7 @@ const buildDependencyTree = (node, traces) => {
           const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const mappingMatches = match(trace, 'SSTORE:0/SHA3:0/MLOAD')
+            const mappingMatches = exactMatch(trace, 'SSTORE:0/SHA3:0/MLOAD')
             if (mappingMatches.length) {
               const storeSignature = validTraces[idx + 1]
               assert(storeSignature)
@@ -162,19 +166,19 @@ const buildDependencyTree = (node, traces) => {
         /*
          * For dynamic mapping, but local storage (storage keyword in function)
          * */
-        const localStorageArrayMatches = match(me, 'SLOAD:0/ADD:1/ADD:1/SHA3:0/MLOAD')
+        const localStorageArrayMatches = exactMatch(me, 'SLOAD:0/ADD:1/ADD:1/SHA3:0/MLOAD')
         if (localStorageArrayMatches.length) {
           const [type, name, ...params] = last(localStorageArrayMatches)
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x20))
           assert(isConst(params[2]))
-          const loadSignature = last(localStorageArrayMatches)
           const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+          const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const localStorageArrayMatches = match(trace, 'SSTORE:0/ADD:1/ADD:1/SHA3:0/MLOAD')
+            const localStorageArrayMatches = exactMatch(trace, 'SSTORE:0/ADD:1/ADD:1/SHA3:0/MLOAD')
             if (localStorageArrayMatches.length) {
-              const storeSignature = last(localStorageArrayMatches)
+              const storeSignature = validTraces[idx + 1]
               assert(storeSignature)
               if (equal(loadSignature, storeSignature)) {
                 const [type, name, storeOffset, value] = trace
@@ -188,19 +192,19 @@ const buildDependencyTree = (node, traces) => {
         /*
          * For dynamic mapping, but local storage (storage keyword in function)
          * */
-        const localStorageMappingMatches = match(me, 'SLOAD:0/ADD:1/SHA3:0/MLOAD')
+        const localStorageMappingMatches = exactMatch(me, 'SLOAD:0/ADD:1/SHA3:0/MLOAD')
         if (localStorageMappingMatches.length) {
           const [type, name, ...params] = last(localStorageMappingMatches)
           assert(isConstWithValue(params[0], 0x00))
           assert(isConstWithValue(params[1], 0x40))
           assert(isConst(params[2]))
-          const loadSignature = last(localStorageMappingMatches)
           const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+          const [loadSignature] = validTraces
           /* Search for similar SSTORE */
           validTraces.forEach((trace, idx) => {
-            const localStorageMappingMatches = match(trace, 'SSTORE:0/ADD:1/SHA3:0/MLOAD')
+            const localStorageMappingMatches = exactMatch(trace, 'SSTORE:0/ADD:1/SHA3:0/MLOAD')
             if (localStorageMappingMatches.length) {
-              const storeSignature = last(localStorageMappingMatches)
+              const storeSignature = validTraces[idx + 1]
               assert(storeSignature)
               if (equal(loadSignature, storeSignature)) {
                 const [type, name, storeOffset, value] = trace
