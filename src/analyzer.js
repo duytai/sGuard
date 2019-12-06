@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { reverse, last } = require('lodash')
+const { reverse, last, first } = require('lodash')
 const {
   prettify,
   logger,
@@ -25,23 +25,17 @@ const find = (symbol, cond) => {
   )
 }
 
-const exactMatch = (symbol, xpath) => {
-  const internalMatch = (symbol, pathNames) => {
-    if (!pathNames.length) return []
-    const [name, paramIndex] = pathNames.shift().split(':')
-    if (name != symbol[1]) return []
-    const params = symbol.slice(2)
-    if (paramIndex) return [symbol, ...internalMatch(params[parseInt(paramIndex)], [...pathNames])]
-    return [symbol, ...params.reduce((agg, n) => [...agg, ...internalMatch(n, [...pathNames])], [])]
+const traverse = (symbol, path = [], indexes = [0], paths = []) => {
+  const [type, name, ...params] = symbol
+  path.push(symbol)
+  if (type == 'const') {
+    paths.push({ path, indexes })
+  } else {
+    params.forEach((param, index) => {
+      traverse(param, [...path], [...indexes, index], paths)
+    })
   }
-  const pathNames = xpath.split('/')
-  const ret = internalMatch(symbol, [...pathNames])
-  assert(ret.length <= pathNames.length)
-  if (ret.length < pathNames.length) return []
-  return ret
-}
-
-const traverse = (symbol) => {
+  return paths
 }
 
 const buildDependencyTree = (node, traces) => {
@@ -49,41 +43,47 @@ const buildDependencyTree = (node, traces) => {
   assert(!childs.length)
   switch (me[1]) {
     case 'MLOAD': {
-      const [loadOffset, dataLen, traceSize] = me.slice(2) 
+      const [loadOffset, dataLen, traceSize] = me.slice(2)
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
-      const arrayMatches = exactMatch(me, 'MLOAD:0/ADD:1/MLOAD')
-      if (arrayMatches.length) {
-        const loadSignature = last(arrayMatches)
-        const [type, name, ...loadParams] = loadSignature
-        assert(isConstWithValue(loadParams[0], 0x40))
-        assert(isConstWithValue(loadParams[1], 0x20))
-        assert(isConst(loadParams[2]))
-        const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-        validTraces.forEach((trace, idx) => {
-          const arrayMatches = exactMatch(trace, 'MSTORE:0/ADD:1/MLOAD')
-          if (arrayMatches.length) {
-            const storeSignature = last(arrayMatches)
-            if (equal(loadSignature, storeSignature)) {
-              const [type, name, storeOffset, value] = trace
-              const newNode = { me: value, childs: [] }
-              buildDependencyTree(newNode, traces)
-              childs.push(newNode)
-            }
-          }
-        })
-      }
+      const arrayPaths = traverse(me) 
+      console.log(`MATCHES: ${arrayPaths.length}`)
+      arrayPaths.forEach(arrayPath => {
+        console.log('----')
+        prettify(arrayPath.path)
+        console.log(arrayPath.indexes)
+      })
+      // const arrayMatches = exactMatch(me, 'MLOAD:0/ADD:1/MLOAD')
+      // if (arrayMatches.length) {
+        // const loadSignature = last(arrayMatches)
+        // const [type, name, ...loadParams] = loadSignature
+        // assert(isConstWithValue(loadParams[0], 0x40))
+        // assert(isConstWithValue(loadParams[1], 0x20))
+        // assert(isConst(loadParams[2]))
+        // const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+        // validTraces.forEach((trace, idx) => {
+          // const arrayMatches = exactMatch(trace, 'MSTORE:0/ADD:1/MLOAD')
+          // if (arrayMatches.length) {
+            // const storeSignature = last(arrayMatches)
+            // if (equal(loadSignature, storeSignature)) {
+              // const [type, name, storeOffset, value] = trace
+              // const newNode = { me: value, childs: [] }
+              // buildDependencyTree(newNode, traces)
+              // childs.push(newNode)
+            // }
+          // }
+        // })
+      // }
       break
     }
     case 'SLOAD': {
-      traverse(me)
-      const [loadOffset, traceSize] = me.slice(2) 
+      const [loadOffset, traceSize] = me.slice(2)
       assert(isConst(traceSize))
       if (isConst(loadOffset)) {
         /*
          * For static address, storage location is statically assigned
-         * We can not deconstruct variable location 
+         * We can not deconstruct variable location
          * Example:
          * uint[10] balances;
          * uint[10] photos;
@@ -111,110 +111,6 @@ const buildDependencyTree = (node, traces) => {
           }
         }
       } else {
-        /*
-         * For dynamic array 
-         * */
-        const arrayMatches = exactMatch(me, 'SLOAD:0/ADD:0/SHA3:0/MLOAD')
-        if (arrayMatches.length) {
-          const [type, name, ...params] = last(arrayMatches)
-          assert(isConstWithValue(params[0], 0x00))
-          assert(isConstWithValue(params[1], 0x20))
-          assert(isConst(params[2]))
-          const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
-          const [loadSignature] = validTraces
-          /* Search for similar SSTORE */
-          validTraces.forEach((trace, idx) => {
-            const arrayMatches = exactMatch(trace, 'SSTORE:0/ADD:0/SHA3:0/MLOAD')
-            if (arrayMatches.length) {
-              const storeSignature = validTraces[idx + 1]
-              assert(storeSignature)
-              if (equal(loadSignature, storeSignature)) {
-                const [type, name, storeOffset, value] = trace
-                const newNode = { me: value, childs: [] }
-                buildDependencyTree(newNode, traces)
-                childs.push(newNode)
-              }
-            }
-          })
-        }
-        /*
-         * For dynamic mapping
-         * */
-        const mappingMatches = exactMatch(me, 'SLOAD:0/SHA3:0/MLOAD')
-        if (mappingMatches.length) {
-          const [type, name, ...params] = mappingMatches.pop()
-          assert(isConstWithValue(params[0], 0x00))
-          assert(isConstWithValue(params[1], 0x40))
-          assert(isConst(params[2]))
-          const validTraces = reverse(traces.slice(0, params[2][1].toNumber()))
-          const [loadSignature] = validTraces
-          /* Search for similar SSTORE */
-          validTraces.forEach((trace, idx) => {
-            const mappingMatches = exactMatch(trace, 'SSTORE:0/SHA3:0/MLOAD')
-            if (mappingMatches.length) {
-              const storeSignature = validTraces[idx + 1]
-              assert(storeSignature)
-              if (equal(loadSignature, storeSignature)) {
-                const [type, name, storeOffset, value] = trace
-                const newNode = { me: value, childs: [] }
-                buildDependencyTree(newNode, traces)
-                childs.push(newNode)
-              }
-            }
-          })
-        }
-        /*
-         * For dynamic mapping, but local storage (storage keyword in function)
-         * */
-        const localStorageArrayMatches = exactMatch(me, 'SLOAD:0/ADD:1/ADD:1/SHA3:0/MLOAD')
-        if (localStorageArrayMatches.length) {
-          const [type, name, ...params] = last(localStorageArrayMatches)
-          assert(isConstWithValue(params[0], 0x00))
-          assert(isConstWithValue(params[1], 0x20))
-          assert(isConst(params[2]))
-          const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-          const [loadSignature] = validTraces
-          /* Search for similar SSTORE */
-          validTraces.forEach((trace, idx) => {
-            const localStorageArrayMatches = exactMatch(trace, 'SSTORE:0/ADD:1/ADD:1/SHA3:0/MLOAD')
-            if (localStorageArrayMatches.length) {
-              const storeSignature = validTraces[idx + 1]
-              assert(storeSignature)
-              if (equal(loadSignature, storeSignature)) {
-                const [type, name, storeOffset, value] = trace
-                const newNode = { me: value, childs: [] }
-                buildDependencyTree(newNode, traces)
-                childs.push(newNode)
-              }
-            }
-          })
-        }
-        /*
-         * For dynamic mapping, but local storage (storage keyword in function)
-         * */
-        const localStorageMappingMatches = exactMatch(me, 'SLOAD:0/ADD:1/SHA3:0/MLOAD')
-        if (localStorageMappingMatches.length) {
-          const [type, name, ...params] = last(localStorageMappingMatches)
-          assert(isConstWithValue(params[0], 0x00))
-          assert(isConstWithValue(params[1], 0x40))
-          assert(isConst(params[2]))
-          const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-          const [loadSignature] = validTraces
-          /* Search for similar SSTORE */
-          validTraces.forEach((trace, idx) => {
-            const localStorageMappingMatches = exactMatch(trace, 'SSTORE:0/ADD:1/SHA3:0/MLOAD')
-            if (localStorageMappingMatches.length) {
-              const storeSignature = validTraces[idx + 1]
-              assert(storeSignature)
-              if (equal(loadSignature, storeSignature)) {
-                const [type, name, storeOffset, value] = trace
-                const newNode = { me: value, childs: [] }
-                buildDependencyTree(newNode, traces)
-                childs.push(newNode)
-              }
-            }
-          })
-        }
       }
       break
     }
