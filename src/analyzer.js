@@ -25,12 +25,16 @@ const find = (symbol, cond) => {
   )
 }
 
-const traverse = (symbol, path = [], indexes = [0], paths = []) => {
+const traverse = (symbol, path = [], indexes = [], paths = []) => {
   const [type, name, ...params] = symbol
-  path.push(symbol)
-  if (type == 'const') {
-    paths.push({ path, indexes })
+  if (type == 'const')  {
+    const key = indexes.slice(0, -1).join(':')
+    const hasKey = paths.find(({ key: otherKey, path }) => key == otherKey)
+    if (!hasKey) {
+      paths.push({ key, path })
+    }
   } else {
+    path.push(symbol)
     params.forEach((param, index) => {
       traverse(param, [...path], [...indexes, index], paths)
     })
@@ -47,12 +51,12 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
-      const arrayPaths = traverse(me) 
-      console.log(`MATCHES: ${arrayPaths.length}`)
-      arrayPaths.forEach(arrayPath => {
-        console.log('----')
-        prettify(arrayPath.path)
-        console.log(arrayPath.indexes)
+      const arrayPaths = traverse(me)
+      console.log(`matches: ${arrayPaths.length}`)
+      arrayPaths.forEach(({ path, key }) => {
+        console.log('---P---')
+        prettify(path)
+        console.log(key)
       })
       // const arrayMatches = exactMatch(me, 'MLOAD:0/ADD:1/MLOAD')
       // if (arrayMatches.length) {
