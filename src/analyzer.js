@@ -57,7 +57,6 @@ const buildDependencyTree = (node, traces) => {
       const [loadOffset, dataLen, traceSize] = me.slice(2)
       assert(isConst(traceSize))
       assert(isConst(dataLen))
-      assert(!isConst(loadOffset))
       const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
       const allMatches = traverse(me).filter(({ key, path }) => {
         if (path.length < 2) return false
@@ -73,7 +72,7 @@ const buildDependencyTree = (node, traces) => {
           const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
             if (path.length < 2) return false
             if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
-            return loadKey == storeKey 
+            return true
           })
           allMatches.forEach(({ path }) => {
             const storeSignature = last(path)
@@ -136,7 +135,7 @@ const buildDependencyTree = (node, traces) => {
               if (first(path)[1] != 'SSTORE') return false
               if (last(path)[1] != 'MLOAD') return false
               if (path[path.length - 2][1] != 'SHA3') return false
-              return loadKey == storeKey
+              return true
             })
             allMatches.forEach(({ path }) => {
               const [type, name, ...loadParams] = last(path)
