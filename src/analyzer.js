@@ -139,6 +139,10 @@ const buildDependencyTree = (node, traces) => {
               return loadKey == storeKey
             })
             allMatches.forEach(({ path }) => {
+              const [type, name, ...loadParams] = last(path)
+              assert(isConstWithValue(loadParams[0], 0x00))
+              assert(isConstWithValue(loadParams[1], 0x20) || isConstWithValue(loadParams[1], 0x40))
+              assert(isConst(loadParams[2]))
               const storeSignature = validTraces[idx + 1]
               if (equal(loadSignature, storeSignature)) {
                 const [type, name, storeOffset, value] = trace
