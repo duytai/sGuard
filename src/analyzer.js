@@ -69,9 +69,10 @@ const buildDependencyTree = (node, traces) => {
         assert(isConstWithValue(loadParams[1], 0x20))
         assert(isConst(loadParams[2]))
         validTraces.forEach((trace, idx) => {
-          const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
+          const allMatches = traverse(trace).filter(({ path, key: storeKey }) => {
             if (path.length < 2) return false
             if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
+            if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
             return true
           })
           allMatches.forEach(({ path }) => {
@@ -124,7 +125,10 @@ const buildDependencyTree = (node, traces) => {
         const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
         const allMatches = traverse(me).filter(({ key, path }) => {
           if (path.length < 3) return false
-          return first(path)[1] == 'SLOAD' && path[path.length - 2][1] == 'SHA3'
+          if (first(path)[1] != 'SLOAD') return false
+          if (last(path)[1] != 'MLOAD') return false
+          if (path[path.length - 2][1] != 'SHA3') return false
+          return true
         })
         assert(allMatches.length == 1)
         const loadSignature = validTraces.find(([type, name, ...loadParams]) => {
@@ -135,7 +139,7 @@ const buildDependencyTree = (node, traces) => {
         assert(loadSignature)
         allMatches.forEach(({ key: loadKey, path })=> {
           validTraces.forEach((trace, idx) => {
-            const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
+            const allMatches = traverse(trace).filter(({ path }) => {
               if (path.length < 3) return false
               if (first(path)[1] != 'SSTORE') return false
               if (last(path)[1] != 'MLOAD') return false
