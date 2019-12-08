@@ -58,36 +58,33 @@ const buildDependencyTree = (node, traces) => {
       assert(isConst(traceSize))
       assert(isConst(dataLen))
       assert(!isConst(loadOffset))
+      const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
       const allMatches = traverse(me).filter(({ key, path }) => {
         if (path.length < 2) return false
         return first(path)[1] == 'MLOAD' && last(path)[1] == 'MLOAD'
       })
       allMatches.forEach(({ key: loadKey, path })=> {
-        if (path.length) {
-          const matchLen = path.length 
-          const loadSignature = last(path)
-          const [type, name, ...loadParams] = loadSignature
-          assert(isConstWithValue(loadParams[0], 0x40))
-          assert(isConstWithValue(loadParams[1], 0x20))
-          assert(isConst(loadParams[2]))
-          const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
-          validTraces.forEach((trace, idx) => {
-            const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
-              if (path.length < 2) return false
-              if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
-              return loadKey == storeKey 
-            })
-            allMatches.forEach(({ key: storeKey, path }) => {
-              const storeSignature = last(path)
-              if (equal(loadSignature, storeSignature)) {
-                const [type, name, storeOffset, value] = trace
-                const newNode = { me: value, childs: [] }
-                buildDependencyTree(newNode, traces)
-                childs.push(newNode)
-              }
-            })
+        const loadSignature = last(path)
+        const [type, name, ...loadParams] = loadSignature
+        assert(isConstWithValue(loadParams[0], 0x40))
+        assert(isConstWithValue(loadParams[1], 0x20))
+        assert(isConst(loadParams[2]))
+        validTraces.forEach((trace, idx) => {
+          const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
+            if (path.length < 2) return false
+            if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
+            return loadKey == storeKey 
           })
-        }
+          allMatches.forEach(({ path }) => {
+            const storeSignature = last(path)
+            if (equal(loadSignature, storeSignature)) {
+              const [type, name, storeOffset, value] = trace
+              const newNode = { me: value, childs: [] }
+              buildDependencyTree(newNode, traces)
+              childs.push(newNode)
+            }
+          })
+        })
       })
       break
     }
@@ -125,6 +122,30 @@ const buildDependencyTree = (node, traces) => {
           }
         }
       } else {
+        const validTraces = reverse(traces.slice(0, traceSize[1].toNumber()))
+        const allMatches = traverse(me).filter(({ key, path }) => {
+          if (path.length < 3) return false
+          return first(path)[1] == 'SLOAD' && path[path.length - 2][1] == 'SHA3'
+        })
+        assert(allMatches.length == 1)
+        const [loadSignature] = validTraces
+        allMatches.forEach(({ key: loadKey, path })=> {
+          validTraces.forEach((trace, idx) => {
+            const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
+              if (path.length < 3) return false
+              return first(path)[1] == 'SSTORE' && path[path.length - 2][1] == 'SHA3' && loadKey == storeKey
+            })
+            allMatches.forEach(({ path }) => {
+              const storeSignature = validTraces[idx + 1]
+              if (equal(loadSignature, storeSignature)) {
+                const [type, name, storeOffset, value] = trace
+                const newNode = { me: value, childs: [] }
+                buildDependencyTree(newNode, traces)
+                childs.push(newNode)
+              }
+            })
+          })
+        })
       }
       break
     }
