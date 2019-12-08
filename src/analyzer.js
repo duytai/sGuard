@@ -129,7 +129,7 @@ const buildDependencyTree = (node, traces) => {
         assert(allMatches.length == 1)
         const loadSignature = validTraces.find(([type, name, ...loadParams]) => {
           if (name != 'MSTORE') return false
-          // if (!isConstWithValue(loadParams[0], 0x00) && isConstWithValue(loadParams[0], 0x20)) return false
+          if (!isConstWithValue(loadParams[0], 0x00)) return false
           return true
         })
         assert(loadSignature)
@@ -149,7 +149,7 @@ const buildDependencyTree = (node, traces) => {
               assert(isConst(loadParams[2]))
               const storeSignature = validTraces.slice(idx + 1).find(([type, name, ...loadParams]) => {
                 if (name != 'MSTORE') return false
-                // if (!isConstWithValue(loadParams[0], 0x00) && isConstWithValue(loadParams[0], 0x20)) return false
+                if (!isConstWithValue(loadParams[0], 0x00)) return false
                 return true
               })
               assert(storeSignature)
