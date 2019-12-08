@@ -72,7 +72,7 @@ const buildDependencyTree = (node, traces) => {
           const allMatches = traverse(trace).filter(({ path, key: storeKey }) => {
             if (path.length < 2) return false
             if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
-            // if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
+            if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
             return true
           })
           allMatches.forEach(({ path }) => {
