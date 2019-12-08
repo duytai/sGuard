@@ -6,7 +6,7 @@ const {
   isConstWithValue,
   isConst,
   isSymbol,
-} = require('./shared')
+} = require('../shared')
 
 const format = ([type, name, ...params]) => {
   if (type == 'const') return name.toString(16) 
@@ -72,7 +72,7 @@ const buildDependencyTree = (node, traces) => {
           const allMatches = traverse(trace).filter(({ path, key: storeKey }) => {
             if (path.length < 2) return false
             if (first(path)[1] != 'MSTORE' || last(path)[1] != 'MLOAD') return false
-            if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
+            // if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
             return true
           })
           allMatches.forEach(({ path }) => {
@@ -139,11 +139,12 @@ const buildDependencyTree = (node, traces) => {
         assert(loadSignature)
         allMatches.forEach(({ key: loadKey, path })=> {
           validTraces.forEach((trace, idx) => {
-            const allMatches = traverse(trace).filter(({ path }) => {
+            const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
               if (path.length < 3) return false
               if (first(path)[1] != 'SSTORE') return false
               if (last(path)[1] != 'MLOAD') return false
               if (path[path.length - 2][1] != 'SHA3') return false
+              if (!storeKey.startsWith(loadKey) && !loadKey.startsWith(storeKey)) return false
               return true
             })
             allMatches.forEach(({ path }) => {
