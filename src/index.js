@@ -12,6 +12,7 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   if (contractJson.asm) {
     const asm = contractJson.asm['.data']['0']['.code']
     const contract = new Contract(bin, asm)
+    console.log(`++++++++++ Analyzing contract: ${name} ++++++++++`)
     contract.execute()
   }
 })

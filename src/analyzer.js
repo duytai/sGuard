@@ -133,7 +133,10 @@ const buildDependencyTree = (node, traces) => {
           validTraces.forEach((trace, idx) => {
             const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
               if (path.length < 3) return false
-              return first(path)[1] == 'SSTORE' && path[path.length - 2][1] == 'SHA3' && loadKey == storeKey
+              if (first(path)[1] != 'SSTORE') return false
+              if (last(path)[1] != 'MLOAD') return false
+              if (path[path.length - 2][1] != 'SHA3') return false
+              return loadKey == storeKey
             })
             allMatches.forEach(({ path }) => {
               const storeSignature = validTraces[idx + 1]
