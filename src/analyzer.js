@@ -127,7 +127,12 @@ const buildDependencyTree = (node, traces) => {
           return first(path)[1] == 'SLOAD' && path[path.length - 2][1] == 'SHA3'
         })
         assert(allMatches.length == 1)
-        const [loadSignature] = validTraces
+        const loadSignature = validTraces.find(([type, name, ...loadParams]) => {
+          if (name != 'MSTORE') return false
+          // if (!isConstWithValue(loadParams[0], 0x00) && isConstWithValue(loadParams[0], 0x20)) return false
+          return true
+        })
+        assert(loadSignature)
         allMatches.forEach(({ key: loadKey, path })=> {
           validTraces.forEach((trace, idx) => {
             const allMatches = traverse(trace).filter(({ key: storeKey, path }) => {
@@ -142,7 +147,12 @@ const buildDependencyTree = (node, traces) => {
               assert(isConstWithValue(loadParams[0], 0x00))
               assert(isConstWithValue(loadParams[1], 0x20) || isConstWithValue(loadParams[1], 0x40))
               assert(isConst(loadParams[2]))
-              const storeSignature = validTraces[idx + 1]
+              const storeSignature = validTraces.slice(idx + 1).find(([type, name, ...loadParams]) => {
+                if (name != 'MSTORE') return false
+                // if (!isConstWithValue(loadParams[0], 0x00) && isConstWithValue(loadParams[0], 0x20)) return false
+                return true
+              })
+              assert(storeSignature)
               if (equal(loadSignature, storeSignature)) {
                 const [type, name, storeOffset, value] = trace
                 const newNode = { me: value, childs: [] }
