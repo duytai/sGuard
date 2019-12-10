@@ -255,31 +255,7 @@ class Contract {
       case 'SUB': {
         const [x, y] = stack.splice(-2).reverse()
         if (x[0] != 'const' || y[0] != 'const') {
-          const stackLen = stack.length
-          if (x[0] == 'const') {
-            const [type, name, left, right] = y
-            if (name == 'ADD') {
-              if (left[0] == 'const') {
-                const r = x[1].sub(left[1]).toTwos(256)
-                stack.push(['symbol', name, ['const', r], right])
-              } else if (right[0] == 'const') {
-                const r = x[1].sub(right[1])
-                stack.push(['symbol', name, left, ['const', r]])
-              }
-            }
-            if (name == 'SUB') {
-              if (left[0] == 'const') {
-                const r = x[1].add(left[1])
-                stack.push(['symbol', name, ['const', r], right])
-              } else if (right[0] == 'const') {
-                const r = x[1].add(right[1])
-                stack.push(['symbol', name, left, ['const', r]])
-              }
-            }
-          }
-          if (stackLen == stack.length) {
-            stack.push(['symbol', name, x, y])
-          }
+          stack.push(['symbol', name, x, y])
         } else {
           stack.push(['const', x[1].sub(y[1]).toTwos(256)])
         }
@@ -300,12 +276,15 @@ class Contract {
                 stack.push(['symbol', name, left, ['const', r]])
               }
             }
-            if (name == 'SUB') {
+          }
+          if (y[0] == 'const') {
+            const [type, name, left, right] = x
+            if (name == 'ADD') {
               if (left[0] == 'const') {
-                const r = x[1].sub(left[1]).toTwos(256)
+                const r = y[1].add(left[1])
                 stack.push(['symbol', name, ['const', r], right])
               } else if (right[0] == 'const') {
-                const r = x[1].sub(right[1]).toTwos(256)
+                const r = y[1].add(right[1])
                 stack.push(['symbol', name, left, ['const', r]])
               }
             }
