@@ -4,7 +4,6 @@ const { prettify, isConst } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 
-const isZero = x => x[0] == 'const' && x[1].toNumber() == 0
 const traverse = (symbol) => {
   const [type, name, ...params] = symbol 
   if (type == 'symbol') {
@@ -31,11 +30,6 @@ const traverse = (symbol) => {
       }
       case 'ADD': {
         const [left, right] = params
-        if (isZero(left) || isZero(right)) {
-          symbol.length = 0
-          assign(symbol, isZero(left) ? right : left)
-          return traverse(symbol)
-        }
         if (isConst(left) || isConst(right)) {
           const x = isConst(left) ? right : left
           const y = isConst(left) ? left : right
