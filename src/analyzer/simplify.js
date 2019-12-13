@@ -3,7 +3,6 @@ const { assign } = require('lodash')
 const { prettify, isConst } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
-
 const traverse = (symbol) => {
   const [type, name, ...params] = symbol 
   if (type == 'symbol') {
@@ -55,8 +54,6 @@ const traverse = (symbol) => {
 
 const simplify = (traces) => {
   traces.forEach(trace => traverse(trace))
-  console.log('///NEW TRACES')
-  prettify(traces)
 }
 
 

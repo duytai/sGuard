@@ -62,9 +62,9 @@ const analyze = (symbol, traces) => {
       } else {
         const root = { me: symbol, childs: [] }
         simplify([...traces, symbol])
-        // buildDependencyTree(root, traces)
-        // console.log('////TREE')
-        // prettifyTree(root)
+        buildDependencyTree(root, traces)
+        console.log('////TREE')
+        prettifyTree(root)
       }
       break
     }
