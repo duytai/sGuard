@@ -45,10 +45,6 @@ const prettifyTree = (root, level = 0) => {
 }
 
 const analyze = (symbol, traces) => {
-  prettify(traces)
-  console.log('>>>>')
-  prettify([symbol])
-  console.log('<<<<')
   const [type, name, ...params] = symbol 
   switch (type) {
     case 'const': {
@@ -62,6 +58,10 @@ const analyze = (symbol, traces) => {
       } else {
         const root = { me: symbol, childs: [] }
         simplify([...traces, symbol])
+        prettify(traces)
+        console.log('>>>>')
+        prettify([symbol])
+        console.log('<<<<')
         buildDependencyTree(root, traces)
         console.log('////TREE')
         prettifyTree(root)
