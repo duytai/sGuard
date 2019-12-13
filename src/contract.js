@@ -13,6 +13,7 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * TODO: stop condition and JUMP address
  * */
 
+const isZero = x => x[0] == 'const' && x[1].toNumber() == 0
 class Contract {
   constructor(bin, asm) {
     this.bin = bin
@@ -254,19 +255,27 @@ class Contract {
       }
       case 'SUB': {
         const [x, y] = stack.splice(-2).reverse()
-        if (x[0] != 'const' || y[0] != 'const') {
-          stack.push(['symbol', name, x, y])
+        if (isZero(x) || isZero(y)) {
+          stack.push(isZero(x) ? y : x)
         } else {
-          stack.push(['const', x[1].sub(y[1]).toTwos(256)])
+          if (x[0] != 'const' || y[0] != 'const') {
+            stack.push(['symbol', name, x, y])
+          } else {
+            stack.push(['const', x[1].sub(y[1]).toTwos(256)])
+          }
         }
         break
       }
       case 'ADD': {
         const [x, y] = stack.splice(-2).reverse()
-        if (x[0] != 'const' || y[0] != 'const') {
-          stack.push(['symbol', name, x, y])
+        if (isZero(x) || isZero(y)) {
+          stack.push(isZero(x) ? y : x)
         } else {
-          stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
+          if (x[0] != 'const' || y[0] != 'const') {
+            stack.push(['symbol', name, x, y])
+          } else {
+            stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
+          }
         }
         break
       }
