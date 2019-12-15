@@ -1,6 +1,10 @@
 const assert = require('assert')
 const { reverse, last, first } = require('lodash')
-const { prettify, logger, isConst, prettifyMemLoc } = require('../shared')
+const {
+  prettify,
+  logger,
+  formatSymbol
+} = require('../shared')
 const simplify = require('./simplify')
 const Memory = require('./memory')
 
@@ -23,6 +27,7 @@ const buildDependencyTree = (node, traces) => {
     case 'MLOAD': {
       const [offset, size, stackLen] = me.slice(2)
       const memory = new Memory(me)
+      const { base } = memory.memloc
       memory.match(traces).forEach(symbol => {
         const newNode = { me: symbol, childs: [] }
         buildDependencyTree(newNode, traces)
@@ -79,6 +84,4 @@ const analyze = (symbol, traces) => {
   }
 }
 
-module.exports = {
-  analyze,
-} 
+module.exports = { analyze } 
