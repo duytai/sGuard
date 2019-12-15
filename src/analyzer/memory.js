@@ -5,6 +5,7 @@ const { formatSymbol, isConst } = require('../shared')
 class Memory {
   constructor(symbol) {
     const [type, name, offset] = symbol
+    assert(name == 'MLOAD')
     this.memloc = this.extractMemloc(offset)
   }
 

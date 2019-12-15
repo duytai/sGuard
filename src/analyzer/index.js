@@ -23,7 +23,11 @@ const buildDependencyTree = (node, traces) => {
     case 'MLOAD': {
       const [offset, size, stackLen] = me.slice(2)
       const memory = new Memory(me)
-      memory.match(traces)
+      memory.match(traces).forEach(symbol => {
+        const newNode = { me: symbol, childs: [] }
+        buildDependencyTree(newNode, traces)
+        childs.push(newNode)
+      })
       break
     }
     case 'SLOAD': {
