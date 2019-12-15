@@ -1,7 +1,8 @@
 const assert = require('assert')
 const { reverse, last, first } = require('lodash')
-const { prettify, logger } = require('../shared')
+const { prettify, logger, isConst, prettifyMemLoc } = require('../shared')
 const simplify = require('./simplify')
+const Memory = require('./memory')
 
 /*
  * Traverse the symbol and return only matched symbol 
@@ -20,6 +21,9 @@ const buildDependencyTree = (node, traces) => {
   assert(!childs.length)
   switch (me[1]) {
     case 'MLOAD': {
+      const [offset, size, stackLen] = me.slice(2)
+      const memory = new Memory(me)
+      memory.match(traces)
       break
     }
     case 'SLOAD': {

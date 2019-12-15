@@ -5,16 +5,16 @@ const { range } = require('lodash')
 const { createLogger, format, transports } = winston
 const { combine, timestamp, label, printf, prettyPrint } = format
 
-const prettify = (values, spaceLen = 0) => {
-  const format = ([type, name, ...params]) => {
-    if (type == 'const') return name.toString(16) 
-    if (!params.length) return name
-    return `${name}(${params.map(p => format(p)).join(',')})`
-  }
-  const space = range(0, spaceLen).map(i => ' ').join('') || ''
-  values.forEach(v => console.log(`${space}${format(v)}`))
+const formatSymbol = ([type, name, ...params]) => {
+  if (type == 'const') return name.toString(16) 
+  if (!params.length) return name
+  return `${name}(${params.map(p => formatSymbol(p)).join(',')})`
 }
 
+const prettify = (values, spaceLen = 0) => {
+  const space = range(0, spaceLen).map(i => ' ').join('') || ''
+  values.forEach(v => console.log(`${space}${formatSymbol(v)}`))
+}
 /*
  * Initialize logger 
  * */
@@ -45,6 +45,7 @@ module.exports = {
   isConstWithValue,
   logger,
   prettify,
+  formatSymbol,
   isSymbol,
   isConsts,
   isConst,
