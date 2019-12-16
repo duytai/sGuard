@@ -1,12 +1,13 @@
 const BN = require('bn.js')
 const assert = require('assert')
+const { reverse } = require('lodash')
 const { prettify, formatSymbol, isConst } = require('../shared')
 
 class Storage {
   constructor(symbol, traces) {
     const [type, name, offset, stackLen] = symbol
     assert(name == 'SLOAD')
-    this.traces = traces
+    this.traces = traces 
     this.storageloc = this.extractStorageloc(offset, stackLen)
   }
 
@@ -31,7 +32,7 @@ class Storage {
       const [type, name, ...params] = trace
       if (name != 'SSTORE') return false
       const [offset, value] = params
-      const stackLen = ['const', new BN(idx)]
+      const stackLen = ['const', new BN(idx + 1)]
       const storageloc = this.extractStorageloc(offset, stackLen)
       return this.equal(storageloc.base, this.storageloc.base)
     })
@@ -48,10 +49,24 @@ class Storage {
     const [type, name, ...params] = symbol
     if (type == 'const') return { base: symbol, offset: zero }
     assert(type == 'symbol')
-    const offset = name == 'ADD' ? params[1] : zero
-    const base = this.traces[stackLen[1].toNumber() - 1]
-    assert(base[1] == 'MSTORE')
-    return { base, offset }
+    switch (name) {
+      case 'ADD': {
+        const [type, name] = params[0] 
+        if (name == 'SHA3') {
+          const validTraces = this.traces.slice(0, stackLen[1].toNumber())
+          const base = reverse(validTraces).find(trace => trace[1] == 'MSTORE')
+          assert(base)
+          return { base, offset: params[1] }
+        }
+        return { base: symbol, offset: zero }
+      }
+      case 'SHA3': {
+        const validTraces = this.traces.slice(0, stackLen[1].toNumber())
+        const base = reverse(validTraces).find(trace => trace[1] == 'MSTORE')
+        assert(base)
+        return { base, offset: zero }
+      }
+    }
   }
 }
 

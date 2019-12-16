@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { reverse } = require('lodash')
 const BN = require('bn.js')
 const { formatSymbol, isConst } = require('../shared')
 
@@ -6,8 +7,8 @@ class Memory {
   constructor(symbol, traces) {
     const [type, name, offset] = symbol
     assert(name == 'MLOAD')
-    this.memloc = this.extractMemloc(offset)
     this.traces = traces
+    this.memloc = this.extractMemloc(offset)
   }
 
   prettify({ base, offset }) {
@@ -32,7 +33,9 @@ class Memory {
       if (name != 'MSTORE') return false
       const [offset, value, stackLen] = params
       const memloc = this.extractMemloc(offset)
-      return this.equal(memloc.base, this.memloc.base)
+      if (!this.equal(memloc.base, this.memloc.base)) return false
+      if (isConst(this.memloc.offset)) return this.equal(this.memloc.offset, memloc.offset)
+      return true
     })
     return memstores.map(mstore => {
       const [type, name, offset, value] = mstore
