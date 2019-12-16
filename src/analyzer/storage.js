@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const assert = require('assert')
-const { reverse } = require('lodash')
+const { reverse, findIndex } = require('lodash')
 const { prettify, formatSymbol, isConst } = require('../shared')
 
 class Storage {
@@ -51,13 +51,16 @@ class Storage {
     assert(type == 'symbol')
     switch (name) {
       case 'ADD': {
-        const [type, name] = params[0] 
-        if (name == 'SHA3') {
+        const shaIdx = findIndex(params, param => param[1] == 'SHA3')
+        if (shaIdx != -1) {
+          const offset = params[1 - shaIdx]
           const validTraces = this.traces.slice(0, stackLen[1].toNumber())
           const base = reverse(validTraces).find(trace => trace[1] == 'MSTORE')
           assert(base)
-          return { base, offset: params[1] }
+          return { base, offset }
         }
+        assert(params[0][0] == 'const')
+        assert(params[1][1] == 'ADD')
         return { base: symbol, offset: zero }
       }
       case 'SHA3': {

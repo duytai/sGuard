@@ -27,7 +27,7 @@ class Memory {
    * + Bases must be the same
    * + If the offset is const then offsets must be the same. Otherwise, return all matches
    * */
-  match() {
+  matches() {
     const memstores = this.traces.filter(trace => {
       const [type, name, ...params] = trace
       if (name != 'MSTORE') return false
