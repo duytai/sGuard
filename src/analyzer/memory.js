@@ -32,9 +32,7 @@ class Memory {
       if (name != 'MSTORE') return false
       const [offset, value, stackLen] = params
       const memloc = this.extractMemloc(offset)
-      if (!this.equal(memloc.base, this.memloc.base)) return false
-      if (isConst(this.memloc.offset)) return this.equal(this.memloc.offset, memloc.offset)
-      return true
+      return this.equal(memloc.base, this.memloc.base)
     })
     return memstores.map(mstore => {
       const [type, name, offset, value] = mstore

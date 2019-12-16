@@ -36,7 +36,12 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
-      // const storage = new Storage(me, traces)
+      const storage = new Storage(me, traces)
+      storage.matches().forEach(symbol => {
+        const newNode = { me: symbol, childs: [] }
+        buildDependencyTree(newNode, traces)
+        childs.push(newNode)
+      })
       break
     }
     default: {
