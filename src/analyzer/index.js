@@ -7,6 +7,7 @@ const {
 } = require('../shared')
 const simplify = require('./simplify')
 const Memory = require('./memory')
+const Storage = require('./storage')
 
 /*
  * Traverse the symbol and return only matched symbol 
@@ -26,9 +27,8 @@ const buildDependencyTree = (node, traces) => {
   switch (me[1]) {
     case 'MLOAD': {
       const [offset, size, stackLen] = me.slice(2)
-      const memory = new Memory(me)
-      const { base } = memory.memloc
-      memory.match(traces).forEach(symbol => {
+      const memory = new Memory(me, traces)
+      memory.matches().forEach(symbol => {
         const newNode = { me: symbol, childs: [] }
         buildDependencyTree(newNode, traces)
         childs.push(newNode)
@@ -36,6 +36,7 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
+      // const storage = new Storage(me, traces)
       break
     }
     default: {

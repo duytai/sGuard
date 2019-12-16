@@ -3,10 +3,11 @@ const BN = require('bn.js')
 const { formatSymbol, isConst } = require('../shared')
 
 class Memory {
-  constructor(symbol) {
+  constructor(symbol, traces) {
     const [type, name, offset] = symbol
     assert(name == 'MLOAD')
     this.memloc = this.extractMemloc(offset)
+    this.traces = traces
   }
 
   prettify({ base, offset }) {
@@ -25,8 +26,8 @@ class Memory {
    * + Bases must be the same
    * + If the offset is const then offsets must be the same. Otherwise, return all matches
    * */
-  match(traces) {
-    const memstores = traces.filter(trace => {
+  match() {
+    const memstores = this.traces.filter(trace => {
       const [type, name, ...params] = trace
       if (name != 'MSTORE') return false
       const [offset, value, stackLen] = params
