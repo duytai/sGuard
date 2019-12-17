@@ -13,7 +13,7 @@ const formatSymbol = ([type, name, ...params]) => {
 
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
-  values.forEach(v => console.log(`${space}${formatSymbol(v)}`))
+  values.forEach((v, idx) => console.log(`0x${idx.toString(16)} || ${space}${formatSymbol(v)}`))
 }
 /*
  * Initialize logger 

@@ -5,7 +5,6 @@ const {
   logger,
   formatSymbol
 } = require('../shared')
-const simplify = require('./simplify')
 const Memory = require('./memory')
 const Storage = require('./storage')
 
@@ -27,21 +26,21 @@ const buildDependencyTree = (node, traces) => {
   switch (me[1]) {
     case 'MLOAD': {
       const [offset, size, stackLen] = me.slice(2)
-      const memory = new Memory(me, traces)
-      memory.matches().forEach(symbol => {
-        const newNode = { me: symbol, childs: [] }
-        buildDependencyTree(newNode, traces)
-        childs.push(newNode)
-      })
+      // const memory = new Memory(me, traces)
+      // memory.matches().forEach(symbol => {
+        // const newNode = { me: symbol, childs: [] }
+        // buildDependencyTree(newNode, traces)
+        // childs.push(newNode)
+      // })
       break
     }
     case 'SLOAD': {
       const storage = new Storage(me, traces)
-      storage.matches().forEach(symbol => {
-        const newNode = { me: symbol, childs: [] }
-        buildDependencyTree(newNode, traces)
-        childs.push(newNode)
-      })
+      // storage.matches().forEach(symbol => {
+        // const newNode = { me: symbol, childs: [] }
+        // buildDependencyTree(newNode, traces)
+        // childs.push(newNode)
+      // })
       break
     }
     default: {
@@ -76,7 +75,6 @@ const analyze = (symbol, traces) => {
         logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
       } else {
         const root = { me: symbol, childs: [] }
-        simplify([...traces, symbol])
         prettify(traces)
         console.log('>>>>')
         prettify([symbol])

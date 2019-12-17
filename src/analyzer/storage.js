@@ -61,6 +61,7 @@ class Storage {
         }
         assert(params[0][0] == 'const')
         assert(params[1][1] == 'ADD')
+        console.log('>>> BASE')
         return { base: symbol, offset: zero }
       }
       case 'SHA3': {
