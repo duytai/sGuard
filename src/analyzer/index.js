@@ -1,41 +1,20 @@
 const assert = require('assert')
 const { reverse, last, first } = require('lodash')
-const {
-  prettify,
-  logger,
-  formatSymbol
-} = require('../shared')
+const { prettify, logger, findSymbol } = require('../shared')
 const Memory = require('./memory')
 const Storage = require('./storage')
-
-/*
- * Traverse the symbol and return only matched symbol 
- * */
-const find = (symbol, cond) => {
-  const [type, name, ...params] = symbol
-  if (cond(symbol)) return [symbol]
-  return params.reduce(
-    (agg, symbol) => [...agg, ...find(symbol, cond)],
-    [],
-  )
-}
 
 const buildDependencyTree = (node, traces) => {
   const { me, childs } = node
   assert(!childs.length)
   switch (me[1]) {
     case 'MLOAD': {
-      const [offset, size, stackLen] = me.slice(2)
-      // const memory = new Memory(me, traces)
-      // memory.matches().forEach(symbol => {
-        // const newNode = { me: symbol, childs: [] }
-        // buildDependencyTree(newNode, traces)
-        // childs.push(newNode)
-      // })
+      const memory = new Memory(me)
+      memory.findMatches(traces)
       break
     }
     case 'SLOAD': {
-      const storage = new Storage(me, traces)
+      // const storage = new Storage(me)
       // storage.matches().forEach(symbol => {
         // const newNode = { me: symbol, childs: [] }
         // buildDependencyTree(newNode, traces)
@@ -44,7 +23,7 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     default: {
-      const symbols = find(me, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
+      const symbols = findSymbol(me, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
       symbols.forEach(symbol => {
         const newNode = { me: symbol, childs: [] }
         buildDependencyTree(newNode, traces)
@@ -70,7 +49,7 @@ const analyze = (symbol, traces) => {
       break
     }
     case 'symbol': {
-      const foundSymbols = find(symbol, ([type, name]) => type == 'symbol' && name == 'NUMBER')
+      const foundSymbols = findSymbol(symbol, ([type, name]) => type == 'symbol' && name == 'NUMBER')
       if (foundSymbols.length > 0) {
         logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
       } else {

@@ -11,6 +11,16 @@ const formatSymbol = ([type, name, ...params]) => {
   return `${name}(${params.map(p => formatSymbol(p)).join(',')})`
 }
 
+const findSymbol = (symbol, cond) => {
+  const [type, name, ...params] = symbol
+  if (cond(symbol)) return [symbol]
+  return params.reduce(
+    (agg, symbol) => [...agg, ...findSymbol(symbol, cond)],
+    [],
+  )
+}
+
+
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
   values.forEach((v, idx) => console.log(`0x${idx.toString(16)} || ${space}${formatSymbol(v)}`))
@@ -50,4 +60,5 @@ module.exports = {
   isConsts,
   isConst,
   isConstWithValue,
+  findSymbol,
 }
