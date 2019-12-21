@@ -8,9 +8,7 @@ class Storage {
   constructor(sload, traces) {
     assert(sload[1] == 'SLOAD')
     const variable = this.toVariable(sload, traces)
-    if (variable) {
-      console.log(`>> ${variable.toString()}`)
-    }
+    console.log(`>> ${variable.toString()}`)
   }
 
   shaToVariableName(sha, traces) {
@@ -23,7 +21,8 @@ class Storage {
   findMatches(traces) {
     const sstores = traces.filter(([type, name]) => name == 'SSTORE')
     sstores.forEach(sstore => {
-      const variable = this.toVariable(sstore)
+      const variable = this.toVariable(sstore, traces)
+      console.log(`>> ${variable.toString()}`)
     })
   }
 
