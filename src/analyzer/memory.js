@@ -1,17 +1,8 @@
-const { findIndex, reverse } = require('lodash')
 const assert = require('assert')
 const BN = require('bn.js')
+const { findIndex, reverse } = require('lodash')
 const { prettify, isConst } = require('../shared')
-
-class Variable {
-  constructor(members) {
-    this.members = members
-  }
-
-  toString() {
-    return this.members.join('.')
-  }
-}
+const Variable = require('./variable')
 
 class Memory {
   constructor(mload) {
@@ -27,9 +18,9 @@ class Memory {
       const expression = mainStack.pop()
       switch (expression[1]) {
         case 'MLOAD': {
-          const [offset, size, stackLen] = expression.slice(2)
-          if (isConst(offset)) {
-            assert(offset[1].toNumber() == 0x40)
+          const [loc, size, stackLen] = expression.slice(2)
+          if (isConst(loc)) {
+            assert(loc[1].toNumber() == 0x40)
             const root = `variable_${stackLen[1].toString(16)}`
             const members = reverse(properties).map(prop => {
               if (isConst(prop)) return prop[1].toString(16)
@@ -37,24 +28,23 @@ class Memory {
             })
             return new Variable([root, ...members])
           } else {
-            const [property, nestedMload] = offset.slice(2)
-            mainStack.push(nestedMload)
+            const [property, base] = loc.slice(2)
+            mainStack.push(base)
             properties.push(property)
           }
           break
         }
         case 'MSTORE': {
-          const [offset] = expression.slice(2)
-          if (isConst(offset)) {
-            const root = `variable_${offset[1].toString(16)}`
+          const [loc] = expression.slice(2)
+          if (isConst(loc)) {
+            const root = `variable_${loc[1].toString(16)}`
             return new Variable([root])
           }
-          mainStack.push(offset)
+          mainStack.push(loc)
           break
         }
         case 'ADD': {
           const [left, right] = expression.slice(2)
-          assert(isConst(left))
           properties.push(left)
           mainStack.push(right)
           break
@@ -70,7 +60,6 @@ class Memory {
     const mstores = traces.filter(trace => ([type, name]) => name == 'MSTORE')
     mstores.forEach(mstore => {
       const variable = this.toVariable(mstore)
-      console.log(`>> ${variable.toString()}`)
     })
   }
 }

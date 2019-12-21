@@ -1,12 +1,84 @@
 const BN = require('bn.js')
 const assert = require('assert')
-const { findIndex } = require('lodash')
-const { prettify, formatSymbol } = require('../shared')
+const { reverse, findIndex } = require('lodash')
+const Variable = require('./variable')
+const { isConst, prettify } = require('../shared')
 
-const zero = ['const', new BN(0)]
 class Storage {
-  constructor(symbol) {
-    assert(symbol[1] == 'SLOAD')
+  constructor(sload, traces) {
+    assert(sload[1] == 'SLOAD')
+    const variable = this.toVariable(sload, traces)
+    if (variable) {
+      console.log(`>> ${variable.toString()}`)
+    }
+  }
+
+  shaToVariableName(sha, traces) {
+    const [loc, size, stackLen] = sha[2].slice(2)
+    const trace = traces[stackLen[1].toNumber() - 1]
+    const storeValue = trace[3]
+    return `variable_${storeValue[1].toString(16)}`
+  }
+
+  findMatches(traces) {
+    const sstores = traces.filter(([type, name]) => name == 'SSTORE')
+    sstores.forEach(sstore => {
+      const variable = this.toVariable(sstore)
+    })
+  }
+
+  toVariable(expression, traces) {
+    const properties = []
+    const mainStack = [expression]
+    while (mainStack.length > 0) {
+      const expression = mainStack.pop()
+      switch (expression[1]) {
+        case 'SSTORE':
+        case 'SLOAD': {
+          const [loc, size, stackLen] = expression.slice(2)
+          if (isConst(loc)) {
+            const root = `variable_${loc[1].toString(16)}`
+            return new Variable([root])
+          }
+          mainStack.push(loc)
+          break
+        }
+        case 'ADD': {
+          const operands = expression.slice(2, 4)
+          const shaIdx = findIndex(operands, ([type, name]) => name == 'SHA3')
+          const constIdx = findIndex(operands, ([type]) => type == 'const')
+          if (constIdx == 1) {
+            const [offset, base] = operands
+            const root = `variable_${base[1].toString(16)}`
+            const members = reverse([...properties, offset]).map(prop => {
+              if (isConst(prop)) return prop[1].toString(16)
+              return '*'
+            })
+            return new Variable([root, ...members])
+          }
+          if (shaIdx >= 0) {
+            const base = operands[shaIdx]
+            const offset = operands[1 - shaIdx]
+            const root = this.shaToVariableName(base, traces) 
+            const members = reverse([...properties, offset]).map(prop => {
+              if (isConst(prop)) return prop[1].toString(16)
+              return '*'
+            })
+            return new Variable([root, ...members])
+          } else {
+            assert(constIdx != -1)
+            const base = operands[1 - constIdx]
+            const offset = operands[constIdx]
+            properties.push(offset)
+            mainStack.push(base)
+          }
+          break
+        }
+        default: {
+          assert(false)
+        }
+      }
+    }
   }
 }
 
