@@ -60,6 +60,7 @@ class Memory {
     const mstores = traces.filter(trace => ([type, name]) => name == 'MSTORE')
     mstores.forEach(mstore => {
       const variable = this.toVariable(mstore)
+      console.log(`>> ${variable.toString()}`)
     })
   }
 }

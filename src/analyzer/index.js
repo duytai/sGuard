@@ -38,29 +38,44 @@ const prettifyTree = (root, level = 0) => {
 }
 
 const analyze = (symbol, traces) => {
-  const [type, name, ...params] = symbol 
-  switch (type) {
-    case 'const': {
-      logger.info(`No dependency since wei is ${JSON.stringify(symbol)}`)
+  const [type, name] = symbol
+  prettify([symbol])
+  switch (name) {
+    case 'MLOAD': {
+      const memory = new Memory(symbol)
       break
     }
-    case 'symbol': {
-      const foundSymbols = findSymbol(symbol, ([type, name]) => type == 'symbol' && name == 'NUMBER')
-      if (foundSymbols.length > 0) {
-        logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
-      } else {
-        const root = { me: symbol, childs: [] }
-        prettify(traces)
-        console.log('>>>>')
-        prettify([symbol])
-        console.log('<<<<')
-        buildDependencyTree(root, traces)
-        console.log('////TREE')
-        prettifyTree(root)
-      }
+    case 'SSTORE': {
+      const sstore = new Storage(symbol)
       break
     }
   }
 }
+
+// const analyze = (symbol, traces) => {
+  // const [type, name, ...params] = symbol
+  // switch (type) {
+    // case 'const': {
+      // logger.info(`No dependency since wei is ${JSON.stringify(symbol)}`)
+      // break
+    // }
+    // case 'symbol': {
+      // const foundSymbols = findSymbol(symbol, ([type, name]) => type == 'symbol' && name == 'NUMBER')
+      // if (foundSymbols.length > 0) {
+        // logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
+      // } else {
+        // const root = { me: symbol, childs: [] }
+        // prettify(traces)
+        // console.log('>>>>')
+        // prettify([symbol])
+        // console.log('<<<<')
+        // buildDependencyTree(root, traces)
+        // console.log('////TREE')
+        // prettifyTree(root)
+      // }
+      // break
+    // }
+  // }
+// }
 
 module.exports = { analyze } 
