@@ -45,8 +45,8 @@ const analyze = (symbol, traces) => {
       const memory = new Memory(symbol)
       break
     }
-    case 'SSTORE': {
-      const sstore = new Storage(symbol)
+    case 'SLOAD': {
+      const sstore = new Storage(symbol, traces)
       break
     }
   }

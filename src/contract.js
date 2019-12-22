@@ -159,12 +159,12 @@ class Contract {
       case 'SSTORE': {
         const [x, y] = stack.splice(-2).reverse()
         traces.push(['symbol', name, x, y])
-        const sstore = traces[traces.length - 1]
-        analyze(sstore, traces)
         break
       }
       case 'SLOAD': {
         stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length)]])
+        const sload = stack[stack.length - 1]
+        analyze(sload, traces)
         break
       }
       case 'ISZERO': {

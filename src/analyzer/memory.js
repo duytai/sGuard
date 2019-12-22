@@ -1,4 +1,5 @@
 const assert = require('assert')
+const chalk = require('chalk')
 const BN = require('bn.js')
 const { findIndex, reverse } = require('lodash')
 const { prettify, isConst } = require('../shared')
@@ -8,7 +9,7 @@ class Memory {
   constructor(mload) {
     assert(mload[1] == 'MLOAD')
     const variable = this.toVariable(mload)
-    console.log(`>> ${variable.toString()}`)
+    console.log(chalk.green(variable.toString()))
   }
 
   toVariable(expression) {
@@ -21,7 +22,7 @@ class Memory {
           const [loc, size, stackLen] = expression.slice(2)
           if (isConst(loc)) {
             assert(loc[1].toNumber() == 0x40)
-            const root = `variable_${stackLen[1].toString(16)}`
+            const root = `m_${stackLen[1].toString(16)}`
             const members = reverse(properties).map(prop => {
               if (isConst(prop)) return prop[1].toString(16)
               return '*'
@@ -37,7 +38,7 @@ class Memory {
         case 'MSTORE': {
           const [loc] = expression.slice(2)
           if (isConst(loc)) {
-            const root = `variable_${loc[1].toString(16)}`
+            const root = `m_${loc[1].toString(16)}`
             return new Variable([root])
           }
           mainStack.push(loc)
