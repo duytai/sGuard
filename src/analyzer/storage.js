@@ -15,8 +15,8 @@ const Storage = {
       assert(name, 'MLOAD')
       assert(isConstWithValue(base, 0x00))
       const trace = traces[traceSize[1].toNumber() - 1]
-      const storeValue = trace[3]
-      const root = `s_${storeValue[1].toString(16)}`
+      const variable = this.toVariable(trace[3], traces) 
+      const root = variable.toString()
       return new Variable([root])
     }
     const properties = []
@@ -39,7 +39,8 @@ const Storage = {
       if (shaIdx >= 0) {
         const base = operands[shaIdx]
         const offset = operands[1 - shaIdx]
-        const root = this.toVariable(base, traces)
+        const variable = this.toVariable(base, traces)
+        const root = variable.toString()
         const members = reverse([...properties, offset]).map(prop => {
           if (isConst(prop)) return prop[1].toString(16)
           return '*'
