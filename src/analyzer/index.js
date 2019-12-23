@@ -54,6 +54,15 @@ const analyze = (symbol, traces) => {
       break
     }
     case 'SLOAD': {
+      console.log('///////')
+      prettify([symbol])
+      const [loc] = symbol.slice(2)
+      const variable = Storage.toVariable(loc, traces)
+      if (variable) {
+        console.log(chalk.green(variable.toString()))
+      } else {
+        console.log(chalk.red('Missing'))
+      }
       break
     }
   }
