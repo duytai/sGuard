@@ -404,6 +404,7 @@ class Contract {
         break
       }
       case 'CALL': {
+        console.log(`PC: ${pc}`)
         const [
           gasLimit,
           toAddress,

@@ -1,15 +1,23 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const { findIndex, reverse } = require('lodash')
-const { prettify, isConst } = require('../shared')
+const { prettify, isConst, isConstWithValue } = require('../shared')
 const Variable = require('./variable')
 
 const Memory = {
-  toVariable(loc, traceSize) {
-    if (isConst(loc)) {
-      if (loc[1].toNumber() == 0x40)
-        return new Variable([`m_${traceSize[1].toString(16)}`])
+  toVariable(loc) {
+    if (isConst(loc))
       return new Variable([`m_${loc[1].toString(16)}`])
+    if (loc[1] == 'MLOAD') {
+      const [base, loadSize, traceSize] = loc.slice(2)
+      if (isConstWithValue(base, 0x40)) {
+        const variable = this.toVariable(traceSize)
+        const root = variable.toString()
+        return new Variable([root])
+      }
+      const variable = this.toVariable(base)
+      const root = variable.toString()
+      return new Variable([root])
     }
     const properties = []
     const stack = [loc]
@@ -31,7 +39,7 @@ const Memory = {
       if (mloadIdx >= 0) {
         const base = operands[mloadIdx]
         const offset = operands[1 - mloadIdx]
-        const variable = this.toVariable(base[2], base[4])
+        const variable = this.toVariable(base)
         const root = variable.toString() 
         const members = reverse([...properties, offset]).map(prop => {
           if (isConst(prop)) return prop[1].toString(16)

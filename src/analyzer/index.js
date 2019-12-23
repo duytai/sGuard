@@ -45,7 +45,7 @@ const analyze = (symbol, traces) => {
       console.log('///////')
       prettify([symbol])
       const [loc, loadSize, traceSize] = symbol.slice(2)
-      const variable = Memory.toVariable(loc, traceSize)
+      const variable = Memory.toVariable(loc)
       if (variable) {
         console.log(chalk.green(variable.toString()))
       } else {
