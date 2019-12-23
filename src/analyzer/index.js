@@ -1,5 +1,6 @@
 const assert = require('assert')
 const { reverse, last, first } = require('lodash')
+const chalk = require('chalk')
 const { prettify, logger, findSymbol } = require('../shared')
 const Memory = require('./memory')
 const Storage = require('./storage')
@@ -39,43 +40,26 @@ const prettifyTree = (root, level = 0) => {
 
 const analyze = (symbol, traces) => {
   const [type, name] = symbol
-  prettify([symbol])
   switch (name) {
+    case 'MSTORE':
     case 'MLOAD': {
-      const memory = new Memory(symbol)
+      console.log('///////')
+      prettify([symbol])
+      const [loc, loadSize, traceSize] = symbol.slice(2)
+      const variable = Memory.toVariable(loc, traceSize)
+      if (variable) {
+        console.log(chalk.green(variable.toString()))
+      } else {
+        console.log(chalk.red('Missing'))
+      }
       break
     }
     case 'SLOAD': {
-      const sstore = new Storage(symbol, traces)
       break
     }
   }
 }
 
-// const analyze = (symbol, traces) => {
-  // const [type, name, ...params] = symbol
-  // switch (type) {
-    // case 'const': {
-      // logger.info(`No dependency since wei is ${JSON.stringify(symbol)}`)
-      // break
-    // }
-    // case 'symbol': {
-      // const foundSymbols = findSymbol(symbol, ([type, name]) => type == 'symbol' && name == 'NUMBER')
-      // if (foundSymbols.length > 0) {
-        // logger.info(`Number dependency since wei is ${JSON.stringify(symbol)}`)
-      // } else {
-        // const root = { me: symbol, childs: [] }
-        // prettify(traces)
-        // console.log('>>>>')
-        // prettify([symbol])
-        // console.log('<<<<')
-        // buildDependencyTree(root, traces)
-        // console.log('////TREE')
-        // prettifyTree(root)
-      // }
-      // break
-    // }
-  // }
-// }
-
-module.exports = { analyze } 
+module.exports = {
+  analyze,
+} 

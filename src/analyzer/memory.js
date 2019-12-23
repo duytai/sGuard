@@ -1,68 +1,51 @@
 const assert = require('assert')
-const chalk = require('chalk')
 const BN = require('bn.js')
 const { findIndex, reverse } = require('lodash')
 const { prettify, isConst } = require('../shared')
 const Variable = require('./variable')
 
-class Memory {
-  constructor(mload) {
-    assert(mload[1] == 'MLOAD')
-    const variable = this.toVariable(mload)
-    console.log(chalk.green(variable.toString()))
-  }
-
-  toVariable(expression) {
+const Memory = {
+  toVariable(loc, traceSize) {
+    if (isConst(loc)) {
+      if (loc[1].toNumber() == 0x40)
+        return new Variable([`m_${traceSize[1].toString(16)}`])
+      return new Variable([`m_${loc[1].toString(16)}`])
+    }
     const properties = []
-    const mainStack = [expression]
-    while (mainStack.length > 0) {
-      const expression = mainStack.pop()
-      switch (expression[1]) {
-        case 'MLOAD': {
-          const [loc, size, stackLen] = expression.slice(2)
-          if (isConst(loc)) {
-            assert(loc[1].toNumber() == 0x40)
-            const root = `m_${stackLen[1].toString(16)}`
-            const members = reverse(properties).map(prop => {
-              if (isConst(prop)) return prop[1].toString(16)
-              return '*'
-            })
-            return new Variable([root, ...members])
-          } else {
-            const [property, base] = loc.slice(2)
-            mainStack.push(base)
-            properties.push(property)
-          }
-          break
-        }
-        case 'MSTORE': {
-          const [loc] = expression.slice(2)
-          if (isConst(loc)) {
-            const root = `m_${loc[1].toString(16)}`
-            return new Variable([root])
-          }
-          mainStack.push(loc)
-          break
-        }
-        case 'ADD': {
-          const [left, right] = expression.slice(2)
-          properties.push(left)
-          mainStack.push(right)
-          break
-        }
-        default: {
-          assert(false)
-        }
+    const stack = [loc]
+    while (stack.length > 0) {
+      const loc = stack.pop()
+      assert(loc[1] == 'ADD')
+      const operands = loc.slice(2)
+      const constIdx = findIndex(operands, ([type]) => type == 'const')
+      const mloadIdx = findIndex(operands, ([type, name]) => name == 'MLOAD')
+      if (constIdx == 1) {
+        const [offset, base] = operands
+        const root = `m_${base[1].toString(16)}`
+        const members = reverse([...properties, offset]).map(prop => {
+          if (isConst(prop)) return prop[1].toString(16)
+          return '*'
+        })
+        return new Variable([root, ...members])
+      }
+      if (mloadIdx >= 0) {
+        const base = operands[mloadIdx]
+        const offset = operands[1 - mloadIdx]
+        const variable = this.toVariable(base[2], base[4])
+        const root = variable.toString() 
+        const members = reverse([...properties, offset]).map(prop => {
+          if (isConst(prop)) return prop[1].toString(16)
+          return '*'
+        })
+        return new Variable([root, ...members])
+      } else {
+        assert(constIdx != -1)
+        const base = operands[1 - constIdx]
+        const offset = operands[constIdx]
+        properties.push(offset)
+        stack.push(base)
       }
     }
-  }
-
-  findMatches(traces) {
-    const mstores = traces.filter(trace => ([type, name]) => name == 'MSTORE')
-    mstores.forEach(mstore => {
-      const variable = this.toVariable(mstore)
-      console.log(`>> ${variable.toString()}`)
-    })
   }
 }
 

@@ -147,24 +147,28 @@ class Contract {
         const [memOffset, memValue] = stack.splice(-2).reverse()
         const size = ['const', new BN(32)]
         traces.push(['symbol', name, memOffset, memValue, size])
+        // const mstore = traces[traces.length - 1]
+        // afixedIndexAccessnalyze(mstore, traces)
         break
       }
       case 'MLOAD': {
         const size = ['const', new BN(32)]
         stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces.length)]])
-        const mload = stack[stack.length - 1]
-        analyze(mload, traces)
+        // const mload = stack[stack.length - 1]
+        // analyze(mload, traces)
         break
       }
       case 'SSTORE': {
         const [x, y] = stack.splice(-2).reverse()
         traces.push(['symbol', name, x, y])
+        // const sstore = traces[traces.length - 1]
+        // analyze(sstore, traces)
         break
       }
       case 'SLOAD': {
         stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length)]])
-        const sload = stack[stack.length - 1]
-        analyze(sload, traces)
+        // const sload = stack[stack.length - 1]
+        // analyze(sload, traces)
         break
       }
       case 'ISZERO': {
@@ -417,6 +421,7 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        analyze(value, traces)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         break
       }
