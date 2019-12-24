@@ -41,6 +41,7 @@ const prettifyTree = (root, level = 0) => {
 const analyze = (symbol, traces) => {
   const [type, name] = symbol
   switch (name) {
+    case 'MSTORE':
     case 'MLOAD': {
       console.log('///////')
       prettify([symbol])

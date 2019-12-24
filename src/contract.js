@@ -147,20 +147,24 @@ class Contract {
         const [memOffset, memValue] = stack.splice(-2).reverse()
         const size = ['const', new BN(32)]
         traces.push(['symbol', name, memOffset, memValue, size])
+        analyze(traces[traces.length - 1], traces)
         break
       }
       case 'MLOAD': {
         const size = ['const', new BN(32)]
         stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces.length)]])
+        analyze(stack[stack.length - 1], traces)
         break
       }
       case 'SSTORE': {
         const [x, y] = stack.splice(-2).reverse()
         traces.push(['symbol', name, x, y])
+        analyze(traces[traces.length - 1], traces)
         break
       }
       case 'SLOAD': {
         stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length)]])
+        analyze(stack[stack.length - 1], traces)
         break
       }
       case 'ISZERO': {
@@ -231,6 +235,15 @@ class Contract {
           stack.push(['symbol', name, x, y])
         } else {
           stack.push(['const', x[1].lt(y[1]) ? new BN(1) : new BN(0)])
+        }
+        break
+      }
+      case 'SLT': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          stack.push(['const', x[1].fromTwos(256).lt(y[1].fromTwos(256)) ? new BN(1) : new BN(0)])
         }
         break
       }
