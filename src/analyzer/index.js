@@ -15,12 +15,12 @@ const buildDependencyTree = (node, traces) => {
       const [loc, loadSize, traceSize] = me.slice(2)
       const loadVariable = Memory.toVariable(loc)
       assert(loadVariable)
-      const mstores = traces.filter(trace => ([type, name]) => name == 'MSTORE')
+      const mstores = traces.filter(([type, name]) => name == 'MSTORE')
       mstores.forEach(mstore => {
         const [loc, storedValue] = mstore.slice(2)
         const storeVariable = Memory.toVariable(loc)
         assert(storeVariable)
-        // TODO: Need to analyze aliasing 
+        // TODO: Need to analyze aliasing
         if (loadVariable.equal(storeVariable)) {
           if (loadVariable.toString() != 'm_40') {
             const newNode = { me: storedValue, childs: [] }
@@ -32,12 +32,21 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
-      console.log('///////')
-      prettify([me])
       const [loc] = me.slice(2)
-      const variable = Storage.toVariable(loc, traces)
-      assert(variable)
-      console.log(chalk.green(variable.toString()))
+      const loadVariable = Storage.toVariable(loc, traces)
+      assert(loadVariable)
+      const sstores = traces.filter(([type, name]) => name == 'SSTORE')
+      sstores.forEach(sstore => {
+        const [loc, storedValue] = sstore.slice(2)
+        const storeVariable = Storage.toVariable(loc, traces)
+        assert(storeVariable)
+        // TODO: Need to analyze aliasing
+        if (loadVariable.equal(storeVariable)) {
+          const newNode = { me: storedValue, childs: [] }
+          buildDependencyTree(newNode, traces)
+          childs.push(newNode)
+        }
+      })
       break
     }
     default: {
@@ -62,8 +71,19 @@ const prettifyTree = (root, level = 0) => {
 const analyze = (symbol, traces) => {
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
+  traces.forEach(trace => {
+    const [type, name, loc] = trace
+    prettify([trace])
+    if (name == 'MSTORE') {
+      const m = Memory.toVariable(loc)
+      console.log(chalk.green(m.toString()))
+    } else {
+      const s = Storage.toVariable(loc, traces)
+      console.log(chalk.green(s.toString()))
+    }
+  })
+  prettify([symbol])
   buildDependencyTree(root, traces)
-  console.log('---ROOT---')
   prettifyTree(root)
 }
 
