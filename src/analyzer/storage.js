@@ -28,22 +28,14 @@ const Storage = {
       if (constIdx == 1) {
         const [offset, base] = operands
         const root = `s_${base[1].toString(16)}`
-        const members = reverse([...properties, offset]).map(prop => {
-          if (isConst(prop)) return prop[1].toString(16)
-          return '*'
-        })
+        const members = reverse([...properties, offset])
         return new Variable([root, ...members])
       }
       if (shaIdx >= 0) {
         const base = operands[shaIdx]
         const offset = operands[1 - shaIdx]
-        const variable = this.toVariable(base, traces)
-        const root = variable.toString()
-        const members = reverse([...properties, offset]).map(prop => {
-          if (isConst(prop)) return prop[1].toString(16)
-          return '*'
-        })
-        return new Variable([root, ...members])
+        const members = reverse([...properties, offset])
+        return new Variable([root, ...members], this.toVariable(base, traces))
       } else {
         assert(constIdx != -1)
         const base = operands[1 - constIdx]

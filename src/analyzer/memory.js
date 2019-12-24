@@ -25,22 +25,14 @@ const Memory = {
       if (constIdx == 1) {
         const [offset, base] = operands
         const root = `m_${base[1].toString(16)}`
-        const members = reverse([...properties, offset]).map(prop => {
-          if (isConst(prop)) return prop[1].toString(16)
-          return '*'
-        })
+        const members = reverse([...properties, offset])
         return new Variable([root, ...members])
       }
       if (mloadIdx >= 0) {
         const base = operands[mloadIdx]
         const offset = operands[1 - mloadIdx]
-        const variable = this.toVariable(base)
-        const root = variable.toString() 
-        const members = reverse([...properties, offset]).map(prop => {
-          if (isConst(prop)) return prop[1].toString(16)
-          return '*'
-        })
-        return new Variable([root, ...members])
+        const members = reverse([...properties, offset])
+        return new Variable(members, this.toVariable(base))
       } else {
         assert(constIdx != -1)
         const base = operands[1 - constIdx]
