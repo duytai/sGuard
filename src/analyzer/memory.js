@@ -22,24 +22,24 @@ const Memory = {
       const operands = loc.slice(2)
       const constIdx = findIndex(operands, ([type]) => type == 'const')
       const mloadIdx = findIndex(operands, ([type, name]) => name == 'MLOAD')
+      const addIndex = findIndex(operands, ([type, name]) => name == 'ADD')
+      if (mloadIdx >= 0) {
+        const base = operands[mloadIdx]
+        const offset = operands[1 - mloadIdx]
+        const members = reverse([...properties, offset])
+        return new Variable(members, this.toVariable(base))
+      } 
       if (constIdx == 1) {
         const [offset, base] = operands
         const root = `m_${base[1].toString(16)}`
         const members = reverse([...properties, offset])
         return new Variable([root, ...members])
       }
-      if (mloadIdx >= 0) {
-        const base = operands[mloadIdx]
-        const offset = operands[1 - mloadIdx]
-        const members = reverse([...properties, offset])
-        return new Variable(members, this.toVariable(base))
-      } else {
-        assert(constIdx != -1)
-        const base = operands[1 - constIdx]
-        const offset = operands[constIdx]
-        properties.push(offset)
-        stack.push(base)
-      }
+      assert(addIndex != -1)
+      const base = operands[addIndex]
+      const offset = operands[1 - addIndex]
+      properties.push(offset)
+      stack.push(base)
     }
   }
 }

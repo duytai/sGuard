@@ -36,6 +36,7 @@ const buildDependencyTree = (node, traces) => {
       const loadVariable = Storage.toVariable(loc, traces)
       assert(loadVariable)
       const sstores = traces.filter(([type, name]) => name == 'SSTORE')
+      console.log(loadVariable.toString())
       sstores.forEach(sstore => {
         const [loc, storedValue] = sstore.slice(2)
         const storeVariable = Storage.toVariable(loc, traces)
@@ -83,8 +84,11 @@ const analyze = (symbol, traces) => {
     }
   })
   prettify([symbol])
+  console.log('//////')
   buildDependencyTree(root, traces)
   prettifyTree(root)
+  // TODO: REMOVE IT LATER
+  // process.exit(0)
 }
 
 module.exports = {
