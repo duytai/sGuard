@@ -10,14 +10,9 @@ const Memory = {
       return new Variable([`m_${loc[1].toString(16)}`])
     if (loc[1] == 'MLOAD') {
       const [base, loadSize, traceSize] = loc.slice(2)
-      if (isConstWithValue(base, 0x40)) {
-        const variable = this.toVariable(traceSize)
-        const root = variable.toString()
-        return new Variable([root])
-      }
-      const variable = this.toVariable(base)
-      const root = variable.toString()
-      return new Variable([root])
+      if (isConstWithValue(base, 0x40))
+        return this.toVariable(traceSize)
+      return this.toVariable(base)
     }
     const properties = []
     const stack = [loc]

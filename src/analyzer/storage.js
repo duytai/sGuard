@@ -15,9 +15,7 @@ const Storage = {
       assert(name, 'MLOAD')
       assert(isConstWithValue(base, 0x00))
       const trace = traces[traceSize[1].toNumber() - 1]
-      const variable = this.toVariable(trace[3], traces) 
-      const root = variable.toString()
-      return new Variable([root])
+      return this.toVariable(trace[3], traces) 
     }
     const properties = []
     const stack = [loc]
