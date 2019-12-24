@@ -25,24 +25,23 @@ const Storage = {
       const operands = loc.slice(2)
       const shaIdx = findIndex(operands, ([type, name]) => name == 'SHA3')
       const constIdx = findIndex(operands, ([type]) => type == 'const')
+      if (shaIdx >= 0) {
+        const base = operands[shaIdx]
+        const offset = operands[1 - shaIdx]
+        const members = reverse([...properties, offset])
+        return new Variable([root, ...members], this.toVariable(base, traces))
+      }
       if (constIdx == 1) {
         const [offset, base] = operands
         const root = `s_${base[1].toString(16)}`
         const members = reverse([...properties, offset])
         return new Variable([root, ...members])
       }
-      if (shaIdx >= 0) {
-        const base = operands[shaIdx]
-        const offset = operands[1 - shaIdx]
-        const members = reverse([...properties, offset])
-        return new Variable([root, ...members], this.toVariable(base, traces))
-      } else {
-        assert(constIdx != -1)
-        const base = operands[1 - constIdx]
-        const offset = operands[constIdx]
-        properties.push(offset)
-        stack.push(base)
-      }
+      assert(constIdx != -1)
+      const base = operands[1 - constIdx]
+      const offset = operands[constIdx]
+      properties.push(offset)
+      stack.push(base)
     }
   }
 }
