@@ -1,9 +1,9 @@
 const assert = require('assert')
 const { isConst } = require('../shared')
 
+// first member is variable name (string)
+// the rest is a list of symbols
 class Variable {
-  // first member is variable name (string)
-  // the rest is a list of symbol
   constructor(members, variable) {
     this.members = variable ? [...variable.members, ...members] : members
   }
