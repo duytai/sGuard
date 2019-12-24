@@ -40,18 +40,25 @@ const prettifyTree = (root, level = 0) => {
 
 const analyze = (symbol, traces) => {
   const [type, name] = symbol
+  prettify(traces)
   switch (name) {
-    case 'MSTORE':
     case 'MLOAD': {
       console.log('///////')
       prettify([symbol])
       const [loc, loadSize, traceSize] = symbol.slice(2)
-      const variable = Memory.toVariable(loc)
-      if (variable) {
-        console.log(chalk.green(variable.toString()))
-      } else {
-        console.log(chalk.red('Missing'))
-      }
+      const loadVariable = Memory.toVariable(loc)
+      assert(loadVariable)
+      console.log(chalk.green(loadVariable.toString()))
+      const mstores = traces
+        .filter(trace => ([type, name]) => name == 'MSTORE')
+        .filter(mstore => {
+          prettify([mstore])
+          const [loc] = mstore.slice(2) 
+          const storeVariable = Memory.toVariable(loc) 
+          assert(storeVariable)
+          console.log(chalk.green(storeVariable.toString()))
+          return loadVariable.equal(storeVariable)
+        })
       break
     }
     case 'SLOAD': {
@@ -59,11 +66,8 @@ const analyze = (symbol, traces) => {
       prettify([symbol])
       const [loc] = symbol.slice(2)
       const variable = Storage.toVariable(loc, traces)
-      if (variable) {
-        console.log(chalk.green(variable.toString()))
-      } else {
-        console.log(chalk.red('Missing'))
-      }
+      assert(variable)
+      console.log(chalk.green(variable.toString()))
       break
     }
   }
