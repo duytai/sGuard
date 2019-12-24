@@ -40,7 +40,6 @@ const prettifyTree = (root, level = 0) => {
 
 const analyze = (symbol, traces) => {
   const [type, name] = symbol
-  prettify(traces)
   switch (name) {
     case 'MLOAD': {
       console.log('///////')
@@ -52,11 +51,9 @@ const analyze = (symbol, traces) => {
       const mstores = traces
         .filter(trace => ([type, name]) => name == 'MSTORE')
         .filter(mstore => {
-          prettify([mstore])
           const [loc] = mstore.slice(2) 
           const storeVariable = Memory.toVariable(loc) 
           assert(storeVariable)
-          console.log(chalk.green(storeVariable.toString()))
           return loadVariable.equal(storeVariable)
         })
       break
