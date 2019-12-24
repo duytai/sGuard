@@ -5,8 +5,6 @@ const { prettify, logger, findSymbol } = require('../shared')
 const Memory = require('./memory')
 const Storage = require('./storage')
 
-let counter = 0
-
 const buildDependencyTree = (node, traces) => {
   const { me, childs } = node
   assert(!childs.length)
@@ -15,7 +13,9 @@ const buildDependencyTree = (node, traces) => {
       const [loc, loadSize, traceSize] = me.slice(2)
       const loadVariable = Memory.toVariable(loc)
       assert(loadVariable)
-      const mstores = traces.filter(([type, name]) => name == 'MSTORE')
+      const mstores = traces
+        .slice(0, traceSize[1].toNumber())
+        .filter(([type, name]) => name == 'MSTORE')
       mstores.forEach(mstore => {
         const [loc, storedValue] = mstore.slice(2)
         const storeVariable = Memory.toVariable(loc)
@@ -32,11 +32,12 @@ const buildDependencyTree = (node, traces) => {
       break
     }
     case 'SLOAD': {
-      const [loc] = me.slice(2)
+      const [loc, traceSize] = me.slice(2)
       const loadVariable = Storage.toVariable(loc, traces)
       assert(loadVariable)
-      const sstores = traces.filter(([type, name]) => name == 'SSTORE')
-      console.log(loadVariable.toString())
+      const sstores = traces
+        .slice(0, traceSize[1].toNumber())
+        .filter(([type, name]) => name == 'SSTORE')
       sstores.forEach(sstore => {
         const [loc, storedValue] = sstore.slice(2)
         const storeVariable = Storage.toVariable(loc, traces)
