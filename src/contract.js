@@ -131,6 +131,7 @@ class Contract {
       case 'INVALID': {
         return
       }
+      case 'MSIZE':
       case 'CALLVALUE':
       case 'CALLER':
       case 'ADDRESS':
@@ -428,6 +429,31 @@ class Contract {
           const r = x[1].xor(y[1])
           stack.push(['const', r])
         }
+        break
+      }
+      case 'CALLDATACOPY': {
+        const [memOffset, dataOffset, dataLen] = stack.splice(-3).reverse()
+        const callData = ['symbol', 'CALLDATALOAD', dataOffset]
+        traces.push(['symbol', 'MSTORE', memOffset, callData, dataLen])
+        break
+      }
+      case 'RETURNDATACOPY': {
+        const [memOffset, returnDataOffset, dataLen] = stack.splice(-3).reverse()
+        // TODO: return data is not a opcode
+        const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
+        traces.push(['symbol', 'MSTORE', memOffset, returnData, dataLen])
+        break
+      }
+      case 'DELEGATECALL': {
+        const [
+          gasLimit,
+          toAddress,
+          inOffset,
+          inLength,
+          outOffset,
+          outLength,
+        ] = stack.splice(-6).reverse()
+        stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
         break
       }
       case 'CALL': {

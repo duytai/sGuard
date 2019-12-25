@@ -13,16 +13,18 @@ const toContractURL = (address) => {
 
 const main = async () => {
   const bin = path.join(__dirname, 'bin/')
-  const jsonString = await rp(toPageURL({ page: 1, count: 5 }))
+  const jsonString = await rp(toPageURL({ page: 1, count: 10 }))
   const json = JSON.parse(jsonString)
   for (let i = 0; i < json.contracts.length; i++) {
-    const { address } = json.contracts[i]
-    const binPath = path.join(bin, address)
-    if (!fs.existsSync(binPath)) {
-      console.log(chalk.green(address))
-      const jsonString = await rp(toContractURL(address))
-      const { bytecode } = JSON.parse(jsonString)
-      fs.writeFileSync(binPath, bytecode)
+    const { address, has_source } = json.contracts[i]
+    if (has_source) {
+      const binPath = path.join(bin, address)
+      if (!fs.existsSync(binPath)) {
+        console.log(chalk.green(address))
+        const jsonString = await rp(toContractURL(address))
+        const { bytecode } = JSON.parse(jsonString)
+        fs.writeFileSync(binPath, bytecode)
+      }
     }
   }
 }
