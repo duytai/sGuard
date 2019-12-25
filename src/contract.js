@@ -57,6 +57,11 @@ class Contract {
         stack.pop()
         break
       }
+      case 'LOG': {
+        console.log(`ins: ${ins}`)
+        stack.splice(-ins)
+        break
+      }
       case 'JUMPI': {
         const [cond, label] = stack.splice(-ins) 
         assert(label[0] == 'const')

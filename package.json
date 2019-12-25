@@ -6,12 +6,18 @@
   "license": "MIT",
   "scripts": {
     "dev": "IN=sample.sol ./scripts/compile.sh && COMPILED=contracts/sample.sol.json node src/index.js",
-    "test": "IN=etherscan.sol ./scripts/compile.sh && COMPILED=contracts/etherscan.sol.json node src/index.js"
+    "test": "IN=etherscan.sol ./scripts/compile.sh && COMPILED=contracts/etherscan.sol.json node src/index.js",
+    "stress": "node stress/index.js"
   },
   "dependencies": {
     "bn.js": "^5.0.0",
     "chalk": "^3.0.0",
     "lodash": "^4.17.15",
     "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.5"
   }
 }

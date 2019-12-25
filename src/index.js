@@ -9,9 +9,7 @@ const compiled = fs.readFileSync(process.env.COMPILED, 'utf8')
 
 forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const bin = Buffer.from(contractJson['bin-runtime'], 'hex')
-  if (bin) {
-    const contract = new Contract(bin)
-    console.log(`++++++++++ Analyzing contract: ${name} ++++++++++`)
-    contract.execute()
-  }
+  const contract = new Contract(bin)
+  console.log(`++++++++++ Analyzing contract: ${name} ++++++++++`)
+  contract.execute()
 })
