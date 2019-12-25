@@ -1,8 +1,9 @@
-const { range, reverse, keys, pickBy, last } = require('lodash')
 const BN = require('bn.js')
 const assert = require('assert')
+const chalk = require('chalk')
+const { keys, pickBy, last } = require('lodash')
 const { opcodes } = require('./evm')
-const { logger, prettify } = require('./shared')
+const { prettify } = require('./shared')
 const { analyze } = require('./analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -137,10 +138,12 @@ class Contract {
         stack.push(['symbol', name])
         break
       }
+      case 'BALANCE':
+      case 'CALLDATALOAD':
       case 'EXTCODESIZE':
       case 'EXTCODEHASH':
       case 'BLOCKHASH': {
-        stack.push(['symbol', 'blockhash', stack.pop()])
+        stack.push(['symbol', name, stack.pop()])
         break
       }
       case 'MSTORE': {
@@ -198,10 +201,6 @@ class Contract {
             stack.push(['const', r])
           }
         }
-        break
-      }
-      case 'CALLDATALOAD': {
-        stack.push(['symbol', name, stack.pop()])
         break
       }
       case 'EQ': {
@@ -427,11 +426,12 @@ class Contract {
         break
       }
       default: {
-        console.log(name)
-        stack = stack.slice(0, stack.length - ins)
-        range(outs).forEach(() => {
-          stack.push(['const', new BN(0)])
-        })
+        console.log(chalk.bold.red(`Missing ${name}`))
+        const inputs = stack.splice(-ins).reverse()
+        assert(outs <= 1)
+        if (outs) {
+          stack.push(['symbol', name, ...inputs])
+        }
         break
       }
     }
