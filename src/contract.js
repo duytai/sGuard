@@ -84,10 +84,13 @@ class Contract {
             })
           }
           if (!forbiddenJumpdests.includes(jumpdest)) {
-            assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-            process.nextTick(() => {
-              this.execute(jumpdest, [...stack], [...path], [...traces])
-            })
+            if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
+              process.nextTick(() => {
+                this.execute(jumpdest, [...stack], [...path], [...traces])
+              })
+            } else {
+              console.log(chalk.bold.red('INVALID JUMPI'))
+            }
           }
         }
         return
@@ -96,10 +99,13 @@ class Contract {
         const [label] = stack.splice(-ins)
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
-        assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-        process.nextTick(() => {
-          this.execute(jumpdest, [...stack], [...path], [...traces])
-        })
+        if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
+          process.nextTick(() => {
+            this.execute(jumpdest, [...stack], [...path], [...traces])
+          })
+        } else {
+          console.log(chalk.bold.red('INVALID JUMP'))
+        }
         return
       }
       case 'SWAP': {
