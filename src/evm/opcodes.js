@@ -143,11 +143,11 @@ const opcodes = {
   0x9e: { name: 'SWAP', fee: 3, ins: 0, outs: 0 },
   0x9f: { name: 'SWAP', fee: 3, ins: 0, outs: 0 },
 
-  0xa0: { name: 'LOG', fee: 375, ins: 3, outs: 1 },
-  0xa1: { name: 'LOG', fee: 375, ins: 4, outs: 1 },
-  0xa2: { name: 'LOG', fee: 375, ins: 5, outs: 1 },
-  0xa3: { name: 'LOG', fee: 375, ins: 6, outs: 1 },
-  0xa4: { name: 'LOG', fee: 375, ins: 7, outs: 1 },
+  0xa0: { name: 'LOG', fee: 375, ins: 2, outs: 1 },
+  0xa1: { name: 'LOG', fee: 375, ins: 3, outs: 1 },
+  0xa2: { name: 'LOG', fee: 375, ins: 4, outs: 1 },
+  0xa3: { name: 'LOG', fee: 375, ins: 5, outs: 1 },
+  0xa4: { name: 'LOG', fee: 375, ins: 6, outs: 1 },
 
   // '0xf0' range - closures
   0xf0: { name: 'CREATE', fee: 32000, ins: 3, outs: 1 },

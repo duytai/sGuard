@@ -3,7 +3,7 @@ const assert = require('assert')
 const chalk = require('chalk')
 const { keys, pickBy, last } = require('lodash')
 const { opcodes } = require('./evm')
-const { prettify } = require('./shared')
+const { prettify, prettifyPath } = require('./shared')
 const { analyze } = require('./analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -58,7 +58,6 @@ class Contract {
         break
       }
       case 'LOG': {
-        console.log(`ins: ${ins}`)
         stack.splice(-ins)
         break
       }
@@ -383,7 +382,7 @@ class Contract {
           stack.push(['const', new BN(0)])
         } else {
           if (base[0] != 'const' || exponent[0] != 'const') {
-            stack.push(['symbol', name, base, component])
+            stack.push(['symbol', name, base, exponent])
           } else {
             const byteLength = exponent[1].byteLength()
             assert(byteLength >= 1 && byteLength <= 32)
