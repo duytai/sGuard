@@ -13,7 +13,7 @@ const toContractURL = (address) => {
 
 const main = async () => {
   const bin = path.join(__dirname, 'bin/')
-  const jsonString = await rp(toPageURL({ page: 1, count: 1 }))
+  const jsonString = await rp(toPageURL({ page: 1, count: 5 }))
   const json = JSON.parse(jsonString)
   for (let i = 0; i < json.contracts.length; i++) {
     const { address } = json.contracts[i]

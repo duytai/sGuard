@@ -414,6 +414,16 @@ class Contract {
         }
         break
       }
+      case 'XOR': {
+        const [x, y] = stack.splice(-2).reverse()
+        if (x[0] != 'const' || y[0] != 'const') {
+          stack.push(['symbol', name, x, y])
+        } else {
+          const r = x[1].xor(y[1])
+          stack.push(['const', r])
+        }
+        break
+      }
       case 'CALL': {
         const [
           gasLimit,
