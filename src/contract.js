@@ -15,9 +15,8 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * */
 
 class Contract {
-  constructor(bin, asm) {
+  constructor(bin) {
     this.bin = bin
-    this.asm = asm
   }
 
   findForbiddenJumpdests(path) {
