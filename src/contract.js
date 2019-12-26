@@ -45,8 +45,6 @@ class Contract {
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
-    logger.info('--> Executing')
-    prettifyPath([last(path)])
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
