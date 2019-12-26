@@ -23,12 +23,12 @@ const findSymbol = (symbol, cond) => {
 
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
-  values.forEach((v, idx) => console.log(`${space}${formatSymbol(v)}`))
+  values.forEach((v, idx) => logger.debug(`${space}${formatSymbol(v)}`))
 }
 
 const prettifyPath = (path) => {
   path.forEach(({ pc, opcode, stack }, idx) => {
-    console.log(`${pc}|${Number(pc).toString(16)}\t${opcode.name}`)
+    logger.debug(`${pc}|${Number(pc).toString(16)}\t${opcode.name}`)
     prettify(stack, 2)
   })
 }
@@ -40,8 +40,8 @@ const logger = createLogger({
     format.colorize(),
     label({ label: 'symEvm' }),
     timestamp(),
-    printf(({ level, message, timestamp, label }) => {
-      return `${timestamp} [${label}] ${level}: ${message}`
+    printf(({ level, message, label }) => {
+      return `[${label}] ${level}: ${message}`
     }),
   ),
   transports: [
