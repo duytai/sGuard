@@ -19,11 +19,10 @@ class Contract {
     this.bin = bin
   }
 
-  findForbiddenJumpdests(path) {
+  findForbiddenJumpdests(path, jumpdest) {
     const forbiddenJumpdests = new Set() 
-    const { pc: jumpi } = last(path)
     const pcs = path.map(({ pc }) => pc)
-    const indexes = keys(pickBy(pcs, pc => pc == jumpi)).map(i => parseInt(i))
+    const indexes = keys(pickBy(pcs, pc => pc == jumpdest)).map(i => parseInt(i))
     if (indexes.length > 2) {
       const subPaths = []
       for (let i = 0; i < indexes.length - 1; i ++) {
@@ -32,7 +31,7 @@ class Contract {
       for (let i = 0; i < subPaths.length - 1; i ++) {
         for (let j = i + 1; j < subPaths.length; j ++) {
           if (subPaths[i].join('') == subPaths[j].join('')) {
-            forbiddenJumpdests.add(subPaths[i][1])
+            forbiddenJumpdests.add(subPaths[i][0])
           }
         }
       }
@@ -74,11 +73,10 @@ class Contract {
               this.execute(pc + 1, [...stack], [...path], [...traces])
             }
           } else {
-            const forbiddenJumpdests = this.findForbiddenJumpdests(path)
-            if (!forbiddenJumpdests.includes(pc + 1)) {
+            if (!this.findForbiddenJumpdests(path, pc + 1).includes(pc + 1)) {
               this.execute(pc + 1, [...stack], [...path], [...traces])
             }
-            if (!forbiddenJumpdests.includes(jumpdest)) {
+            if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
                 this.execute(jumpdest, [...stack], [...path], [...traces])
               } else {
@@ -92,10 +90,12 @@ class Contract {
           const [label] = stack.splice(-ins)
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
-          if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-            this.execute(jumpdest, [...stack], [...path], [...traces])
-          } else {
-            console.log(chalk.bold.red('INVALID JUMP'))
+          if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
+            if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
+              this.execute(jumpdest, [...stack], [...path], [...traces])
+            } else {
+              console.log(chalk.bold.red('INVALID JUMP'))
+            }
           }
           return
         }
