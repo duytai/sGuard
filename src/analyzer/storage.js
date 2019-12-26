@@ -21,7 +21,7 @@ const Storage = {
     const stack = [loc]
     while (stack.length > 0) {
       const loc = stack.pop()
-      assert(loc[1] == 'ADD')
+      assert(loc[1] == 'ADD', `loc is ${loc[1]}`)
       const operands = loc.slice(2)
       const shaIdx = findIndex(operands, ([type, name]) => name == 'SHA3')
       const constIdx = findIndex(operands, ([type]) => type == 'const')

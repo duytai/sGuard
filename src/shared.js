@@ -28,7 +28,7 @@ const prettify = (values, spaceLen = 0) => {
 
 const prettifyPath = (path) => {
   path.forEach(({ pc, opcode, stack }, idx) => {
-    logger.debug(`${pc}|${Number(pc).toString(16)}\t${opcode.name}`)
+    logger.debug(`${Number(pc).toString(16)}\t${opcode.name}`)
     prettify(stack, 2)
   })
 }
@@ -46,6 +46,7 @@ const logger = createLogger({
   ),
   transports: [
     new (winston.transports.Console)({ level: 'debug' }),
+    new winston.transports.File({ filename: 'logs/combined.log', level: 'debug' })
   ]
 })
 /*

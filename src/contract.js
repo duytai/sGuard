@@ -3,7 +3,7 @@ const assert = require('assert')
 const chalk = require('chalk')
 const { keys, pickBy, last } = require('lodash')
 const { opcodes } = require('./evm')
-const { prettify, prettifyPath } = require('./shared')
+const { prettify, prettifyPath, logger } = require('./shared')
 const { analyze } = require('./analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -45,6 +45,8 @@ class Contract {
     if (!opcode) return
     const { name, ins, outs } = opcode
     path.push({ stack: [...stack], opcode, pc })
+    logger.info('--> Executing')
+    prettifyPath([last(path)])
     switch (name) {
       case 'PUSH': {
         const dataLen = this.bin[pc] - 0x5f
@@ -466,6 +468,8 @@ class Contract {
           outOffset,
           outLength,
         ] = stack.splice(-7).reverse()
+        logger.info('>> Executed path')
+        prettifyPath(path)
         analyze(value, traces)
         stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
         break
