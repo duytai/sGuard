@@ -84,13 +84,10 @@ const analyze = (symbol, traces) => {
       console.log(chalk.green(s.toString()))
     }
   })
-  console.log('*****')
   prettify([symbol])
-  console.log('/////')
   buildDependencyTree(root, traces)
-  prettifyTree(root)
-  // TODO: REMOVE IT LATER
-  // process.exit(0)
+  console.log('-----------------------------')
+  // prettifyTree(root)
 }
 
 module.exports = {

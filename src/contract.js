@@ -68,26 +68,18 @@ class Contract {
         if (cond[0] == 'const') {
           if (!cond[1].isZero()) {
             assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-            process.nextTick(() => {
-              this.execute(jumpdest, [...stack], [...path], [...traces])
-            })
+            this.execute(jumpdest, [...stack], [...path], [...traces])
           } else {
-            process.nextTick(() => {
-              this.execute(pc + 1, [...stack], [...path], [...traces])
-            })
+            this.execute(pc + 1, [...stack], [...path], [...traces])
           }
         } else {
           const forbiddenJumpdests = this.findForbiddenJumpdests(path)
           if (!forbiddenJumpdests.includes(pc + 1)) {
-            process.nextTick(() => {
-              this.execute(pc + 1, [...stack], [...path], [...traces])
-            })
+            this.execute(pc + 1, [...stack], [...path], [...traces])
           }
           if (!forbiddenJumpdests.includes(jumpdest)) {
             if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-              process.nextTick(() => {
-                this.execute(jumpdest, [...stack], [...path], [...traces])
-              })
+              this.execute(jumpdest, [...stack], [...path], [...traces])
             } else {
               console.log(chalk.bold.red('INVALID JUMPI'))
             }
@@ -100,9 +92,7 @@ class Contract {
         assert(label[0] == 'const')
         const jumpdest = label[1].toNumber()
         if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-          process.nextTick(() => {
-            this.execute(jumpdest, [...stack], [...path], [...traces])
-          })
+          this.execute(jumpdest, [...stack], [...path], [...traces])
         } else {
           console.log(chalk.bold.red('INVALID JUMP'))
         }
@@ -480,9 +470,7 @@ class Contract {
         break
       }
     }
-    process.nextTick(() => {
-      this.execute(pc + 1, [...stack], [...path], [...traces])
-    })
+    this.execute(pc + 1, [...stack], [...path], [...traces])
   }
 }
 

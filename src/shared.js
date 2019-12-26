@@ -23,12 +23,13 @@ const findSymbol = (symbol, cond) => {
 
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
-  values.forEach((v, idx) => console.log(`0x${idx.toString(16)} || ${space}${formatSymbol(v)}`))
+  values.forEach((v, idx) => console.log(`${space}${formatSymbol(v)}`))
 }
 
 const prettifyPath = (path) => {
-  path.forEach(({ pc, opcode }) => {
-    console.log(`${Number(pc).toString(16)}\t${opcode.name}`)
+  path.forEach(({ pc, opcode, stack }, idx) => {
+    console.log(`${pc}|${Number(pc).toString(16)}\t${opcode.name}`)
+    prettify(stack, 2)
   })
 }
 /*
