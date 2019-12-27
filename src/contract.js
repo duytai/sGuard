@@ -13,7 +13,6 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * MLOAD: loc, len, position in traces in traces
  * TODO: stop condition and JUMP address
  * */
-
 class Contract {
   constructor(bin) {
     this.bin = bin
@@ -21,7 +20,10 @@ class Contract {
 
   findForbiddenJumpdests(path, jumpdest) {
     const forbiddenJumpdests = new Set() 
-    const pcs = path.map(({ pc }) => pc)
+    const pcs = [
+      ...path.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
+      jumpdest,
+    ]
     const indexes = keys(pickBy(pcs, pc => pc == jumpdest)).map(i => parseInt(i))
     if (indexes.length > 2) {
       const subPaths = []
@@ -36,15 +38,22 @@ class Contract {
         }
       }
     }
+    console.log(jumpdest)
+    console.log(pcs)
+    console.log(indexes)
+    console.log(forbiddenJumpdests)
+    console.log('---')
     return [...forbiddenJumpdests]
   }
 
   execute(pc = 0, stack = [], path = [], traces = []) {
+    console.log(`stackLen: ${stack.length}`)
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
       path.push({ stack: [...stack], opcode, pc })
+      // console.log(`${pc} - ${name}`)
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -73,9 +82,7 @@ class Contract {
               this.execute(pc + 1, [...stack], [...path], [...traces])
             }
           } else {
-            if (!this.findForbiddenJumpdests(path, pc + 1).includes(pc + 1)) {
-              this.execute(pc + 1, [...stack], [...path], [...traces])
-            }
+            this.execute(pc + 1, [...stack], [...path], [...traces])
             if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
                 this.execute(jumpdest, [...stack], [...path], [...traces])
@@ -209,7 +216,7 @@ class Contract {
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
-            stack.push(x[1].eq(y[1]) ? BN(1) : BN(0))
+            stack.push(['const', x[1].eq(y[1]) ? new BN(1) : new BN(0)])
           }
           break
         }
@@ -365,11 +372,14 @@ class Contract {
         }
         case 'CODECOPY': {
           const [memOffset, codeOffset, codeLen] = stack.splice(-3).reverse()
-          assert(codeOffset[0] == 'const')
-          assert(codeLen[0] == 'const')
-          const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
-          const value = ['const', new BN(code.toString('hex'), 16)]
-          traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+          if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
+            const value = ['symbol', name, codeOffset, codeLen]
+            traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+          } else {
+            const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
+            const value = ['const', new BN(code.toString('hex'), 16)]
+            traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+          }
           break
         }
         case 'EXP': {
@@ -457,9 +467,9 @@ class Contract {
             outOffset,
             outLength,
           ] = stack.splice(-7).reverse()
-          logger.info('>> Executed path')
-          prettifyPath(path)
-          analyze(value, traces)
+          // logger.info('>> Executed path')
+          // prettifyPath(path)
+          // analyze(value, traces)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }

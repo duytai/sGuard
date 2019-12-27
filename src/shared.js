@@ -46,7 +46,7 @@ const logger = createLogger({
   ),
   transports: [
     new (winston.transports.Console)({ level: 'debug' }),
-    new winston.transports.File({ filename: 'logs/combined.log', level: 'debug' })
+    // new winston.transports.File({ filename: 'logs/combined.log', level: 'debug' })
   ]
 })
 /*
