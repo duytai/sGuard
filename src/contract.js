@@ -466,16 +466,7 @@ class Contract {
             outOffset,
             outLength,
           ] = stack.splice(-7).reverse()
-          // logger.info('>> Executed path')
-          // prettifyPath(path)
-          // console.log(`PC:${pc}`)
-          // try {
-            analyze(value, traces)
-          // } catch(e) {
-            // console.log(e)
-            // prettifyPath(path)
-            // process.exit()
-          // }
+          analyze(value, traces)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }

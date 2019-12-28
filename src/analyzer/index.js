@@ -76,6 +76,7 @@ const analyze = (symbol, traces) => {
   logger.info(`>> Start analyzing traces`)
   traces.forEach(trace => {
     const [type, name, loc] = trace
+    if (loc[0] == 'symbol' && loc[1] != 'ADD') return 
     prettify([trace])
     if (name == 'MSTORE') {
       const m = Memory.toVariable(loc)
