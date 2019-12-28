@@ -1,7 +1,7 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const chalk = require('chalk')
-const { keys, pickBy, last } = require('lodash')
+const { keys, pickBy, last, countBy } = require('lodash')
 const { opcodes } = require('./evm')
 const { prettify, prettifyPath, logger } = require('./shared')
 const { analyze } = require('./analyzer')
@@ -15,6 +15,7 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * */
 class Contract {
   constructor(bin) {
+    this.MAX_VISITED_BLOCK = 100;
     this.bin = bin
   }
 
@@ -38,22 +39,18 @@ class Contract {
         }
       }
     }
-    console.log(jumpdest)
-    console.log(pcs)
-    console.log(indexes)
-    console.log(forbiddenJumpdests)
-    console.log('---')
+    // Return all jumpdests to stop the execution
+    if (pcs.length >= this.MAX_VISITED_BLOCK)
+      return pcs
     return [...forbiddenJumpdests]
   }
 
   execute(pc = 0, stack = [], path = [], traces = []) {
-    console.log(`stackLen: ${stack.length}`)
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
       path.push({ stack: [...stack], opcode, pc })
-      // console.log(`${pc} - ${name}`)
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -71,6 +68,7 @@ class Contract {
           break
         }
         case 'JUMPI': {
+          console.log(`0x${Number(pc).toString(16)}\t${name}`)
           const [cond, label] = stack.splice(-ins) 
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
@@ -94,6 +92,7 @@ class Contract {
           return
         }
         case 'JUMP': {
+          console.log(`0x${Number(pc).toString(16)}\t${name}`)
           const [label] = stack.splice(-ins)
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
@@ -469,7 +468,14 @@ class Contract {
           ] = stack.splice(-7).reverse()
           // logger.info('>> Executed path')
           // prettifyPath(path)
-          // analyze(value, traces)
+          // console.log(`PC:${pc}`)
+          // try {
+            analyze(value, traces)
+          // } catch(e) {
+            // console.log(e)
+            // prettifyPath(path)
+            // process.exit()
+          // }
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
