@@ -73,10 +73,11 @@ const prettifyTree = (root, level = 0) => {
 const analyze = (symbol, traces) => {
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
+  logger.info(`>> Wei`)
+  prettify([symbol])
   logger.info(`>> Start analyzing traces`)
   traces.forEach(trace => {
     const [type, name, loc] = trace
-    if (loc[0] == 'symbol' && loc[1] != 'ADD') return 
     prettify([trace])
     if (name == 'MSTORE') {
       const m = Memory.toVariable(loc)
@@ -86,8 +87,6 @@ const analyze = (symbol, traces) => {
       logger.debug(chalk.green(s.toString()))
     }
   })
-  logger.info(`>> Wei`)
-  prettify([symbol])
   logger.info(`>> Build dependency tree`)
   buildDependencyTree(root, traces)
   logger.info(`>> Final tree`)
