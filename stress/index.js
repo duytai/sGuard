@@ -13,6 +13,6 @@ binFiles.forEach((binFile, idx) => {
   const bin = fs.readFileSync(path.join(binFolder, binFile), 'utf8').slice(2)
   logger.info(`binLengh: ${bin.length}`)
   const contract = new Contract(Buffer.from(bin, 'hex'))
-  // contract.execute()
+  contract.execute()
   logger.info(`binFile ${binFile}`)
 })

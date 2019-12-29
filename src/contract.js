@@ -15,7 +15,7 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * */
 class Contract {
   constructor(bin) {
-    this.MAX_VISITED_BLOCK = 100;
+    this.MAX_VISITED_BLOCK = 30;
     this.bin = bin
   }
 
