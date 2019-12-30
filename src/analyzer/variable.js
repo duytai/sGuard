@@ -12,9 +12,8 @@ class Variable {
     assert(other.constructor.name == 'Variable')
     const readableMembers = this.toReadableMembers()
     const otherReadableMembers = other.toReadableMembers()
-    const memberLen = Math.min(readableMembers.length, otherReadableMembers.length)
-    assert(memberLen > 0)
-    for (let i = 0; i < memberLen; i ++) {
+    if (readableMembers.length != otherReadableMembers.length) return false
+    for (let i = 0; i < readableMembers.length; i ++) {
       const myMember = readableMembers[i]
       const otherMember = otherReadableMembers[i]
       if (myMember != '*' && otherMember != '*' && myMember != otherMember)
