@@ -68,7 +68,6 @@ class Contract {
           break
         }
         case 'JUMPI': {
-          console.log(`0x${Number(pc).toString(16)}\t${name}`)
           const [cond, label] = stack.splice(-ins) 
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
@@ -92,7 +91,6 @@ class Contract {
           return
         }
         case 'JUMP': {
-          console.log(`0x${Number(pc).toString(16)}\t${name}`)
           const [label] = stack.splice(-ins)
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
@@ -466,6 +464,7 @@ class Contract {
             outOffset,
             outLength,
           ] = stack.splice(-7).reverse()
+          // prettifyPath(path)
           analyze(value, traces)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
