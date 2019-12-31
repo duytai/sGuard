@@ -13,7 +13,7 @@ class Trace {
     this.ts.push(t)
   }
 
-  toMemory() {
+  toMTrace() {
     const ts = this.ts.filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
@@ -25,7 +25,7 @@ class Trace {
     return trace
   }
 
-  toStorage() {
+  toSTrace() {
     const ts = this.ts.filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
@@ -45,6 +45,12 @@ class Trace {
     const trace = new Trace()
     trace.withTs([...this.ts])
     return trace
+  }
+
+  lastIndex() {
+    const idx = this.size() - 1
+    assert(idx >= 0)
+    return idx
   }
 
   size() {
