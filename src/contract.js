@@ -187,8 +187,8 @@ class Contract {
         case 'MLOAD': {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
-          const lastTraceIdx = ['const', new BN(trace.lastIndex())]
-          stack.push(['symbol', name, memLoc, size, lastTraceIdx])
+          const traceSize = ['const', new BN(trace.size())]
+          stack.push(['symbol', name, memLoc, size, traceSize])
           break
         }
         case 'SSTORE': {
@@ -199,8 +199,8 @@ class Contract {
         }
         case 'SLOAD': {
           const storageLoc = stack.pop()
-          const lastTraceIdx = ['const', new BN(trace.lastIndex())]
-          stack.push(['symbol', name, storageLoc, lastTraceIdx])
+          const traceSize = ['const', new BN(trace.size())]
+          stack.push(['symbol', name, storageLoc, traceSize])
           break
         }
         case 'ISZERO': {
@@ -392,8 +392,8 @@ class Contract {
         }
         case 'SHA3': {
           const [x, y] = stack.splice(-2).reverse()
-          const lastTraceIdx = ['const', new BN(trace.lastIndex())]
-          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, lastTraceIdx]])
+          const traceSize = ['const', new BN(trace.size())]
+          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, traceSize]])
           break
         }
         case 'CODESIZE': {

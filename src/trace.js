@@ -47,12 +47,6 @@ class Trace {
     return trace
   }
 
-  lastIndex() {
-    const idx = this.size() - 1
-    assert(idx >= 0)
-    return idx
-  }
-
   size() {
     return this.ts.length
   }
