@@ -71,7 +71,7 @@ const prettifyTree = (root, level = 0) => {
 }
 
 const analyze = (symbol, trace) => {
-  const traces = trace.ts
+  const traces = trace.backedStorage()
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
   logger.info(`>> Wei`)
