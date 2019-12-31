@@ -1,7 +1,7 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const chalk = require('chalk')
-const { keys, pickBy, last, countBy } = require('lodash')
+const { pickBy } = require('lodash')
 const { opcodes } = require('./evm')
 const { prettify, prettifyPath, logger } = require('./shared')
 const { analyze } = require('./analyzer')
@@ -10,7 +10,7 @@ const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
 /*
  * MSTORE: loc, value, len
- * MLOAD: loc, len, position in traces in traces
+ * MLOAD: loc, len, postion of MSTORE(40)
  * TODO: stop condition and JUMP address
  * */
 class Contract {
@@ -25,7 +25,7 @@ class Contract {
       ...path.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
       jumpdest,
     ]
-    const indexes = keys(pickBy(pcs, pc => pc == jumpdest)).map(i => parseInt(i))
+    const indexes = Object.keys(pickBy(pcs, pc => pc == jumpdest)).map(i => parseInt(i))
     if (indexes.length > 2) {
       const subPaths = []
       for (let i = 0; i < indexes.length - 1; i ++) {
@@ -45,7 +45,7 @@ class Contract {
     return [...forbiddenJumpdests]
   }
 
-  execute(pc = 0, stack = [], path = [], traces = []) {
+  execute(pc = 0, stack = [], path = [], traces = [], mTraces = [], sTraces = []) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
@@ -74,15 +74,43 @@ class Contract {
           if (cond[0] == 'const') {
             if (!cond[1].isZero()) {
               assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-              this.execute(jumpdest, [...stack], [...path], [...traces])
+              this.execute(
+                jumpdest,
+                [...stack],
+                [...path],
+                [...traces],
+                [...mTraces],
+                [...sTraces],
+              )
             } else {
-              this.execute(pc + 1, [...stack], [...path], [...traces])
+              this.execute(
+                pc + 1,
+                [...stack],
+                [...path],
+                [...traces],
+                [...mTraces],
+                [...sTraces],
+              )
             }
           } else {
-            this.execute(pc + 1, [...stack], [...path], [...traces])
+            this.execute(
+              pc + 1,
+              [...stack],
+              [...path],
+              [...traces],
+              [...mTraces],
+              [...sTraces],
+            )
             if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-                this.execute(jumpdest, [...stack], [...path], [...traces])
+                this.execute(
+                  jumpdest,
+                  [...stack],
+                  [...path],
+                  [...traces],
+                  [...mTraces],
+                  [...sTraces],
+                )
               } else {
                 console.log(chalk.bold.red('INVALID JUMPI'))
               }
@@ -96,7 +124,14 @@ class Contract {
           const jumpdest = label[1].toNumber()
           if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
             if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-              this.execute(jumpdest, [...stack], [...path], [...traces])
+              this.execute(
+                jumpdest,
+                [...stack],
+                [...path],
+                [...traces],
+                [...mTraces],
+                [...sTraces],
+              )
             } else {
               console.log(chalk.bold.red('INVALID JUMP'))
             }

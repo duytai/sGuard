@@ -82,15 +82,12 @@ const analyze = (symbol, traces) => {
     if (name == 'MSTORE') {
       const m = Memory.toVariable(loc)
       logger.debug(chalk.green(m.toString()))
-    } else {
-      const s = Storage.toVariable(loc, traces)
-      logger.debug(chalk.green(s.toString()))
-    }
+    } 
   })
-  logger.info(`>> Build dependency tree`)
-  buildDependencyTree(root, traces)
-  logger.info(`>> Final tree`)
-  prettifyTree(root)
+  // logger.info(`>> Build dependency tree`)
+  // buildDependencyTree(root, traces)
+  // logger.info(`>> Final tree`)
+  // prettifyTree(root)
 }
 
 module.exports = {

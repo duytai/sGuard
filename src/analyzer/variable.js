@@ -3,6 +3,7 @@ const { isConst } = require('../shared')
 
 // first member is variable name (string)
 // the rest is a list of symbols
+
 class Variable {
   constructor(members, variable) {
     this.members = variable ? [...variable.members, ...members] : members
