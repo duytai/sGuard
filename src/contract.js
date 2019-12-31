@@ -5,6 +5,7 @@ const { pickBy } = require('lodash')
 const { opcodes } = require('./evm')
 const { prettify, prettifyPath, logger } = require('./shared')
 const { analyze } = require('./analyzer')
+const Trace = require('./trace')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -45,7 +46,7 @@ class Contract {
     return [...forbiddenJumpdests]
   }
 
-  execute(pc = 0, stack = [], path = [], traces = []) {
+  execute(pc = 0, stack = [], path = [], trace = new Trace()) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
@@ -78,14 +79,14 @@ class Contract {
                 jumpdest,
                 [...stack],
                 [...path],
-                [...traces],
+                trace.clone(),
               )
             } else {
               this.execute(
                 pc + 1,
                 [...stack],
                 [...path],
-                [...traces],
+                trace.clone(),
               )
             }
           } else {
@@ -93,7 +94,7 @@ class Contract {
               pc + 1,
               [...stack],
               [...path],
-              [...traces],
+              trace.clone(),
             )
             if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
@@ -101,7 +102,7 @@ class Contract {
                   jumpdest,
                   [...stack],
                   [...path],
-                  [...traces],
+                  trace.clone(),
                 )
               } else {
                 console.log(chalk.bold.red('INVALID JUMPI'))
@@ -120,7 +121,7 @@ class Contract {
                 jumpdest,
                 [...stack],
                 [...path],
-                [...traces],
+                trace.clone(),
               )
             } else {
               console.log(chalk.bold.red('INVALID JUMP'))
@@ -179,21 +180,23 @@ class Contract {
         case 'MSTORE': {
           const [memOffset, memValue] = stack.splice(-2).reverse()
           const size = ['const', new BN(32)]
-          traces.push(['symbol', name, memOffset, memValue, size])
+          const t = ['symbol', name, memOffset, memValue, size]
+          trace.add(t)
           break
         }
         case 'MLOAD': {
           const size = ['const', new BN(32)]
-          stack.push(['symbol', name, stack.pop(), size, ['const', new BN(traces.length)]])
+          stack.push(['symbol', name, stack.pop(), size, ['const', new BN(trace.size())]])
           break
         }
         case 'SSTORE': {
           const [x, y] = stack.splice(-2).reverse()
-          traces.push(['symbol', name, x, y])
+          const t = ['symbol', name, x, y]
+          trace.add(t)
           break
         }
         case 'SLOAD': {
-          stack.push(['symbol', name, stack.pop(), ['const', new BN(traces.length)]])
+          stack.push(['symbol', name, stack.pop(), ['const', new BN(trace.size())]])
           break
         }
         case 'ISZERO': {
@@ -385,7 +388,7 @@ class Contract {
         }
         case 'SHA3': {
           const [x, y] = stack.splice(-2).reverse()
-          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, ['const', new BN(traces.length)]]])
+          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, ['const', new BN(trace.size())]]])
           break
         }
         case 'CODESIZE': {
@@ -396,11 +399,13 @@ class Contract {
           const [memOffset, codeOffset, codeLen] = stack.splice(-3).reverse()
           if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
             const value = ['symbol', name, codeOffset, codeLen]
-            traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+            const t = ['symbol', 'MSTORE', memOffset, value, codeLen]
+            trace.add(t)
           } else {
             const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
             const value = ['const', new BN(code.toString('hex'), 16)]
-            traces.push(['symbol', 'MSTORE', memOffset, value, codeLen])
+            const t = ['symbol', 'MSTORE', memOffset, value, codeLen]
+            trace.add(t)
           }
           break
         }
@@ -457,14 +462,16 @@ class Contract {
         case 'CALLDATACOPY': {
           const [memOffset, dataOffset, dataLen] = stack.splice(-3).reverse()
           const callData = ['symbol', 'CALLDATALOAD', dataOffset]
-          traces.push(['symbol', 'MSTORE', memOffset, callData, dataLen])
+          const t = ['symbol', 'MSTORE', memOffset, callData, dataLen]
+          trace.add(t)
           break
         }
         case 'RETURNDATACOPY': {
           const [memOffset, returnDataOffset, dataLen] = stack.splice(-3).reverse()
           // TODO: return data is not a opcode
           const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
-          traces.push(['symbol', 'MSTORE', memOffset, returnData, dataLen])
+          const t = ['symbol', 'MSTORE', memOffset, returnData, dataLen]
+          trace.add(t)
           break
         }
         case 'DELEGATECALL': {
@@ -490,7 +497,7 @@ class Contract {
             outLength,
           ] = stack.splice(-7).reverse()
           // prettifyPath(path)
-          analyze(value, traces)
+          analyze(value, trace)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }

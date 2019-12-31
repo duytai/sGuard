@@ -70,7 +70,8 @@ const prettifyTree = (root, level = 0) => {
   })
 }
 
-const analyze = (symbol, traces) => {
+const analyze = (symbol, trace) => {
+  const traces = trace.ts
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
   logger.info(`>> Wei`)
