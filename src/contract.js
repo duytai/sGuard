@@ -45,7 +45,7 @@ class Contract {
     return [...forbiddenJumpdests]
   }
 
-  execute(pc = 0, stack = [], path = [], traces = [], mTraces = [], sTraces = []) {
+  execute(pc = 0, stack = [], path = [], traces = []) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
@@ -79,8 +79,6 @@ class Contract {
                 [...stack],
                 [...path],
                 [...traces],
-                [...mTraces],
-                [...sTraces],
               )
             } else {
               this.execute(
@@ -88,8 +86,6 @@ class Contract {
                 [...stack],
                 [...path],
                 [...traces],
-                [...mTraces],
-                [...sTraces],
               )
             }
           } else {
@@ -98,8 +94,6 @@ class Contract {
               [...stack],
               [...path],
               [...traces],
-              [...mTraces],
-              [...sTraces],
             )
             if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
@@ -108,8 +102,6 @@ class Contract {
                   [...stack],
                   [...path],
                   [...traces],
-                  [...mTraces],
-                  [...sTraces],
                 )
               } else {
                 console.log(chalk.bold.red('INVALID JUMPI'))
@@ -129,8 +121,6 @@ class Contract {
                 [...stack],
                 [...path],
                 [...traces],
-                [...mTraces],
-                [...sTraces],
               )
             } else {
               console.log(chalk.bold.red('INVALID JUMP'))
