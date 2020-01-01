@@ -12,16 +12,8 @@ const prettify = (values, spaceLen = 0) => {
   values.forEach((v, idx) => logger.debug(`${space}${formatSymbol(v)}`))
 }
 
-const prettifyPath = (path) => {
-  path.forEach(({ pc, opcode, stack }, idx) => {
-    logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
-    prettify(stack, 2)
-  })
-}
-
 module.exports = {
   prettify,
-  prettifyPath,
   formatSymbol,
 }
 

@@ -1,12 +1,11 @@
 const BN = require('bn.js')
 const assert = require('assert')
-const chalk = require('chalk')
-const { pickBy } = require('lodash')
-const { prettify, prettifyPath, logger } = require('../shared')
-const { analyze } = require('../analyzer')
 const Trace = require('../trace')
 const Stack = require('./stack')
+const ExecutionPath = require('./execPath')
 const opcodes = require('./opcodes')
+const { logger } = require('../shared')
+const { analyze } = require('../analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -17,42 +16,15 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * */
 class Evm {
   constructor(bin) {
-    this.MAX_VISITED_BLOCK = 30;
     this.bin = bin
   }
 
-  findForbiddenJumpdests(path, jumpdest) {
-    const forbiddenJumpdests = new Set() 
-    const pcs = [
-      ...path.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
-      jumpdest,
-    ]
-    const indexes = Object.keys(pickBy(pcs, pc => pc == jumpdest)).map(i => parseInt(i))
-    if (indexes.length > 2) {
-      const subPaths = []
-      for (let i = 0; i < indexes.length - 1; i ++) {
-        subPaths.push(pcs.slice(indexes[i], indexes[i + 1]))
-      }
-      for (let i = 0; i < subPaths.length - 1; i ++) {
-        for (let j = i + 1; j < subPaths.length; j ++) {
-          if (subPaths[i].join('') == subPaths[j].join('')) {
-            forbiddenJumpdests.add(subPaths[i][0])
-          }
-        }
-      }
-    }
-    // Return all jumpdests to stop the execution
-    if (pcs.length >= this.MAX_VISITED_BLOCK)
-      return pcs
-    return [...forbiddenJumpdests]
-  }
-
-  execute(pc = 0, stack = new Stack(), path = [], trace = new Trace()) {
+  execute(pc = 0, stack = new Stack(), ep = new ExecutionPath(), trace = new Trace()) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      path.push({ stack: stack.clone(), opcode, pc })
+      ep.add({ stack: stack.clone(), opcode, pc })
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -79,14 +51,14 @@ class Evm {
               this.execute(
                 jumpdest,
                 stack.clone(),
-                [...path],
+                ep.clone(),
                 trace.clone(),
               )
             } else {
               this.execute(
                 pc + 1,
                 stack.clone(),
-                [...path],
+                ep.clone(),
                 trace.clone(),
               )
             }
@@ -94,19 +66,19 @@ class Evm {
             this.execute(
               pc + 1,
               stack.clone(),
-              [...path],
+              ep.clone(),
               trace.clone(),
             )
-            if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
+            if (!ep.findForbiddenJumpdests(jumpdest).includes(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
                 this.execute(
                   jumpdest,
                   stack.clone(),
-                  [...path],
+                  ep.clone(),
                   trace.clone(),
                 )
               } else {
-                console.log(chalk.bold.red('INVALID JUMPI'))
+                logger.error('INVALID JUMPI')
               }
             }
           }
@@ -116,16 +88,16 @@ class Evm {
           const label = stack.pop()
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
-          if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
+          if (!ep.findForbiddenJumpdests(jumpdest).includes(jumpdest)) {
             if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
               this.execute(
                 jumpdest,
                 stack.clone(),
-                [...path],
+                ep.clone(),
                 trace.clone(),
               )
             } else {
-              console.log(chalk.bold.red('INVALID JUMP'))
+              logger.error('INVALID JUMP')
             }
           }
           return
@@ -494,13 +466,13 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          // prettifyPath(path)
+          ep.prettify()
           analyze(value, trace)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
         default: {
-          console.log(chalk.bold.red(`Missing ${name}`))
+          logger.error(`Missing ${name}`)
           const inputs = stack.popN(ins)
           assert(outs <= 1)
           if (outs) {

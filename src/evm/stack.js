@@ -45,8 +45,8 @@ class Stack {
     return stack
   }
 
-  prettify() {
-    prettify(this.st)
+  prettify(space = 0) {
+    prettify(this.st, space)
   }
 
 }
