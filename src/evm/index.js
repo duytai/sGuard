@@ -1,5 +1,3 @@
-const opcodes = require('./opcodes')
+const Evm = require('./evm')
 
-module.exports = {
-  opcodes,
-}
+module.exports = Evm

@@ -2,10 +2,10 @@ const BN = require('bn.js')
 const assert = require('assert')
 const chalk = require('chalk')
 const { pickBy } = require('lodash')
-const { opcodes } = require('./evm')
-const { prettify, prettifyPath, logger } = require('./shared')
-const { analyze } = require('./analyzer')
-const Trace = require('./trace')
+const { prettify, prettifyPath, logger } = require('../shared')
+const { analyze } = require('../analyzer')
+const Trace = require('../trace')
+const opcodes = require('./opcodes')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -14,7 +14,7 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
  * MLOAD: loc, len, postion of MSTORE(40)
  * TODO: stop condition and JUMP address
  * */
-class Contract {
+class Evm {
   constructor(bin) {
     this.MAX_VISITED_BLOCK = 30;
     this.bin = bin
@@ -521,4 +521,4 @@ class Contract {
   }
 }
 
-module.exports = Contract 
+module.exports = Evm 
