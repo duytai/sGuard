@@ -14,10 +14,6 @@ class Trace {
     this.ts.push(t)
   }
 
-  backedStorage() {
-    return [...this.ts]
-  }
-
   clone() {
     const trace = new Trace()
     trace.withTs([...this.ts])

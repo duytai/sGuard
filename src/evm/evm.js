@@ -5,6 +5,7 @@ const { pickBy } = require('lodash')
 const { prettify, prettifyPath, logger } = require('../shared')
 const { analyze } = require('../analyzer')
 const Trace = require('../trace')
+const Stack = require('./stack')
 const opcodes = require('./opcodes')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -46,12 +47,12 @@ class Evm {
     return [...forbiddenJumpdests]
   }
 
-  execute(pc = 0, stack = [], path = [], trace = new Trace()) {
+  execute(pc = 0, stack = new Stack(), path = [], trace = new Trace()) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      path.push({ stack: [...stack], opcode, pc })
+      path.push({ stack: stack.clone(), opcode, pc })
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -65,11 +66,11 @@ class Evm {
           break
         }
         case 'LOG': {
-          stack.splice(-ins)
+          stack.pop(ins)
           break
         }
         case 'JUMPI': {
-          const [cond, label] = stack.splice(-ins) 
+          const [label, cond] = stack.popN(ins) 
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
           if (cond[0] == 'const') {
@@ -77,14 +78,14 @@ class Evm {
               assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
               this.execute(
                 jumpdest,
-                [...stack],
+                stack.clone(),
                 [...path],
                 trace.clone(),
               )
             } else {
               this.execute(
                 pc + 1,
-                [...stack],
+                stack.clone(),
                 [...path],
                 trace.clone(),
               )
@@ -92,7 +93,7 @@ class Evm {
           } else {
             this.execute(
               pc + 1,
-              [...stack],
+              stack.clone(),
               [...path],
               trace.clone(),
             )
@@ -100,7 +101,7 @@ class Evm {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
                 this.execute(
                   jumpdest,
-                  [...stack],
+                  stack.clone(),
                   [...path],
                   trace.clone(),
                 )
@@ -112,14 +113,14 @@ class Evm {
           return
         }
         case 'JUMP': {
-          const [label] = stack.splice(-ins)
+          const label = stack.pop()
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
           if (!this.findForbiddenJumpdests(path, jumpdest).includes(jumpdest)) {
             if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
               this.execute(
                 jumpdest,
-                [...stack],
+                stack.clone(),
                 [...path],
                 trace.clone(),
               )
@@ -130,19 +131,11 @@ class Evm {
           return
         }
         case 'SWAP': {
-          const distance = this.bin[pc] - 0x8f
-          const target = stack.length - 1 - distance
-          const tmp = stack[target]
-          assert(target >= 0)
-          stack[target] = stack[stack.length - 1]
-          stack[stack.length - 1] = tmp
+          stack.swapN(this.bin[pc] - 0x8f)
           break
         }
         case 'DUP': {
-          const distance = this.bin[pc] - 0x7f
-          const target = stack.length - distance
-          assert(target >= 0)
-          stack.push(stack[target])
+          stack.dupN(this.bin[pc] - 0x7f)
           break
         }
         case 'REVERT':
@@ -178,7 +171,7 @@ class Evm {
           break
         }
         case 'MSTORE': {
-          const [memLoc, memValue] = stack.splice(-2).reverse()
+          const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
           trace.add(t)
@@ -192,7 +185,7 @@ class Evm {
           break
         }
         case 'SSTORE': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           const t = ['symbol', name, x, y]
           trace.add(t)
           break
@@ -213,7 +206,7 @@ class Evm {
           break
         }
         case 'SHL': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -227,7 +220,7 @@ class Evm {
           break
         }
         case 'SHR': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -241,7 +234,7 @@ class Evm {
           break
         }
         case 'EQ': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -250,7 +243,7 @@ class Evm {
           break
         }
         case 'AND': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -262,7 +255,7 @@ class Evm {
           break
         }
         case 'LT': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -271,7 +264,7 @@ class Evm {
           break
         }
         case 'SLT': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -280,7 +273,7 @@ class Evm {
           break
         }
         case 'GT': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -289,7 +282,7 @@ class Evm {
           break
         }
         case 'MUL': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -298,7 +291,7 @@ class Evm {
           break
         }
         case 'SUB': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -307,7 +300,7 @@ class Evm {
           break
         }
         case 'ADD': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -316,7 +309,7 @@ class Evm {
           break
         }
         case 'DIV': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -329,7 +322,7 @@ class Evm {
           break
         }
         case 'SDIV': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -345,7 +338,7 @@ class Evm {
           break
         }
         case 'MOD': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -358,7 +351,7 @@ class Evm {
           break
         }
         case 'SMOD': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -378,7 +371,7 @@ class Evm {
           break
         }
         case 'ADDMOD': {
-          const [x, y, z] = stack.splice(-3).reverse()
+          const [x, y, z] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const' || z[0] != 'const') {
             stack.push(['symbol', name, x, y, z])
           } else {
@@ -391,7 +384,7 @@ class Evm {
           break
         }
         case 'SHA3': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           const traceSize = ['const', new BN(trace.size())]
           stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, traceSize]])
           break
@@ -401,7 +394,7 @@ class Evm {
           break
         }
         case 'CODECOPY': {
-          const [memLoc, codeOffset, codeLen] = stack.splice(-3).reverse()
+          const [memLoc, codeOffset, codeLen] = stack.popN(ins)
           if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
             const value = ['symbol', name, codeOffset, codeLen]
             const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
@@ -415,7 +408,7 @@ class Evm {
           break
         }
         case 'EXP': {
-          const [base, exponent] = stack.splice(-2).reverse()
+          const [base, exponent] = stack.popN(ins)
           if (exponent[0] == 'const' && exponent[1].isZero()) {
             stack.push(['const', new BN(1)])
           } else if (base[0] == 'const' && base[1].isZero()) {
@@ -445,7 +438,7 @@ class Evm {
           break
         }
         case 'OR': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -455,7 +448,7 @@ class Evm {
           break
         }
         case 'XOR': {
-          const [x, y] = stack.splice(-2).reverse()
+          const [x, y] = stack.popN(ins)
           if (x[0] != 'const' || y[0] != 'const') {
             stack.push(['symbol', name, x, y])
           } else {
@@ -465,14 +458,14 @@ class Evm {
           break
         }
         case 'CALLDATACOPY': {
-          const [memLoc, dataOffset, dataLen] = stack.splice(-3).reverse()
+          const [memLoc, dataOffset, dataLen] = stack.popN(ins)
           const callData = ['symbol', 'CALLDATALOAD', dataOffset]
           const t = ['symbol', 'MSTORE', memLoc, callData, dataLen]
           trace.add(t)
           break
         }
         case 'RETURNDATACOPY': {
-          const [memLoc, returnDataOffset, dataLen] = stack.splice(-3).reverse()
+          const [memLoc, returnDataOffset, dataLen] = stack.popN(ins)
           // TODO: return data is not a opcode
           const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
           const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen]
@@ -487,7 +480,7 @@ class Evm {
             inLength,
             outOffset,
             outLength,
-          ] = stack.splice(-6).reverse()
+          ] = stack.popN(ins)
           stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
           break
         }
@@ -500,7 +493,7 @@ class Evm {
             inLength,
             outOffset,
             outLength,
-          ] = stack.splice(-7).reverse()
+          ] = stack.popN(ins)
           // prettifyPath(path)
           analyze(value, trace)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
@@ -508,7 +501,7 @@ class Evm {
         }
         default: {
           console.log(chalk.bold.red(`Missing ${name}`))
-          const inputs = stack.splice(-ins).reverse()
+          const inputs = stack.popN(ins)
           assert(outs <= 1)
           if (outs) {
             stack.push(['symbol', name, ...inputs])
