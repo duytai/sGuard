@@ -6,9 +6,7 @@ const { prettify, logger, findSymbol } = require('../shared')
 const analyze = (symbol, trace) => {
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
-  logger.info(`>> Wei`)
-  prettify([symbol])
-  logger.info(`>> Full traces`)
+  trace.add(symbol)
   trace.prettify()
   // logger.info(`>> Build dependency tree`)
   // buildDependencyTree(root, traces)

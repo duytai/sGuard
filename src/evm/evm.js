@@ -6,11 +6,7 @@ const { analyze } = require('../analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-/*
- * MSTORE: loc, value, len
- * MLOAD: loc, len, postion of MSTORE(40)
- * TODO: stop condition and JUMP address
- * */
+
 class Evm {
   constructor(bin) {
     this.bin = bin

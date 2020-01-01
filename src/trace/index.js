@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { prettify } = require('../shared')
+const { prettify, logger } = require('../shared')
 
 class Trace {
   constructor() {
@@ -25,6 +25,7 @@ class Trace {
   }
 
   prettify() {
+    logger.info('>> Full traces')
     prettify(this.ts)
   }
 }

@@ -41,13 +41,13 @@ class ExecutionPath {
         }
       }
     }
-    // Return all jumpdests to stop the execution
     if (pcs.length >= this.MAX_VISITED_BLOCK)
       return pcs
     return [...forbiddenJumpdests]
   }
 
   prettify() {
+    logger.info('>> Full ep')
     this.ep.forEach(({ pc, opcode, stack }, idx) => {
       logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
       stack.prettify(2)
