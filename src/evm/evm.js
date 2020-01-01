@@ -1,8 +1,5 @@
 const BN = require('bn.js')
 const assert = require('assert')
-const Trace = require('../trace')
-const Stack = require('./stack')
-const ExecutionPath = require('./execPath')
 const opcodes = require('./opcodes')
 const { logger } = require('../shared')
 const { analyze } = require('../analyzer')
@@ -19,7 +16,7 @@ class Evm {
     this.bin = bin
   }
 
-  execute(pc = 0, stack = new Stack(), ep = new ExecutionPath(), trace = new Trace()) {
+  execute(pc = 0, stack, ep, trace) {
     while (true) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
@@ -38,7 +35,7 @@ class Evm {
           break
         }
         case 'LOG': {
-          stack.pop(ins)
+          stack.popN(ins)
           break
         }
         case 'JUMPI': {
@@ -466,7 +463,6 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          ep.prettify()
           analyze(value, trace)
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
