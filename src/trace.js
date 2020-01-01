@@ -14,8 +14,9 @@ class Trace {
     this.ts.push(t)
   }
 
-  toMemoryPoiterTrace() {
-    const ts = this.ts.filter(([type, name, loc ]) => {
+  toMemoryLocTrace(traceSize) {
+    traceSize = traceSize || this.ts.length
+    const ts = this.ts.slice(0, traceSize).filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
       const locNumber = loc[1].toNumber()
@@ -26,12 +27,37 @@ class Trace {
     return trace
   }
 
-  toStoragePointerTrace() {
-    const ts = this.ts.filter(([type, name, loc ]) => {
+  toStorageLocTrace(traceSize) {
+    traceSize = traceSize || this.ts.length
+    const ts = this.ts.slice(0, traceSize).filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
       const locNumber = loc[1].toNumber()
       return locNumber >= 0x00 && locNumber < 0x40
+    })
+    const trace = new Trace()
+    trace.withTs([...ts])
+    return trace
+  }
+
+  toMemoryAccessTrace(traceSize) {
+    traceSize = traceSize || this.ts.length
+    const ts = this.ts.slice(0, traceSize).filter(([type, name, loc]) => {
+      if (name != 'MSTORE') return false
+      if (loc[0] == 'const' && loc[1] <= 0x80) return false
+      return true
+    })
+    const trace = new Trace()
+    trace.withTs([...ts])
+    return trace
+  }
+
+  toStorageAccessTrace(traceSize) {
+    traceSize = traceSize || this.ts.length
+    const ts = this.ts.slice(0, traceSize).filter(([type, name, loc]) => {
+      if (name != 'SSTORE') return false
+      if (loc[0] == 'const' && loc[1] <= 0x80) return false
+      return true
     })
     const trace = new Trace()
     trace.withTs([...ts])

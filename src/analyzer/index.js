@@ -75,7 +75,7 @@ const analyze = (symbol, trace) => {
   const [type, name, ...params] = symbol
   logger.info(`>> Wei`)
   prettify([symbol])
-  logger.info(`>> Start analyzing traces`)
+  logger.info(`>> Full traces`)
   trace.prettify()
   // logger.info(`>> Build dependency tree`)
   // buildDependencyTree(root, traces)
