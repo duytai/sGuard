@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { prettify } = require('./shared')
 
 class Trace {
   constructor() {
@@ -13,7 +14,7 @@ class Trace {
     this.ts.push(t)
   }
 
-  toMTrace() {
+  toMemoryPoiterTrace() {
     const ts = this.ts.filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
@@ -25,7 +26,7 @@ class Trace {
     return trace
   }
 
-  toSTrace() {
+  toStoragePointerTrace() {
     const ts = this.ts.filter(([type, name, loc ]) => {
       if (name != 'MSTORE') return false
       if (loc[0] != 'const') return false
@@ -49,6 +50,10 @@ class Trace {
 
   size() {
     return this.ts.length
+  }
+
+  prettify() {
+    prettify(this.ts)
   }
 }
 

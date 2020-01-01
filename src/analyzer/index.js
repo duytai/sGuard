@@ -71,20 +71,12 @@ const prettifyTree = (root, level = 0) => {
 }
 
 const analyze = (symbol, trace) => {
-  const traces = trace.backedStorage()
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
   logger.info(`>> Wei`)
   prettify([symbol])
   logger.info(`>> Start analyzing traces`)
-  traces.forEach(trace => {
-    const [type, name, loc] = trace
-    prettify([trace])
-    if (name == 'MSTORE') {
-      const m = Memory.toVariable(loc)
-      logger.debug(chalk.green(m.toString()))
-    } 
-  })
+  trace.prettify()
   // logger.info(`>> Build dependency tree`)
   // buildDependencyTree(root, traces)
   // logger.info(`>> Final tree`)
