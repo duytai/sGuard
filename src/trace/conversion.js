@@ -1,11 +1,12 @@
 const assert = require('assert')
-const { findIndex } = require('lodash')
+const { isEmpty, findIndex, reverse } = require('lodash')
 const Variable = require('./variable')
 const {
   prettify,
   isConst,
   isConstWithValue,
   logger,
+  findSymbol,
 } = require('../shared')
 
 const isVariable = (t) => {
@@ -51,54 +52,29 @@ const toLocalVariable = (t, trace) => {
   const properties = []
   const stack = [t]
   while (stack.length > 0) {
-    const loc = stack.pop()
-    switch (loc[1]) {
-      case 'ADD': {
-        const operands = loc.slice(2)
-        const mloadIdx = findIndex(operands, isMload40)
-        if (mloadIdx >= 0) {
-          const base = operands[mloadIdx]
-          const offset = operands[1 - mloadIdx]
-          const variable = toLocalVariable(base, trace)
-          variable.addN([...properties, offset])
-          return variable
-        }
-        // const constIdx = findIndex(operands, ([type]) => type == 'const')
-        // const addIndex = findIndex(operands, ([type, name]) => name == 'ADD')
-        // const subIndex = findIndex(operands, ([type, name]) => name == 'SUB')
-        // if (mloadIdx >= 0) {
-          // const base = operands[mloadIdx]
-          // const offset = operands[1 - mloadIdx]
-          // const members = reverse([...properties, offset])
-          // return new Variable(members, this.toVariable(base))
-        // }
-        // if (constIdx == 1) {
-          // const [offset, base] = operands
-          // const root = `m_${base[1].toString(16)}`
-          // const members = reverse([...properties, offset])
-          // return new Variable([root, ...members])
-        // }
-        // assert(addIndex != -1 || subIndex != -1)
-        // if (addIndex != -1) {
-          // const base = operands[addIndex]
-          // const offset = operands[1 - addIndex]
-          // properties.push(offset)
-          // stack.push(base)
-        // }
-        // if (subIndex != -1) {
-          // const base = operands[subIndex]
-          // const offset = operands[1 - subIndex]
-          // properties.push(offset)
-          // stack.push(base)
-        // }
-        break
+    const [type, name, ...operands] = stack.pop()
+    assert(name == 'ADD' || name == 'SUB', `loc is ${name}`)
+    if (name == 'ADD') {
+      const hasLeftMload = findSymbol(operands[0], isMload40).length > 0
+      const hasRightMload = findSymbol(operands[1], isMload40).length > 0
+      const constIdx = findIndex(operands, ([type]) => type == 'const')
+      if (!hasLeftMload && !hasRightMload) {
+        assert(false, 'Need an example')
       }
-      case 'SUB': {
-        break
+      const baseIdx = hasRightMload ? 1 : 0
+      const base = operands[baseIdx]
+      const offset = operands[1 - baseIdx]
+      if (isMload40(base)) {
+        const variable = toLocalVariable(base, trace)
+        variable.addN(reverse([...properties, offset]))
+        return variable
+      } else {
+        properties.push(offset)
+        stack.push(base)
       }
-      default: {
-        assert(false, `loc is ${loc[1]}`)
-      }
+    }
+    if (name == 'SUB') {
+      stack.push(operands[0])
     }
   }
 }

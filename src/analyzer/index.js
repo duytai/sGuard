@@ -6,7 +6,6 @@ const { prettify, logger, findSymbol } = require('../shared')
 const analyze = (symbol, trace) => {
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
-  trace.add(symbol)
   trace.prettify()
   logger.info(">> Full conversion")
   trace.applyConversion()
