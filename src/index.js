@@ -1,6 +1,7 @@
 const assert = require('assert')
 const fs = require('fs')
-const { Evm, Stack, ExecutionPath, Trace } = require('./evm')
+const { Evm, Stack, ExecutionPath } = require('./evm')
+const { Trace } = require('./trace')
 const { logger } = require('./shared')
 const { forEach } = require('lodash')
 

@@ -61,6 +61,7 @@ const toLocalVariable = (t, trace) => {
       if (!hasLeftMload && !hasRightMload) {
         assert(false, 'Need an example')
       }
+      // FIXME: both left and right contain mload then left is base  (However it could be right)
       const baseIdx = hasRightMload ? 1 : 0
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
@@ -92,4 +93,5 @@ const toVariable = (t, trace) => {
 module.exports = {
   isVariable,
   toVariable,
+  toLocalVariable,
 }

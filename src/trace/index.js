@@ -1,10 +1,8 @@
 const assert = require('assert')
 const { prettify, logger } = require('../shared')
-const {
-  isVariable,
-  toVariable,
-} = require('./conversion')
+const conversion = require('./conversion')
 
+const { isVariable, toVariable } = conversion
 class Trace {
   constructor() {
     this.ts = []
@@ -63,4 +61,7 @@ class Trace {
   }
 }
 
-module.exports = Trace
+module.exports = {
+  Trace,
+  ...conversion,
+} 
