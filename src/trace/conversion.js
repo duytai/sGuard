@@ -12,9 +12,9 @@ const {
 const isVariable = (t) => {
   if (isConst(t)) return false
   const [type, name, loc] = t
-  if (name != 'MSTORE' && name != 'SSTORE') return false
-  if (isConst(loc)) return loc[1].toNumber() >= 0x80
-  return true
+  if (name == 'SSTORE') return true
+  if (name == 'MSTORE') return (isConst(loc) && loc[1].toNumber() >= 0x80) || !isConst(loc)
+  return false
 }
 
 const isStateVariable = (t) => {
@@ -81,13 +81,13 @@ const toLocalVariable = (t, trace) => {
 }
 
 const toStateVariable = (t) => {
+  if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
 }
 
 const toVariable = (t, trace) => {
-  assert(isVariable(t))
-  if (isLocalVariable(t)) {
-    return toLocalVariable(t[2], trace)
-  }
+  if (isLocalVariable(t)) return toLocalVariable(t[2], trace)
+  if (isStateVariable(t)) return toStateVariable(t[2], trace)
+  assert(false)
 }
 
 module.exports = {
