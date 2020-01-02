@@ -8,10 +8,8 @@ const analyze = (symbol, trace) => {
   const [type, name, ...params] = symbol
   trace.add(symbol)
   trace.prettify()
-  // logger.info(`>> Build dependency tree`)
-  // buildDependencyTree(root, traces)
-  // logger.info(`>> Final tree`)
-  // prettifyTree(root)
+  logger.info(">> Full conversion")
+  trace.applyConversion()
 }
 
 module.exports = {

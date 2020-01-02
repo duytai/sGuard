@@ -15,12 +15,6 @@ class Trace {
   }
 
   add(t) {
-    if (isVariable(t)) {
-      const variable = toVariable(t, this)
-      if (variable) {
-        variable.prettify()
-      }
-    }
     this.ts.push(t)
   }
 
@@ -45,6 +39,18 @@ class Trace {
     const ts = this.ts.filter(t => cond(t))
     trace.withTs([...ts])
     return trace
+  }
+
+  applyConversion() {
+    this.ts.forEach(t => {
+      if (isVariable(t)) {
+        const variable = toVariable(t, this)
+        if (variable) {
+          prettify([t])
+          variable.prettify()
+        }
+      }
+    })
   }
 
   size() {
