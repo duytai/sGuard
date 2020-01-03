@@ -3,11 +3,70 @@ const isSymbol = symbol => symbol[0] == 'symbol'
 const isConsts = symbols => symbols.reduce((agg, symbol) => agg && isSymbol(symbol), true) 
 const isConstWithValue = (symbol, value) => symbol[0] == 'const' && symbol[1].toNumber() == value
 
+const isVariable = (t) => {
+  if (isConst(t)) return false
+  const [type, name, loc] = t
+  if (name == 'SSTORE') return true
+  if (name == 'MSTORE') return (isConst(loc) && loc[1].toNumber() >= 0x80) || !isConst(loc)
+  return false
+}
+
+const isStateVariable = (t) => {
+  if (!isVariable(t)) return false
+  return t[1] == 'SSTORE'
+} 
+
+const isLocalVariable = (t) => {
+  if (!isVariable(t)) return false
+  return t[1] == 'MSTORE'
+} 
+
+const isMload40 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MLOAD') return false
+  return isConstWithValue(t[2], 0x40)
+}
+
+const isMstore40 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MSTORE') return false
+  return isConstWithValue(t[2], 0x40)
+}
+
+const isMload0 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MLOAD') return false
+  return isConstWithValue(t[2], 0x00)
+}
+
+const isMstore0 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MSTORE') return false
+  return isConstWithValue(t[2], 0x00)
+}
+
+const isSha3Mload0 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'SHA3') return false
+  return isMload0(t[2])
+}
+
+const isOpcode = (t, opcodeName) => t[1] == opcodeName 
+
 module.exports = {
   isConst,
   isSymbol,
   isConsts,
   isConstWithValue,
+  isVariable,
+  isStateVariable,
+  isLocalVariable,
+  isMload40,
+  isMstore40,
+  isMload0,
+  isMstore0,
+  isSha3Mload0,
+  isOpcode,
 }
 
 

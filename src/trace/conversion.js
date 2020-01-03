@@ -4,60 +4,16 @@ const Variable = require('./variable')
 const {
   prettify,
   isConst,
-  isConstWithValue,
   logger,
   findSymbol,
+  isVariable,
+  isLocalVariable,
+  isStateVariable,
+  isMload40,
+  isMstore40,
+  isSha3Mload0,
+  isMstore0,
 } = require('../shared')
-
-const isVariable = (t) => {
-  if (isConst(t)) return false
-  const [type, name, loc] = t
-  if (name == 'SSTORE') return true
-  if (name == 'MSTORE') return (isConst(loc) && loc[1].toNumber() >= 0x80) || !isConst(loc)
-  return false
-}
-
-const isStateVariable = (t) => {
-  if (!isVariable(t)) return false
-  return t[1] == 'SSTORE'
-} 
-
-const isLocalVariable = (t) => {
-  if (!isVariable(t)) return false
-  return t[1] == 'MSTORE'
-} 
-
-const isMload40 = (t) => {
-  if (t[0] == 'const') return false
-  if (t[1] != 'MLOAD') return false
-  return isConstWithValue(t[2], 0x40)
-}
-
-const isMstore40 = (t) => {
-  if (t[0] == 'const') return false
-  if (t[1] != 'MSTORE') return false
-  return isConstWithValue(t[2], 0x40)
-}
-
-const isMload0 = (t) => {
-  if (t[0] == 'const') return false
-  if (t[1] != 'MLOAD') return false
-  return isConstWithValue(t[2], 0x00)
-}
-
-const isMstore0 = (t) => {
-  if (t[0] == 'const') return false
-  if (t[1] != 'MSTORE') return false
-  return isConstWithValue(t[2], 0x00)
-}
-
-const isSha3Mload0 = (t) => {
-  if (t[0] == 'const') return false
-  if (t[1] != 'SHA3') return false
-  return isMload0(t[2])
-}
-
-const isOpcode = (t, opcodeName) => t[1] == opcodeName 
 
 const toLocalVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
