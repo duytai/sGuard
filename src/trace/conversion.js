@@ -61,22 +61,13 @@ const isOpcode = (t, opcodeName) => t[1] == opcodeName
 
 const toLocalVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
-  if (isOpcode(t, 'CALLDATALOAD'))  {
-    const dataOffset = t[2]
-    assert(isConst(dataOffset))
-    return new Variable(`arg_${dataOffset[1].toString(16)}`)
-  }
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    const lastTrace = subTrace.get(subTrace.size() - 1)
-    const [loc, storedValue, storedSize, storedTraceSize] = lastTrace.slice(2)
-    assert(isConst(storedTraceSize))
-    const v = toLocalVariable(storedValue, trace.sub(storedTraceSize[1].toNumber()))
-    return new Variable(v)
+    return new Variable(`m_${subTrace.size().toString(16)}`)
   }
   const properties = []
   const stack = [t]
@@ -114,11 +105,6 @@ const toLocalVariable = (t, trace) => {
 
 const toStateVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
-  if (isOpcode(t, 'CALLDATALOAD'))  {
-    const dataOffset = t[2]
-    assert(isConst(dataOffset))
-    return new Variable(`arg_${dataOffset[1].toString(16)}`)
-  }
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
     const [type, name, base, loadSize, loadTraceSize] = mload
@@ -126,11 +112,7 @@ const toStateVariable = (t, trace) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    const lastTrace = subTrace.get(subTrace.size() - 1)
-    const [loc, storedValue, storedSize, storedTraceSize] = lastTrace.slice(2)
-    assert(isConst(storedTraceSize))
-    const v = toStateVariable(storedValue, trace.sub(storedTraceSize[1].toNumber()))
-    return new Variable(v)
+    return new Variable(`s_${subTrace.size().toString(16)}`)
   }
   const properties = []
   const stack = [t]
