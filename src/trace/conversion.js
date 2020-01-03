@@ -57,8 +57,15 @@ const isSha3Mload0 = (t) => {
   return isMload0(t[2])
 }
 
+const isOpcode = (t, opcodeName) => t[1] == opcodeName 
+
 const toLocalVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
+  if (isOpcode(t, 'CALLDATALOAD'))  {
+    const dataOffset = t[2]
+    assert(isConst(dataOffset))
+    return new Variable(`arg_${dataOffset[1].toString(16)}`)
+  }
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
@@ -107,6 +114,11 @@ const toLocalVariable = (t, trace) => {
 
 const toStateVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
+  if (isOpcode(t, 'CALLDATALOAD'))  {
+    const dataOffset = t[2]
+    assert(isConst(dataOffset))
+    return new Variable(`arg_${dataOffset[1].toString(16)}`)
+  }
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
     const [type, name, base, loadSize, loadTraceSize] = mload
