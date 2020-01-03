@@ -1,11 +1,12 @@
 const assert = require('assert')
+const chalk = require('chalk')
 const { logger } = require('../shared')
 
 class Variable  {
-  constructor(root, members = []) {
+  constructor(root) {
     assert(root)
-    this.members = members
     this.root = root
+    this.members = [] 
   }
 
   add(m) {
@@ -20,12 +21,20 @@ class Variable  {
     })
   }
 
-  prettify() {
+  toString(level = 0) {
+    let root = this.root.toString(level + 1)
+    if (level == 0) {
+      root = `[${root}]`
+    }
     const prop = this.members.map(m => {
       if (m[0] == 'const') return m[1].toString(16)
       return '*'
     }).join('.')
-    logger.debug([this.root, prop].filter(p => !!p).join('.'))
+    return [root, prop].filter(p => !!p).join('.')
+  }
+
+  prettify() {
+    logger.debug(chalk.green.bold(this.toString()))
   }
 }
 

@@ -60,12 +60,16 @@ const isSha3Mload0 = (t) => {
 const toLocalVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMload40(t)) {
-    const [base, loadSize, traceSize] = t.slice(2)
-    assert(isConst(traceSize))
+    const [base, loadSize, loadTraceSize] = t.slice(2)
+    assert(isConst(loadTraceSize))
     const subTrace = trace
-      .subTrace(traceSize[1].toNumber())
+      .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    return new Variable(`m_${subTrace.size().toString(16)}`)
+    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const [loc, storedValue, storedSize, storedTraceSize] = lastTrace.slice(2)
+    assert(isConst(storedTraceSize))
+    const v = toLocalVariable(storedValue, trace.sub(storedTraceSize[1].toNumber()))
+    return new Variable(v)
   }
   const properties = []
   const stack = [t]
@@ -105,17 +109,16 @@ const toStateVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
-    const [type, name, base, loadSize, traceSize] = mload
-    assert(isConst(traceSize))
+    const [type, name, base, loadSize, loadTraceSize] = mload
+    assert(isConst(loadTraceSize))
     const subTrace = trace
-      .subTrace(traceSize[1].toNumber())
+      .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    // const last = subTrace.get(subTrace.size() - 1)
-    // const [loc, value] = last.slice(2)
-    // console.log('---')
-    // prettify([t])
-    // assert(isConst(value))
-    return new Variable(`s_${subTrace.size().toString(16)}`)
+    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const [loc, storedValue, storedSize, storedTraceSize] = lastTrace.slice(2)
+    assert(isConst(storedTraceSize))
+    const v = toStateVariable(storedValue, trace.sub(storedTraceSize[1].toNumber()))
+    return new Variable(v)
   }
   const properties = []
   const stack = [t]

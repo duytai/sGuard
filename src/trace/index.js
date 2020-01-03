@@ -27,8 +27,8 @@ class Trace {
     return trace
   }
 
-  subTrace(traceSize) {
-    assert(traceSize > 0)
+  sub(traceSize) {
+    assert(traceSize >= 0)
     assert(traceSize <= this.ts.length)
     const trace = new Trace()
     const ts = this.ts.slice(0, traceSize)
