@@ -21,16 +21,12 @@ class Variable  {
     })
   }
 
-  toString(level = 0) {
-    let root = this.root.toString(level + 1)
-    if (level == 0) {
-      root = `[${root}]`
-    }
+  toString() {
     const prop = this.members.map(m => {
       if (m[0] == 'const') return m[1].toString(16)
       return '*'
     }).join('.')
-    return [root, prop].filter(p => !!p).join('.')
+    return [this.root, prop].filter(p => !!p).join('.')
   }
 
   prettify() {

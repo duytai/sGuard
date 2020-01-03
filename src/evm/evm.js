@@ -138,8 +138,7 @@ class Evm {
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
-          const traceSize = ['const', new BN(trace.size())]
-          const t = ['symbol', name, memLoc, memValue, size, traceSize]
+          const t = ['symbol', name, memLoc, memValue, size]
           trace.add(t)
           break
         }
@@ -360,16 +359,15 @@ class Evm {
           break
         }
         case 'CODECOPY': {
-          const traceSize = ['const', new BN(trace.size())]
           const [memLoc, codeOffset, codeLen] = stack.popN(ins)
           if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
             const value = ['symbol', name, codeOffset, codeLen]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen, traceSize]
+            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
             trace.add(t)
           } else {
             const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
             const value = ['const', new BN(code.toString('hex'), 16)]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen, traceSize]
+            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
             trace.add(t)
           }
           break
@@ -425,18 +423,16 @@ class Evm {
           break
         }
         case 'CALLDATACOPY': {
-          const traceSize = ['const', new BN(trace.size())]
           const [memLoc, dataOffset, dataLen] = stack.popN(ins)
           const callData = ['symbol', 'CALLDATALOAD', dataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, callData, dataLen, traceSize]
+          const t = ['symbol', 'MSTORE', memLoc, callData, dataLen]
           trace.add(t)
           break
         }
         case 'RETURNDATACOPY': {
-          const traceSize = ['const', new BN(trace.size())]
           const [memLoc, returnDataOffset, dataLen] = stack.popN(ins)
           const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen, traceSize]
+          const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen]
           trace.add(t)
           break
         }
