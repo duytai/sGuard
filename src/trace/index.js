@@ -16,6 +16,11 @@ class Trace {
     this.ts.push(t)
   }
 
+  get(idx) {
+    assert(idx >= 0 && idx < this.ts.length)
+    return this.ts[idx]
+  }
+
   clone() {
     const trace = new Trace()
     trace.withTs([...this.ts])

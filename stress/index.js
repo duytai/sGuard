@@ -36,6 +36,7 @@ const main = async() => {
       console.log(e)
       logger.info(`binFile ${binFile}`)
     }
+    logger.info(`binFile ${binFile}`)
   }
 }
 

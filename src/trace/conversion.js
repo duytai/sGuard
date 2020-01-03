@@ -110,13 +110,17 @@ const toStateVariable = (t, trace) => {
     const subTrace = trace
       .subTrace(traceSize[1].toNumber())
       .filter(isMstore0)
+    // const last = subTrace.get(subTrace.size() - 1)
+    // const [loc, value] = last.slice(2)
+    // console.log('---')
+    // prettify([t])
+    // assert(isConst(value))
     return new Variable(`s_${subTrace.size().toString(16)}`)
   }
   const properties = []
   const stack = [t]
   while (stack.length > 0) {
     const [type, name, ...operands] = stack.pop()
-    prettify([t])
     assert(name == 'ADD' || name == 'SUB', `loc is ${name}`)
     if (name == 'ADD') {
       const hasLeftSha3 = findSymbol(operands[0], isSha3Mload0).length > 0
@@ -126,8 +130,8 @@ const toStateVariable = (t, trace) => {
         assert(false, 'Need an example')
       }
       /*
-       * FIXME: both left and right contain mload then left is base
-       * (However it could be right)
+       * FIXME: both left and right contain mload then right is base
+       * (However it could be left)
        * */
       const baseIdx = hasLeftSha3 ? 0 : 1
       const base = operands[baseIdx]
