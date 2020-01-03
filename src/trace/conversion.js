@@ -1,11 +1,12 @@
 const assert = require('assert')
-const { isEmpty, findIndex, reverse } = require('lodash')
+const { isEmpty, findIndex, reverse, uniq } = require('lodash')
 const Variable = require('./variable')
 const {
   prettify,
   isConst,
   logger,
   findSymbol,
+  formatSymbol,
   isVariable,
   isLocalVariable,
   isStateVariable,
@@ -15,7 +16,7 @@ const {
   isMstore0,
 } = require('../shared')
 
-const toLocalVariable = (t, trace) => {
+const toLocalVariable = (t, trace, allocator) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
@@ -23,7 +24,11 @@ const toLocalVariable = (t, trace) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    return new Variable(`m_${subTrace.size().toString(16)}`)
+    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const [loc, value] = lastTrace.slice(2)
+    const idx = findIndex(allocator, it => it == formatSymbol(value))
+    assert(idx >= 0)
+    return new Variable(`m_${idx.toString(16)}`)
   }
   const properties = []
   const stack = [t]
@@ -45,7 +50,7 @@ const toLocalVariable = (t, trace) => {
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
       if (isMload40(base)) {
-        const variable = toLocalVariable(base, trace)
+        const variable = toLocalVariable(base, trace, allocator)
         variable.addN(reverse([...properties, offset]))
         return variable
       } else {
@@ -59,7 +64,7 @@ const toLocalVariable = (t, trace) => {
   }
 }
 
-const toStateVariable = (t, trace) => {
+const toStateVariable = (t, trace, allocator) => {
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
@@ -68,7 +73,11 @@ const toStateVariable = (t, trace) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    return new Variable(`s_${subTrace.size().toString(16)}`)
+    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const [loc, value] = lastTrace.slice(2)
+    const idx = findIndex(allocator, it => it == formatSymbol(value))
+    assert(idx >= 0)
+    return new Variable(`s_${idx.toString(16)}`)
   }
   const properties = []
   const stack = [t]
@@ -90,7 +99,7 @@ const toStateVariable = (t, trace) => {
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
       if (isSha3Mload0(base)) {
-        const variable = toStateVariable(base, trace)
+        const variable = toStateVariable(base, trace, allocator)
         variable.addN(reverse([...properties, offset]))
         return variable
       } else {
@@ -105,8 +114,20 @@ const toStateVariable = (t, trace) => {
 }
 
 const toVariable = (t, trace) => {
-  if (isLocalVariable(t)) return toLocalVariable(t[2], trace)
-  if (isStateVariable(t)) return toStateVariable(t[2], trace)
+  const memoryNameAllocator = uniq(
+    trace
+      .filter(isMstore40)
+      .values()
+      .map(formatSymbol)
+  ).sort()
+  const storageNameAllocator = uniq(
+    trace
+      .filter(isMstore0)
+      .values()
+      .map(formatSymbol)
+  ).sort()
+  if (isLocalVariable(t)) return toLocalVariable(t[2], trace, memoryNameAllocator)
+  if (isStateVariable(t)) return toStateVariable(t[2], trace, storageNameAllocator)
   assert(false)
 }
 
