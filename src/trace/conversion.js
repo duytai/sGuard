@@ -1,12 +1,12 @@
 const assert = require('assert')
 const { isEmpty, findIndex, reverse, uniq } = require('lodash')
 const Variable = require('./variable')
+const NameAllocatorFactory = require('./name_allocator')
 const {
   prettify,
   isConst,
   logger,
   findSymbol,
-  formatSymbol,
   isVariable,
   isLocalVariable,
   isStateVariable,
@@ -17,7 +17,7 @@ const {
 } = require('../shared')
 
 const toLocalVariable = (t, trace, allocator) => {
-  if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
+  if (isConst(t)) return new Variable(allocator.allocate(t)) 
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
@@ -26,9 +26,7 @@ const toLocalVariable = (t, trace, allocator) => {
       .filter(isMstore40)
     const lastTrace = subTrace.get(subTrace.size() - 1)
     const [loc, value] = lastTrace.slice(2)
-    const idx = findIndex(allocator, it => it == formatSymbol(value))
-    assert(idx >= 0)
-    return new Variable(`m_${idx.toString(16)}`)
+    return new Variable(allocator.allocate(value))
   }
   const properties = []
   const stack = [t]
@@ -65,7 +63,7 @@ const toLocalVariable = (t, trace, allocator) => {
 }
 
 const toStateVariable = (t, trace, allocator) => {
-  if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`) 
+  if (isConst(t)) return new Variable(allocator.allocate(t))
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
     const [type, name, base, loadSize, loadTraceSize] = mload
@@ -75,9 +73,7 @@ const toStateVariable = (t, trace, allocator) => {
       .filter(isMstore0)
     const lastTrace = subTrace.get(subTrace.size() - 1)
     const [loc, value] = lastTrace.slice(2)
-    const idx = findIndex(allocator, it => it == formatSymbol(value))
-    assert(idx >= 0)
-    return new Variable(`s_${idx.toString(16)}`)
+    return new Variable(allocator.allocate(value)) 
   }
   const properties = []
   const stack = [t]
@@ -89,6 +85,7 @@ const toStateVariable = (t, trace, allocator) => {
       const hasRightSha3 = findSymbol(operands[1], isSha3Mload0).length > 0
       const constIdx = findIndex(operands, ([type]) => type == 'const')
       if (!hasLeftSha3 && !hasRightSha3) {
+        prettify([t])
         assert(false, 'Need an example')
       }
       /*
@@ -114,18 +111,8 @@ const toStateVariable = (t, trace, allocator) => {
 }
 
 const toVariable = (t, trace) => {
-  const memoryNameAllocator = uniq(
-    trace
-      .filter(isMstore40)
-      .values()
-      .map(formatSymbol)
-  ).sort()
-  const storageNameAllocator = uniq(
-    trace
-      .filter(isMstore0)
-      .values()
-      .map(formatSymbol)
-  ).sort()
+  const memoryNameAllocator = NameAllocatorFactory.byName('MEMORY', trace)
+  const storageNameAllocator = NameAllocatorFactory.byName('STORAGE', trace)
   if (isLocalVariable(t)) return toLocalVariable(t[2], trace, memoryNameAllocator)
   if (isStateVariable(t)) return toStateVariable(t[2], trace, storageNameAllocator)
   assert(false)

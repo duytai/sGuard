@@ -51,6 +51,21 @@ const isSha3Mload0 = (t) => {
   return isMload0(t[2])
 }
 
+const isSstoreConst = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'SSTORE') return false
+  const [type, name, loc] = t
+  return isConst(loc)
+}
+
+const isMstoreGte80 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MSTORE') return false
+  const [type, name, loc] = t
+  if (!isConst(loc)) return false
+  return loc[1].toNumber() >= 0x80
+}
+
 const isOpcode = (t, opcodeName) => t[1] == opcodeName 
 
 module.exports = {
@@ -67,6 +82,8 @@ module.exports = {
   isMstore0,
   isSha3Mload0,
   isOpcode,
+  isSstoreConst,
+  isMstoreGte80,
 }
 
 

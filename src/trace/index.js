@@ -41,6 +41,11 @@ class Trace {
     return this.ts.map(([type, name, loc, value]) => value)
   }
 
+  keys() {
+    this.ts.forEach(([type, name]) => assert(['MSTORE', 'SSTORE'].includes(name)))
+    return this.ts.map(([type, name, loc]) => loc)
+  }
+
   filter(cond) {
     assert(cond)
     const trace = new Trace()
