@@ -11,7 +11,6 @@ const {
   toStateVariable,
   toLocalVariable,
   toVariable,
-  NameAllocatorFactory,
 } = require('../variable')
 
 class DTree {
@@ -26,8 +25,7 @@ class DTree {
     assert(!childs.length)
     switch (me[1]) {
       case 'MLOAD': {
-        const allocator = NameAllocatorFactory.byName('MEMORY', this.trace)
-        const loadVariable = toLocalVariable(me[2], this.trace, allocator)
+        const loadVariable = toLocalVariable(me[2], this.trace)
         assert(loadVariable)
         node.alias = loadVariable.toString()
         this.trace.eachLocalVariable((storeVariable, storedValue) => {
@@ -40,8 +38,7 @@ class DTree {
         break
       }
       case 'SLOAD': {
-        const allocator = NameAllocatorFactory.byName('STORAGE', this.trace)
-        const loadVariable = toStateVariable(me[2], this.trace, allocator) 
+        const loadVariable = toStateVariable(me[2], this.trace) 
         assert(loadVariable)
         node.alias = loadVariable.toString() 
         this.trace.eachStateVariable((storeVariable, storedValue) => {

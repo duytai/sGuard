@@ -1,7 +1,6 @@
 const assert = require('assert')
 const { isEmpty, findIndex, reverse, uniq } = require('lodash')
 const Variable = require('./variable')
-const NameAllocatorFactory = require('./name_allocator')
 const {
   prettify,
   isConst,
@@ -13,18 +12,16 @@ const {
   isMstore0,
 } = require('../shared')
 
-const toLocalVariable = (t, trace, allocator) => {
-  assert(t && trace && allocator)
-  if (isConst(t)) return new Variable(allocator.allocate(t)) 
+const toLocalVariable = (t, trace, ) => {
+  assert(t && trace)
+  if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    const lastTrace = subTrace.last()
-    const [loc, value] = lastTrace.slice(2)
-    return new Variable(allocator.allocate(value))
+    return new Variable(`m_${subTrace.size().toString(16)}`)
   }
   const properties = []
   const stack = [t]
@@ -46,7 +43,7 @@ const toLocalVariable = (t, trace, allocator) => {
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
       if (isMload40(base)) {
-        const variable = toLocalVariable(base, trace, allocator)
+        const variable = toLocalVariable(base, trace)
         variable.addN(reverse([...properties, offset]))
         return variable
       } else {
@@ -60,9 +57,9 @@ const toLocalVariable = (t, trace, allocator) => {
   }
 }
 
-const toStateVariable = (t, trace, allocator) => {
-  assert(t && trace && allocator)
-  if (isConst(t)) return new Variable(allocator.allocate(t))
+const toStateVariable = (t, trace) => {
+  assert(t && trace)
+  if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
     const [type, name, base, loadSize, loadTraceSize] = mload
@@ -70,9 +67,7 @@ const toStateVariable = (t, trace, allocator) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    const lastTrace = subTrace.last()
-    const [loc, value] = lastTrace.slice(2)
-    return new Variable(allocator.allocate(value)) 
+    return new Variable(`s_${subTrace.size().toString(16)}`) 
   }
   const properties = []
   const stack = [t]
@@ -95,7 +90,7 @@ const toStateVariable = (t, trace, allocator) => {
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
       if (isSha3Mload0(base)) {
-        const variable = toStateVariable(base, trace, allocator)
+        const variable = toStateVariable(base, trace)
         variable.addN(reverse([...properties, offset]))
         return variable
       } else {
@@ -112,5 +107,4 @@ const toStateVariable = (t, trace, allocator) => {
 module.exports = {
   toLocalVariable,
   toStateVariable,
-  NameAllocatorFactory,
 }

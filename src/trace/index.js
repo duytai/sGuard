@@ -9,7 +9,6 @@ const {
 const {
   toLocalVariable,
   toStateVariable,
-  NameAllocatorFactory,
 } = require('../variable')
 
 class Trace {
@@ -69,22 +68,20 @@ class Trace {
 
   eachLocalVariable(cb) {
     assert(cb)
-    const allocator = NameAllocatorFactory.byName('MEMORY', this)
     const ts = this.ts.filter(isLocalVariable)
     ts.forEach(t => {
       const [loc, value] = t.slice(2)
-      const variable = toLocalVariable(loc, this, allocator)
+      const variable = toLocalVariable(loc, this)
       cb(variable, value)
     })
   }
 
   eachStateVariable(cb) {
     assert(cb)
-    const allocator = NameAllocatorFactory.byName('STORAGE', this)
     const ts = this.ts.filter(isStateVariable)
     ts.forEach(t => {
       const [loc, value] = t.slice(2)
-      const variable = toStateVariable(loc, this, allocator)
+      const variable = toStateVariable(loc, this)
       cb(variable, value)
     })
   }
@@ -94,14 +91,12 @@ class Trace {
     this.ts.forEach(t => {
       prettify([t])
       if (isLocalVariable(t)) {
-        const allocator = NameAllocatorFactory.byName('MEMORY', this)
-        const variable = toLocalVariable(t[2], this, allocator)
+        const variable = toLocalVariable(t[2], this)
         assert(variable)
         variable.prettify()
       }
       if (isStateVariable(t)) {
-        const allocator = NameAllocatorFactory.byName('STORAGE', this)
-        const variable = toStateVariable(t[2], this, allocator)
+        const variable = toStateVariable(t[2], this)
         assert(variable)
         variable.prettify()
       }

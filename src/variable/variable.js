@@ -34,17 +34,7 @@ class Variable  {
   }
 
   exactEqual(other) {
-    assert(other)
-    if (other.members.length != this.members.length) return false
-    if (other.root != this.root) return false
-    for (let i = 0; i < other.members.length; i++) {
-      const member = this.members[i]
-      const otherMember = other.members[i]
-      if (isConst(member) && isConst(otherMember)) {
-        if (member[1].toNumber() != otherMember[1].toNumber()) return false
-      } 
-    }
-    return true
+    return false
   }
 
 }
