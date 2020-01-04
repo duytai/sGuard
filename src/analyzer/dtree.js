@@ -10,6 +10,7 @@ const {
 const {
   toStateVariable,
   toLocalVariable,
+  toVariable,
 } = require('../variable')
 
 class DTree {

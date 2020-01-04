@@ -7,9 +7,6 @@ const {
   isConst,
   logger,
   findSymbol,
-  isVariable,
-  isLocalVariable,
-  isStateVariable,
   isMload40,
   isMstore40,
   isSha3Mload0,
@@ -110,16 +107,8 @@ const toStateVariable = (t, trace, allocator) => {
   }
 }
 
-const toVariable = (t, trace) => {
-  const memoryNameAllocator = NameAllocatorFactory.byName('MEMORY', trace)
-  const storageNameAllocator = NameAllocatorFactory.byName('STORAGE', trace)
-  if (isLocalVariable(t)) return toLocalVariable(t[2], trace, memoryNameAllocator)
-  if (isStateVariable(t)) return toStateVariable(t[2], trace, storageNameAllocator)
-  assert(false)
-}
-
 module.exports = {
-  isVariable,
-  toVariable,
   toLocalVariable,
+  toStateVariable,
+  NameAllocatorFactory,
 }
