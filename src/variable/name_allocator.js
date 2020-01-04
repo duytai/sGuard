@@ -33,7 +33,7 @@ class StorageNameAllocator extends NameAllocator {
     this.dict = uniq([
       ...directStorageBase,
       ...indirectStorageBase
-    ]).sort((x, y) => x.length - y.length)
+    ]).sort((x, y) => x - y)
   }
 
   allocate(base) {
@@ -57,7 +57,7 @@ class MemoryNameAllocator extends NameAllocator {
     this.dict = uniq([
       ...directMemoryBase,
       ...indirectMemoryBase,
-    ]).sort((x, y) => x.length - y.length)
+    ]).sort((x, y) => x - y)
   }
 
   allocate(base) {

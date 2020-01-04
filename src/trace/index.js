@@ -67,6 +67,28 @@ class Trace {
     return this.ts[this.ts.length - 1]
   }
 
+  eachLocalVariable(cb) {
+    assert(cb)
+    const allocator = NameAllocatorFactory.byName('MEMORY', this)
+    const ts = this.ts.filter(isLocalVariable)
+    ts.forEach(t => {
+      const [loc, value] = t.slice(2)
+      const variable = toLocalVariable(loc, this, allocator)
+      cb(variable, value)
+    })
+  }
+
+  eachStateVariable(cb) {
+    assert(cb)
+    const allocator = NameAllocatorFactory.byName('STORAGE', this)
+    const ts = this.ts.filter(isStateVariable)
+    ts.forEach(t => {
+      const [loc, value] = t.slice(2)
+      const variable = toStateVariable(loc, this, allocator)
+      cb(variable, value)
+    })
+  }
+
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
     this.ts.forEach(t => {
@@ -74,16 +96,14 @@ class Trace {
       if (isLocalVariable(t)) {
         const allocator = NameAllocatorFactory.byName('MEMORY', this)
         const variable = toLocalVariable(t[2], this, allocator)
-        if (variable) {
-          variable.prettify()
-        }
+        assert(variable)
+        variable.prettify()
       }
       if (isStateVariable(t)) {
         const allocator = NameAllocatorFactory.byName('STORAGE', this)
         const variable = toStateVariable(t[2], this, allocator)
-        if (variable) {
-          variable.prettify()
-        }
+        assert(variable)
+        variable.prettify()
       }
     })
   }

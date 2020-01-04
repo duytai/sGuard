@@ -27,16 +27,30 @@ class DTree {
     switch (me[1]) {
       case 'MLOAD': {
         const allocator = NameAllocatorFactory.byName('MEMORY', this.trace)
-        const v = toLocalVariable(me[2], this.trace, allocator)
-        assert(v)
-        node.alias = v.toString()
+        const loadVariable = toLocalVariable(me[2], this.trace, allocator)
+        assert(loadVariable)
+        node.alias = loadVariable.toString()
+        this.trace.eachLocalVariable((storeVariable, storedValue) => {
+          if (loadVariable.exactEqual(storeVariable)) {
+            const newNode = { me: storedValue, childs: [], alias: 'N/A' }
+            childs.push(newNode)
+            this.expand(newNode)
+          }
+        })
         break
       }
       case 'SLOAD': {
         const allocator = NameAllocatorFactory.byName('STORAGE', this.trace)
-        const v = toStateVariable(me[2], this.trace, allocator) 
-        assert(v)
-        node.alias = v.toString() 
+        const loadVariable = toStateVariable(me[2], this.trace, allocator) 
+        assert(loadVariable)
+        node.alias = loadVariable.toString() 
+        this.trace.eachStateVariable((storeVariable, storedValue) => {
+          if (loadVariable.exactEqual(storeVariable)) {
+            const newNode = { me: storedValue, childs: [], alias: 'N/A' }
+            childs.push(newNode)
+            this.expand(newNode)
+          }
+        })
         break
       }
       default: {
