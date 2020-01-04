@@ -11,6 +11,7 @@ const {
   toStateVariable,
   toLocalVariable,
   toVariable,
+  NameAllocatorFactory,
 } = require('../variable')
 
 class DTree {
@@ -25,9 +26,17 @@ class DTree {
     assert(!childs.length)
     switch (me[1]) {
       case 'MLOAD': {
+        const allocator = NameAllocatorFactory.byName('MEMORY', this.trace)
+        const v = toLocalVariable(me[2], this.trace, allocator)
+        assert(v)
+        node.alias = v.toString()
         break
       }
       case 'SLOAD': {
+        const allocator = NameAllocatorFactory.byName('STORAGE', this.trace)
+        const v = toStateVariable(me[2], this.trace, allocator) 
+        assert(v)
+        node.alias = v.toString() 
         break
       }
       default: {
@@ -43,7 +52,7 @@ class DTree {
 
 
   prettify() {
-    logger.debug(chalk.green.bold('>> Full DTREE'))
+    logger.debug(chalk.magenta.bold('>> Full DTREE'))
     const goDown = (root, level) => {
       const { me, childs, alias } = root
       const space = range(0, level).map(i => ' ').join('') || ''

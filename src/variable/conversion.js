@@ -14,6 +14,7 @@ const {
 } = require('../shared')
 
 const toLocalVariable = (t, trace, allocator) => {
+  assert(t && trace && allocator)
   if (isConst(t)) return new Variable(allocator.allocate(t)) 
   if (isMload40(t)) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
@@ -60,6 +61,7 @@ const toLocalVariable = (t, trace, allocator) => {
 }
 
 const toStateVariable = (t, trace, allocator) => {
+  assert(t && trace && allocator)
   if (isConst(t)) return new Variable(allocator.allocate(t))
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)

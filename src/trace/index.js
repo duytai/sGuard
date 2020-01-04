@@ -1,6 +1,16 @@
 const assert = require('assert')
 const chalk = require('chalk')
-const { prettify, logger } = require('../shared')
+const {
+  prettify,
+  logger,
+  isLocalVariable,
+  isStateVariable,
+} = require('../shared')
+const {
+  toLocalVariable,
+  toStateVariable,
+  NameAllocatorFactory,
+} = require('../variable')
 
 class Trace {
   constructor() {
@@ -53,13 +63,29 @@ class Trace {
   }
 
   last() {
-    assert(this.length.length > 0)
+    assert(this.ts.length > 0)
     return this.ts[this.ts.length - 1]
   }
 
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
-    prettify(this.ts)
+    this.ts.forEach(t => {
+      prettify([t])
+      if (isLocalVariable(t)) {
+        const allocator = NameAllocatorFactory.byName('MEMORY', this)
+        const variable = toLocalVariable(t[2], this, allocator)
+        if (variable) {
+          variable.prettify()
+        }
+      }
+      if (isStateVariable(t)) {
+        const allocator = NameAllocatorFactory.byName('STORAGE', this)
+        const variable = toStateVariable(t[2], this, allocator)
+        if (variable) {
+          variable.prettify()
+        }
+      }
+    })
   }
 }
 
