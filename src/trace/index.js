@@ -1,6 +1,5 @@
 const assert = require('assert')
 const { prettify, logger } = require('../shared')
-const conversion = require('./conversion')
 
 class Trace {
   constructor() {
@@ -65,5 +64,4 @@ class Trace {
 
 module.exports = {
   Trace,
-  ...conversion,
 } 
