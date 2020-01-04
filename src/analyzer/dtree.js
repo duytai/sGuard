@@ -1,7 +1,16 @@
 const assert = require('assert')
 const chalk = require('chalk')
 const { range } = require('lodash')
-const { prettify, logger, findSymbol, formatSymbol } = require('../shared')
+const {
+  prettify,
+  logger,
+  findSymbol,
+  formatSymbol,
+} = require('../shared')
+const {
+  toStateVariable,
+  toLocalVariable,
+} = require('../variable')
 
 class DTree {
   constructor(symbol, trace) {
