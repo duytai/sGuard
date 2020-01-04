@@ -24,7 +24,7 @@ const toLocalVariable = (t, trace, allocator) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const lastTrace = subTrace.last()
     const [loc, value] = lastTrace.slice(2)
     return new Variable(allocator.allocate(value))
   }
@@ -71,7 +71,7 @@ const toStateVariable = (t, trace, allocator) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    const lastTrace = subTrace.get(subTrace.size() - 1)
+    const lastTrace = subTrace.last()
     const [loc, value] = lastTrace.slice(2)
     return new Variable(allocator.allocate(value)) 
   }

@@ -2,7 +2,6 @@ const assert = require('assert')
 const { prettify, logger } = require('../shared')
 const conversion = require('./conversion')
 
-const { isVariable, toVariable } = conversion
 class Trace {
   constructor() {
     this.ts = []
@@ -14,11 +13,6 @@ class Trace {
 
   add(t) {
     this.ts.push(t)
-  }
-
-  get(idx) {
-    assert(idx >= 0 && idx < this.ts.length)
-    return this.ts[idx]
   }
 
   clone() {
@@ -54,20 +48,13 @@ class Trace {
     return trace
   }
 
-  applyConversion() {
-    this.ts.forEach(t => {
-      if (isVariable(t)) {
-        const variable = toVariable(t, this)
-        if (variable) {
-          prettify([t])
-          variable.prettify()
-        }
-      }
-    })
-  }
-
   size() {
     return this.ts.length
+  }
+
+  last() {
+    assert(this.length.length > 0)
+    return this.ts[this.ts.length - 1]
   }
 
   prettify() {

@@ -7,8 +7,8 @@ const analyze = (symbol, trace) => {
   const root = { me: symbol, childs: [] }
   const [type, name, ...params] = symbol
   trace.prettify()
+  prettify([symbol])
   logger.info(">> Full conversion")
-  trace.applyConversion()
 }
 
 module.exports = {
