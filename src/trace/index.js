@@ -1,4 +1,5 @@
 const assert = require('assert')
+const chalk = require('chalk')
 const { prettify, logger } = require('../shared')
 
 class Trace {
@@ -57,7 +58,7 @@ class Trace {
   }
 
   prettify() {
-    logger.info('>> Full traces')
+    logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
     prettify(this.ts)
   }
 }
