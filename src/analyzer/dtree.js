@@ -41,12 +41,13 @@ class DTree {
         const loadVariable = toStateVariable(me[2], this.trace) 
         assert(loadVariable)
         node.alias = loadVariable.toString() 
+        const root = loadVariable.getAbsoluteRoot()
         this.trace.eachStateVariable((storeVariable, storedValue) => {
-          if (loadVariable.exactEqual(storeVariable)) {
-            const newNode = { me: storedValue, childs: [], alias: 'N/A' }
-            childs.push(newNode)
-            this.expand(newNode)
-          }
+          // if (storeVariable.exactEqual(storeVariable)) {
+            // const newNode = { me: storedValue, childs: [], alias: 'N/A' }
+            // childs.push(newNode)
+            // this.expand(newNode)
+          // }
         })
         break
       }

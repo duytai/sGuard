@@ -22,13 +22,10 @@ class Variable  {
   }
 
   toString() {
-    const root = typeof this.root == 'string'
-      ? this.root
-      : `[${this.root.toString()}]`
-    const prop = this.members.map(m => {
-      if (m[0] == 'const') return m[1].toString(16)
-      return '*'
-    }).join('.')
+    const isStr = typeof this.root == 'string'
+    let root = this.root.toString()
+    root = isStr ? root : `[${root}]`
+    const prop = this.members.map(m => m[0] == 'const' ? m[1].toString(16) : '*').join('.')
     return [root, prop].filter(p => !!p).join('.')
   }
 
@@ -37,7 +34,13 @@ class Variable  {
   }
 
   exactEqual(other) {
-    return false
+    return other.toString() == this.toString()
+  }
+
+  getAbsoluteRoot() {
+    const isStr = typeof this.root == 'string'
+    if (isStr) return new Variable(this.root)
+    return this.root.getAbsoluteRoot()
   }
 
 }

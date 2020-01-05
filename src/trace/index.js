@@ -68,21 +68,23 @@ class Trace {
 
   eachLocalVariable(cb) {
     assert(cb)
-    const ts = this.ts.filter(isLocalVariable)
-    ts.forEach(t => {
-      const [loc, value] = t.slice(2)
-      const variable = toLocalVariable(loc, this)
-      cb(variable, value)
+    this.ts.forEach((t, traceIdx) => {
+      if (isLocalVariable(t)) {
+        const [loc, value] = t.slice(2)
+        const variable = toLocalVariable(loc, this)
+        cb(variable, value, traceIdx)
+      }
     })
   }
 
   eachStateVariable(cb) {
     assert(cb)
-    const ts = this.ts.filter(isStateVariable)
-    ts.forEach(t => {
-      const [loc, value] = t.slice(2)
-      const variable = toStateVariable(loc, this)
-      cb(variable, value)
+    this.ts.forEach((t, traceIdx) => {
+      if (isStateVariable(t)) {
+        const [loc, value] = t.slice(2)
+        const variable = toStateVariable(loc, this)
+        cb(variable, value, traceIdx)
+      }
     })
   }
 
