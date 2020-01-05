@@ -10,6 +10,7 @@ const {
   isMstore40,
   isSha3Mload0,
   isMstore0,
+  isOpcode,
 } = require('../shared')
 
 const toLocalVariable = (t, trace) => {
@@ -23,6 +24,12 @@ const toLocalVariable = (t, trace) => {
       .filter(isMstore40)
     const storedValue = subTrace.last()[3]
     const v = toLocalVariable(storedValue, trace)
+    return new Variable(v)
+  }
+  if (isOpcode(t, 'MLOAD')) {
+    const [base, loadSize, loadTraceSize] = t.slice(2)
+    const subTrace = trace.sub(loadTraceSize[1].toNumber())
+    const v = toLocalVariable(base, subTrace)
     return new Variable(v)
   }
   const properties = []

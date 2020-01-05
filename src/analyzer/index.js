@@ -1,10 +1,10 @@
 const assert = require('assert')
-const DTree = require('./dtree')
+const DNode = require('./dnode')
 
 const analyze = (symbol, trace) => {
-  const dtree = new DTree(symbol, trace)
+  const dnode = new DNode(symbol, trace)
   trace.prettify()
-  dtree.prettify()
+  dnode.prettify()
 }
 
 module.exports = {
