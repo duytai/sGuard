@@ -22,11 +22,14 @@ class Variable  {
   }
 
   toString() {
+    const root = typeof this.root == 'string'
+      ? this.root
+      : `[${this.root.toString()}]`
     const prop = this.members.map(m => {
       if (m[0] == 'const') return m[1].toString(16)
       return '*'
     }).join('.')
-    return [this.root, prop].filter(p => !!p).join('.')
+    return [root, prop].filter(p => !!p).join('.')
   }
 
   prettify() {

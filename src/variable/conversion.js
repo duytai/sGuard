@@ -12,7 +12,7 @@ const {
   isMstore0,
 } = require('../shared')
 
-const toLocalVariable = (t, trace, ) => {
+const toLocalVariable = (t, trace) => {
   assert(t && trace)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMload40(t)) {
@@ -21,7 +21,9 @@ const toLocalVariable = (t, trace, ) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
-    return new Variable(`m_${subTrace.size().toString(16)}`)
+    const storedValue = subTrace.last()[3]
+    const v = toLocalVariable(storedValue, trace)
+    return new Variable(v)
   }
   const properties = []
   const stack = [t]
@@ -67,7 +69,9 @@ const toStateVariable = (t, trace) => {
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
-    return new Variable(`s_${subTrace.size().toString(16)}`) 
+    const storedValue = subTrace.last()[3]
+    const v = toStateVariable(storedValue, trace)
+    return new Variable(v)
   }
   const properties = []
   const stack = [t]
