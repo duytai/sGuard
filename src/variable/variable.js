@@ -22,27 +22,26 @@ class Variable  {
   }
 
   toString() {
-    const isStr = typeof this.root == 'string'
-    let root = this.root.toString()
-    root = isStr ? root : `[${root}]`
-    const prop = this.members.map(m => m[0] == 'const' ? m[1].toString(16) : '*').join('.')
-    return [root, prop].filter(p => !!p).join('.')
+    const prop = this.members.map(m => isConst(m) ? m[1].toString(16) : '*').join('.')
+    return [this.root, prop].filter(p => !!p).join('.')
   }
 
   prettify() {
     logger.debug(chalk.green.bold(this.toString()))
   }
 
-  exactEqual(other) {
-    return other.toString() == this.toString()
+  partialEqual(other) {
+    if (this.root != other.root) return false
+    const minLen = Math.min(this.members.length, other.members.length)
+    for (let i = 0; i < minLen; i ++) {
+      const member = this.members[i]
+      const otherMember = other.members[i]
+      if (isConst(member) && isConst(otherMember)) {
+        if (member[1].toNumber() != otherMember[1].toNumber()) return false
+      }
+    }
+    return true
   }
-
-  getAbsoluteRoot() {
-    const isStr = typeof this.root == 'string'
-    if (isStr) return new Variable(this.root)
-    return this.root.getAbsoluteRoot()
-  }
-
 }
 
 module.exports = Variable

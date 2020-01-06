@@ -1,6 +1,7 @@
 const assert = require('assert')
 const { isEmpty, findIndex, reverse, uniq } = require('lodash')
 const Variable = require('./variable')
+const hash = require('object-hash')
 const {
   prettify,
   isConst,
@@ -11,6 +12,7 @@ const {
   isSha3Mload0,
   isMstore0,
   isOpcode,
+  formatSymbol,
 } = require('../shared')
 
 const toLocalVariable = (t, trace) => {
@@ -23,14 +25,8 @@ const toLocalVariable = (t, trace) => {
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
     const storedValue = subTrace.last()[3]
-    const v = toLocalVariable(storedValue, trace)
-    return new Variable(v)
-  }
-  if (isOpcode(t, 'MLOAD')) {
-    const [base, loadSize, loadTraceSize] = t.slice(2)
-    const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const v = toLocalVariable(base, subTrace)
-    return new Variable(v)
+    const name = hash(formatSymbol(storedValue)).slice(0, 2)
+    return new Variable(`m_${name}`)
   }
   const properties = []
   const stack = [t]
@@ -55,10 +51,9 @@ const toLocalVariable = (t, trace) => {
         const variable = toLocalVariable(base, trace)
         variable.addN(reverse([...properties, offset]))
         return variable
-      } else {
-        properties.push(offset)
-        stack.push(base)
       }
+      properties.push(offset)
+      stack.push(base)
     }
     if (name == 'SUB') {
       stack.push(operands[0])
@@ -71,14 +66,14 @@ const toStateVariable = (t, trace) => {
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
-    const [type, name, base, loadSize, loadTraceSize] = mload
+    const [base, loadSize, loadTraceSize] = mload.slice(2)
     assert(isConst(loadTraceSize))
     const subTrace = trace
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
     const storedValue = subTrace.last()[3]
-    const v = toStateVariable(storedValue, trace)
-    return new Variable(v)
+    const name = hash(formatSymbol(storedValue)).slice(0, 2)
+    return new Variable(`s_${name}`)
   }
   const properties = []
   const stack = [t]
@@ -104,10 +99,9 @@ const toStateVariable = (t, trace) => {
         const variable = toStateVariable(base, trace)
         variable.addN(reverse([...properties, offset]))
         return variable
-      } else {
-        properties.push(offset)
-        stack.push(base)
       }
+      properties.push(offset)
+      stack.push(base)
     }
     if (name == 'SUB') {
       stack.push(operands[0])

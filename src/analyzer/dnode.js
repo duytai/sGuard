@@ -28,7 +28,6 @@ class DNode {
       case 'MLOAD': {
         const loadVariable = toLocalVariable(me[2], this.trace)
         assert(loadVariable)
-        node.alias = loadVariable.toString()
         this.trace.eachLocalVariable((storeVariable, storedValue) => {
           // TODO:
         })
@@ -38,9 +37,11 @@ class DNode {
         const loadVariable = toStateVariable(me[2], this.trace) 
         assert(loadVariable)
         node.alias = loadVariable.toString() 
-        const root = loadVariable.getAbsoluteRoot()
         this.trace.eachStateVariable((storeVariable, storedValue, traceIdx) => {
-          // TODO:
+          if (storeVariable.partialEqual(loadVariable)) {
+            const dnode = new DNode(storedValue, this.trace.sub(traceIdx))
+            childs.push(dnode)
+          }
         })
         break
       }
