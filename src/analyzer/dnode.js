@@ -28,8 +28,12 @@ class DNode {
       case 'MLOAD': {
         const loadVariable = toLocalVariable(me[2], this.trace)
         assert(loadVariable)
-        this.trace.eachLocalVariable((storeVariable, storedValue) => {
-          // TODO:
+        node.alias = loadVariable.toString() 
+        this.trace.eachLocalVariable((storeVariable, storedValue, traceIdx) => {
+          if (storeVariable.partialEqual(loadVariable)) {
+            const dnode = new DNode(storedValue, this.trace.sub(traceIdx))
+            childs.push(dnode)
+          }
         })
         break
       }
