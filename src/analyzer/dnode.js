@@ -32,8 +32,15 @@ class DNode {
         node.alias = loadVariable.toString() 
         this.trace.eachLocalVariable((storeVariable, storedValue) => {
           if (storeVariable.partialEqual(loadVariable)) {
-            const dnode = new DNode(storedValue, subTrace)
-            childs.push(dnode)
+            const members = [
+              ...loadVariable.getSymbolMembers(),
+              ...storeVariable.getSymbolMembers(),
+              storedValue,
+            ]
+            members.forEach(m => {
+              const dnode = new DNode(m, subTrace)
+              childs.push(dnode)
+            })
           }
         })
         break
@@ -45,8 +52,15 @@ class DNode {
         node.alias = loadVariable.toString() 
         this.trace.eachStateVariable((storeVariable, storedValue, traceIdx) => {
           if (storeVariable.partialEqual(loadVariable)) {
-            const dnode = new DNode(storedValue, subTrace)
-            childs.push(dnode)
+            const members = [
+              ...loadVariable.getSymbolMembers(),
+              ...storeVariable.getSymbolMembers(),
+              storedValue,
+            ]
+            members.forEach(m => {
+              const dnode = new DNode(m, subTrace)
+              childs.push(dnode)
+            })
           }
         })
         break
