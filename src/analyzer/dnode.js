@@ -26,24 +26,26 @@ class DNode {
     assert(!childs.length)
     switch (me[1]) {
       case 'MLOAD': {
-        const loadVariable = toLocalVariable(me[2], this.trace)
+        const subTrace = this.trace.sub(me[4][1].toNumber())
+        const loadVariable = toLocalVariable(me[2], subTrace)
         assert(loadVariable)
         node.alias = loadVariable.toString() 
-        this.trace.eachLocalVariable((storeVariable, storedValue, traceIdx) => {
+        this.trace.eachLocalVariable((storeVariable, storedValue) => {
           if (storeVariable.partialEqual(loadVariable)) {
-            const dnode = new DNode(storedValue, this.trace.sub(traceIdx))
+            const dnode = new DNode(storedValue, subTrace)
             childs.push(dnode)
           }
         })
         break
       }
       case 'SLOAD': {
-        const loadVariable = toStateVariable(me[2], this.trace) 
+        const subTrace = this.trace.sub(me[3][1].toNumber())
+        const loadVariable = toStateVariable(me[2], subTrace) 
         assert(loadVariable)
         node.alias = loadVariable.toString() 
         this.trace.eachStateVariable((storeVariable, storedValue, traceIdx) => {
           if (storeVariable.partialEqual(loadVariable)) {
-            const dnode = new DNode(storedValue, this.trace.sub(traceIdx))
+            const dnode = new DNode(storedValue, subTrace)
             childs.push(dnode)
           }
         })

@@ -459,7 +459,6 @@ class Evm {
             outLength,
           ] = stack.popN(ins)
           analyze(value, trace)
-          process.exit()
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }

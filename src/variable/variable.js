@@ -30,6 +30,10 @@ class Variable  {
     logger.debug(chalk.green.bold(this.toString()))
   }
 
+  getSymbolMembers() {
+    return this.members.filter(m => !isConst(m))
+  }
+
   partialEqual(other) {
     if (this.root != other.root) return false
     const minLen = Math.min(this.members.length, other.members.length)
