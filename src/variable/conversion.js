@@ -7,7 +7,7 @@ const {
   isConst,
   logger,
   findSymbol,
-  isMload40,
+  isMloadConst,
   isMstore40,
   isSha3Mload0,
   isMstore0,
@@ -18,15 +18,16 @@ const {
 const toLocalVariable = (t, trace) => {
   assert(t && trace)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
-  if (isMload40(t)) {
+  if (isMloadConst(t)) {
+    const name = hash(formatSymbol(t)).slice(0, 2)
+    return new Variable(`m_${name}`)
+  }
+  if (isOpcode(t, 'MLOAD')) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
-    const subTrace = trace
-      .sub(loadTraceSize[1].toNumber())
-      .filter(isMstore40)
-    const storedValue = subTrace.last()[3]
-    const name = hash(formatSymbol(storedValue)).slice(0, 2)
-    return new Variable(`m_${name}`)
+    const subTrace = trace.sub(loadTraceSize[1].toNumber())
+    const v = toLocalVariable(base, subTrace)
+    return new Variable(v)
   }
   const properties = []
   const stack = [t]
@@ -34,8 +35,8 @@ const toLocalVariable = (t, trace) => {
     const [type, name, ...operands] = stack.pop()
     assert(name == 'ADD' || name == 'SUB', `loc is ${name}`)
     if (name == 'ADD') {
-      const hasLeftMload = findSymbol(operands[0], isMload40).length > 0
-      const hasRightMload = findSymbol(operands[1], isMload40).length > 0
+      const hasLeftMload = findSymbol(operands[0], isMloadConst).length > 0
+      const hasRightMload = findSymbol(operands[1], isMloadConst).length > 0
       const constIdx = findIndex(operands, ([type]) => type == 'const')
       if (!hasLeftMload && !hasRightMload) {
         assert(false, 'Need an example')
@@ -47,9 +48,10 @@ const toLocalVariable = (t, trace) => {
       const baseIdx = hasRightMload ? 1 : 0
       const base = operands[baseIdx]
       const offset = operands[1 - baseIdx]
-      if (isMload40(base)) {
+      if (isOpcode(base, 'MLOAD')) {
         const variable = toLocalVariable(base, trace)
-        variable.addN(reverse([...properties, offset]))
+        properties.push(offset)
+        variable.addN(reverse(properties))
         return variable
       }
       properties.push(offset)
