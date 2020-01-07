@@ -1,4 +1,5 @@
 const assert = require('assert')
+const BN = require('bn.js')
 const chalk = require('chalk')
 const { logger, isConst } = require('../shared')
 
@@ -9,16 +10,22 @@ class Variable  {
     this.members = [] 
   }
 
-  add(m) {
-    assert(m)
-    this.members.push(m)
-  }
-
   addN(ms) {
     assert(ms.length > 0)
-    ms.forEach(m => {
-      this.members.push(m)
-    })
+    const symbols = ms.filter(m => !isConst(m))
+    switch (symbols.length) {
+      case 0: {
+        const sum = ms.reduce((r, n) => r + n[1].toNumber(), 0)
+        if (sum > 0) return this.members.push(['const', new BN(sum)])
+        break
+      }
+      case 1: {
+        return this.members.push(symbols[0])
+      }
+      default: {
+        assert(false, 'accept only one symbol')
+      }
+    }
   }
 
   toString() {
