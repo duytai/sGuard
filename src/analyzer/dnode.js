@@ -16,20 +16,21 @@ const {
 
 class DNode {
   constructor(symbol, trace) {
-    this.node = { me: symbol, childs: [], alias: 'N/A' }
+    this.node = { me: symbol, childs: [], alias: 'N/A', variable: null }
     this.trace = trace
-    this.expand(this.node)
+    this.expand()
   }
 
-  expand(node) {
-    const { me, childs } = node
+  expand() {
+    const { me, childs } = this.node 
     assert(!childs.length)
     switch (me[1]) {
       case 'MLOAD': {
         const subTrace = this.trace.sub(me[4][1].toNumber())
         const loadVariable = toLocalVariable(me[2], subTrace)
         assert(loadVariable)
-        node.alias = loadVariable.toString() 
+        this.node.alias = loadVariable.toString() 
+        this.node.variable = loadVariable
         this.trace.eachLocalVariable((storeVariable, storedValue) => {
           if (storeVariable.partialEqual(loadVariable)) {
             const members = [
@@ -49,8 +50,9 @@ class DNode {
         const subTrace = this.trace.sub(me[3][1].toNumber())
         const loadVariable = toStateVariable(me[2], subTrace) 
         assert(loadVariable)
-        node.alias = loadVariable.toString() 
-        this.trace.eachStateVariable((storeVariable, storedValue, traceIdx) => {
+        this.node.alias = loadVariable.toString() 
+        this.node.variable = loadVariable
+        this.trace.eachStateVariable((storeVariable, storedValue) => {
           if (storeVariable.partialEqual(loadVariable)) {
             const members = [
               ...loadVariable.getSymbolMembers(),
@@ -79,11 +81,12 @@ class DNode {
 
   findSloads() {
     const sloads = []
-    const stack = [this.node]
+    const stack = [this]
     while (stack.length > 0) {
-      const { me, childs } = stack.pop()
-      if (me[1] == 'SLOAD') sloads.push(me)
-      childs.forEach(child => stack.push(child.node))
+      const dnode = stack.pop()
+      const { node: { me, childs } } = dnode
+      if (me[1] == 'SLOAD') sloads.push(dnode)
+      childs.forEach(dnode => stack.push(dnode))
     }
     return sloads
   }
