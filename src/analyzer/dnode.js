@@ -77,6 +77,17 @@ class DNode {
     }
   }
 
+  findSloads() {
+    const sloads = []
+    const stack = [this.node]
+    while (stack.length > 0) {
+      const { me, childs } = stack.pop()
+      if (me[1] == 'SLOAD') sloads.push(me)
+      childs.forEach(child => stack.push(child.node))
+    }
+    return sloads
+  }
+
 
   prettify(level = 0) {
     if (level == 0) {

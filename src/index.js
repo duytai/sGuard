@@ -3,6 +3,7 @@ const fs = require('fs')
 const { Evm, Stack, ExecutionPath } = require('./evm')
 const { Trace } = require('./trace')
 const { logger } = require('./shared')
+const { analyze } = require('./analyzer')
 const { forEach } = require('lodash')
 
 assert(process.env.COMPILED)
@@ -17,4 +18,8 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const trace = new Trace()
   const pc = 0
   evm.execute(pc, stack, ep, trace)
+  const { checkPoints, endPoints } = evm
+  checkPoints.forEach(({ trace, value }) => {
+    analyze(value, trace, endPoints)
+  })
 })

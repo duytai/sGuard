@@ -2,7 +2,6 @@ const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
 const { logger } = require('../shared')
-const { analyze } = require('../analyzer')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -10,6 +9,8 @@ const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffff
 class Evm {
   constructor(bin) {
     this.bin = bin
+    this.checkPoints = []
+    this.endPoints = []
   }
 
   execute(pc = 0, stack, ep, trace) {
@@ -108,6 +109,9 @@ class Evm {
         case 'RETURN':
         case 'STOP':
         case 'INVALID': {
+          this.endPoints.push({
+            trace: trace.clone(),
+          })
           return
         }
         case 'MSIZE':
@@ -458,7 +462,10 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          analyze(value, trace)
+          this.checkPoints.push({
+            value,
+            trace: trace.clone(),
+          })
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
