@@ -64,19 +64,18 @@ class Analyzer {
       sloads.forEach(sload => {
         const { variable: loadVariable, childs } = sload.node
         trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
-          console.log(`pc: ${pc}`)
           const subTrace = trace.sub(traceIdx)
           /// sload corresponds to other sstores in other function
           if (storeVariable.partialEqual(loadVariable)) {
             /// dont need to get symbolMembers of loadVariable
-            const members = [
-              ...storeVariable.getSymbolMembers(),
-              storedValue,
-            ]
-            members.forEach(m => {
+            storeVariable.getSymbolMembers().forEach(m => {
               const dnode = new DNode(m, subTrace)
               childs.push(dnode)
             })
+            /// since sstore here, we need to analyze sstore dependency 
+            const data = { pc, symbol: storedValue, trace }
+            const analyzer = new Analyzer(data, this.endPoints)
+            childs.push(analyzer.dnode);
           }
         })
       })

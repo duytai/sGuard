@@ -72,7 +72,7 @@ class Trace {
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toLocalVariable(loc, this)
-        cb(variable, value, traceIdx)
+        cb(variable, value, traceIdx, pc)
       }
     })
   }
@@ -83,7 +83,7 @@ class Trace {
       if (isStateVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toStateVariable(loc, this)
-        cb(variable, value, traceIdx)
+        cb(variable, value, traceIdx, pc)
       }
     })
   }
