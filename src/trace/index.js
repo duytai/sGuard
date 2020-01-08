@@ -52,7 +52,7 @@ class Trace {
   filter(cond) {
     assert(cond)
     const trace = new Trace()
-    const ts = this.ts.filter(t => cond(t))
+    const ts = this.ts.filter(({ t }) => cond(t))
     trace.withTs([...ts])
     return trace
   }
@@ -63,7 +63,7 @@ class Trace {
 
   last() {
     assert(this.ts.length > 0)
-    return this.ts[this.ts.length - 1]
+    return this.ts[this.ts.length - 1].t
   }
 
   eachLocalVariable(cb) {
