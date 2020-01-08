@@ -22,7 +22,6 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   checkPoints.forEach(({ type, data }) => {
     switch (type) {
       case 'CALL': {
-        const { value, trace, pc } = data
         const analyzer = new Analyzer(data, endPoints)
         analyzer.prettify()
         break

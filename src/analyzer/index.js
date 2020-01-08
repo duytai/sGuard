@@ -1,23 +1,57 @@
 const assert = require('assert')
-const { intersection, uniqBy } = require('lodash')
+const { intersection, uniqBy, assign } = require('lodash')
 const DNode = require('./dnode')
 const { prettify, formatSymbol } = require('../shared')
 
 class Analyzer {
-  constructor(data, endPoints) {
-    const { symbol, trace, pc } = data
-    this.symbol = symbol 
-    this.trace = trace
-    this.endPoints = endPoints
-    this.run(this.findConds(pc))
+  constructor({ symbol, trace, pc }, endPoints) {
+    assign(this, { symbol, trace, pc, endPoints })
+    this.conds = this.findConds()
+    this.dnode = new DNode(symbol, trace)
+    this.crossfunctionAnalysis()
+    this.conditionAnalysis()
+  }
+
+  crossfunctionAnalysis() {
+    const sloads = this.dnode.findSloads()
+    this.endPoints.forEach(({ trace }) => {
+      sloads.forEach(sload => {
+        const { variable: loadVariable, childs } = sload.node
+        trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
+          const subTrace = trace.sub(traceIdx)
+          /// sload corresponds to other sstores in other function
+          if (storeVariable.partialEqual(loadVariable)) {
+            /// dont need to get symbolMembers of loadVariable
+            storeVariable.getSymbolMembers().forEach(m => {
+              const dnode = new DNode(m, subTrace)
+              childs.push(dnode)
+            })
+            /// since sstore here, we need to analyze sstore dependency 
+            // const data = { pc, symbol: storedValue, trace }
+            // const analyzer = new Analyzer(data, this.endPoints)
+            // childs.push(analyzer.dnode);
+          }
+        })
+      })
+    })
+  }
+
+  conditionAnalysis() {
+    const conds = this.findConds()
+    conds.forEach(({ pc, cond }) => {
+      const data = { pc, symbol: cond, trace: this.trace }
+      const analyzer = new Analyzer(data, this.endPoints)
+      const childs = this.dnode.node.childs
+      childs.push(analyzer.dnode)
+    })
   }
 
   /// Find jumpi nodes where our `pc` depends on
   /// and collect conditions at that jumpi
-  findConds(pc) {
+  findConds() {
     const executionPaths = this.endPoints.map(({ ep, trace }) => ep.ep)
-    const pcIncludingExecutionPaths = executionPaths.filter(p => p.find(pp => pp.pc == pc))
-    const pcExcludingExecutionPaths = executionPaths.filter(p => !p.find(pp => pp.pc == pc))
+    const pcIncludingExecutionPaths = executionPaths.filter(p => p.find(pp => pp.pc == this.pc))
+    const pcExcludingExecutionPaths = executionPaths.filter(p => !p.find(pp => pp.pc == this.pc))
     const pathToBranchKeys = (p) => {
       const keys = []
       for (let i = 0; i < p.length - 1; i ++) {
@@ -55,43 +89,10 @@ class Analyzer {
     return uniqBy(conds, ({ cond }) => formatSymbol(cond))
   }
 
-  run(conds) {
-    /// Internal analysis 
-    this.dnode = new DNode(this.symbol, this.trace)
-    const sloads = this.dnode.findSloads()
-    /// Cross function analysis
-    this.endPoints.forEach(({ trace }) => {
-      sloads.forEach(sload => {
-        const { variable: loadVariable, childs } = sload.node
-        trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
-          const subTrace = trace.sub(traceIdx)
-          /// sload corresponds to other sstores in other function
-          if (storeVariable.partialEqual(loadVariable)) {
-            /// dont need to get symbolMembers of loadVariable
-            storeVariable.getSymbolMembers().forEach(m => {
-              const dnode = new DNode(m, subTrace)
-              childs.push(dnode)
-            })
-            /// since sstore here, we need to analyze sstore dependency 
-            const data = { pc, symbol: storedValue, trace }
-            const analyzer = new Analyzer(data, this.endPoints)
-            childs.push(analyzer.dnode);
-          }
-        })
-      })
-    })
-    /// Condition analysis
-    conds.forEach(({ pc, cond }) => {
-      const data = { pc, symbol: cond, trace: this.trace }
-      const analyzer = new Analyzer(data, this.endPoints)
-      const childs = this.dnode.node.childs
-      childs.push(analyzer.dnode)
-    })
-  }
-
   prettify() {
     this.trace.prettify()
     this.dnode.prettify()
   }
 }
+
 module.exports = Analyzer
