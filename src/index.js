@@ -3,8 +3,8 @@ const fs = require('fs')
 const { Evm, Stack, ExecutionPath } = require('./evm')
 const { Trace } = require('./trace')
 const { logger } = require('./shared')
-const { analyze } = require('./analyzer')
 const { forEach } = require('lodash')
+const Analyzer = require('./analyzer')
 
 assert(process.env.COMPILED)
 const compiled = fs.readFileSync(process.env.COMPILED, 'utf8')
@@ -19,7 +19,14 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const pc = 0
   evm.execute(pc, stack, ep, trace)
   const { checkPoints, endPoints } = evm
-  checkPoints.forEach(({ trace, value }) => {
-    analyze(value, trace, endPoints)
+  checkPoints.forEach(({ type, data }) => {
+    switch (type) {
+      case 'CALL': {
+        const { value, trace, pc } = data
+        const analyzer = new Analyzer(data, endPoints)
+        analyzer.prettify()
+        break
+      }
+    }
   })
 })

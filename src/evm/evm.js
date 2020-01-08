@@ -1,7 +1,7 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
-const { logger } = require('../shared')
+const { logger, prettify } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -110,6 +110,7 @@ class Evm {
         case 'STOP':
         case 'INVALID': {
           this.endPoints.push({
+            ep: ep.clone(),
             trace: trace.clone(),
           })
           return
@@ -143,7 +144,7 @@ class Evm {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
-          trace.add(t)
+          trace.add(t, pc)
           break
         }
         case 'MLOAD': {
@@ -156,7 +157,7 @@ class Evm {
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
           const t = ['symbol', name, x, y]
-          trace.add(t)
+          trace.add(t, pc)
           break
         }
         case 'SLOAD': {
@@ -367,12 +368,12 @@ class Evm {
           if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
             const value = ['symbol', name, codeOffset, codeLen]
             const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t)
+            trace.add(t, pc)
           } else {
             const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
             const value = ['const', new BN(code.toString('hex'), 16)]
             const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t)
+            trace.add(t, pc)
           }
           break
         }
@@ -430,14 +431,14 @@ class Evm {
           const [memLoc, dataOffset, dataLen] = stack.popN(ins)
           const callData = ['symbol', 'CALLDATALOAD', dataOffset]
           const t = ['symbol', 'MSTORE', memLoc, callData, dataLen]
-          trace.add(t)
+          trace.add(t, pc)
           break
         }
         case 'RETURNDATACOPY': {
           const [memLoc, returnDataOffset, dataLen] = stack.popN(ins)
           const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
           const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen]
-          trace.add(t)
+          trace.add(t, pc)
           break
         }
         case 'DELEGATECALL': {
@@ -463,8 +464,12 @@ class Evm {
             outLength,
           ] = stack.popN(ins)
           this.checkPoints.push({
-            value,
-            trace: trace.clone(),
+            type: 'CALL',
+            data: {
+              trace: trace.clone(),
+              symbol: value,
+              pc,
+            },
           })
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
