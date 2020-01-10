@@ -5,6 +5,7 @@ const { Trace } = require('./trace')
 const { logger } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
+const Oracle = require('./oracle')
 
 assert(process.env.COMPILED)
 const compiled = fs.readFileSync(process.env.COMPILED, 'utf8')
@@ -23,7 +24,11 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
     switch (type) {
       case 'CALL': {
         const analyzer = new Analyzer(data, endPoints)
+        const oracle = new Oracle(analyzer)
         analyzer.prettify()
+        oracle.findBugs(['BLOCK_DEP']).forEach(dep => {
+          dep.report()
+        })
         break
       }
     }

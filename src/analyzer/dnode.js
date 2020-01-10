@@ -89,17 +89,24 @@ class DNode {
   }
 
   findSloads() {
-    const sloads = []
+    const cond = (dnode) => {
+      const { node: { me, childs } } = dnode
+      return me[1] == 'SLOAD'
+    }
+    return this.traverse(cond)
+  }
+
+  traverse(cond) {
+    assert(cond)
+    const dnodes = []
     const stack = [this]
     while (stack.length > 0) {
       const dnode = stack.pop()
-      const { node: { me, childs } } = dnode
-      if (me[1] == 'SLOAD') sloads.push(dnode)
-      childs.forEach(dnode => stack.push(dnode))
+      if (cond(dnode)) dnodes.push(dnode)
+      dnode.node.childs.forEach(dnode => stack.push(dnode))
     }
-    return sloads
+    return dnodes
   }
-
 
   prettify(level = 0) {
     if (level == 0) {
