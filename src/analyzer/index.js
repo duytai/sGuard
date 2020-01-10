@@ -4,18 +4,19 @@ const DNode = require('./dnode')
 const { prettify, formatSymbol } = require('../shared')
 
 class Analyzer {
-  constructor({ symbol, trace, pc }, endPoints) {
+  constructor({ symbol, trace, pc }, endPoints, visited = []) {
     assign(this, { symbol, trace, pc, endPoints })
+    visited.push(pc)
     this.dnode = new DNode(symbol, trace)
-    this.crossfunctionAnalysis()
-    this.conditionAnalysis()
+    this.conditionAnalysis(visited)
+    this.crossfunctionAnalysis(visited)
   }
 
   getdnode() {
     return this.dnode
   }
 
-  crossfunctionAnalysis() {
+  crossfunctionAnalysis(visited) {
     const sloads = this.dnode.findSloads()
     this.endPoints.forEach(({ trace }) => {
       sloads.forEach(sload => {
@@ -29,22 +30,26 @@ class Analyzer {
               const dnode = new DNode(m, subTrace)
               sload.addChild(dnode)
             })
-            /// since sstore here, we need to analyze sstore dependency 
-            // const data = { pc, symbol: storedValue, trace }
-            // const analyzer = new Analyzer(data, this.endPoints)
-            // childs.push(analyzer.dnode);
+            if (!visited.includes(pc)) {
+              /// since sstore here, we need to analyze sstore dependency 
+              const data = { pc, symbol: storedValue, trace }
+              const analyzer = new Analyzer(data, this.endPoints)
+              sload.addChild(analyzer.getdnode())
+            }
           }
         })
       })
     })
   }
 
-  conditionAnalysis() {
+  conditionAnalysis(visited) {
     const conds = this.findConds()
     conds.forEach(({ pc, cond }) => {
-      const data = { pc, symbol: cond, trace: this.trace }
-      const analyzer = new Analyzer(data, this.endPoints)
-      this.dnode.addChild(analyzer.getdnode())
+      if (!visited.includes(pc)) {
+        const data = { pc, symbol: cond, trace: this.trace }
+        const analyzer = new Analyzer(data, this.endPoints, visited)
+        this.dnode.addChild(analyzer.getdnode())
+      }
     })
   }
 
