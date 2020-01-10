@@ -21,6 +21,15 @@ class DNode {
     this.expand()
   }
 
+  addChild(child) {
+    assert(child)
+    this.node.childs.push(child)
+  }
+
+  getVariable() {
+    return this.node.variable
+  }
+
   expand() {
     const { me, childs } = this.node 
     assert(!childs.length)

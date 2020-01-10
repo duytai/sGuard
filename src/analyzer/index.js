@@ -6,17 +6,20 @@ const { prettify, formatSymbol } = require('../shared')
 class Analyzer {
   constructor({ symbol, trace, pc }, endPoints) {
     assign(this, { symbol, trace, pc, endPoints })
-    this.conds = this.findConds()
     this.dnode = new DNode(symbol, trace)
     this.crossfunctionAnalysis()
     this.conditionAnalysis()
+  }
+
+  getdnode() {
+    return this.dnode
   }
 
   crossfunctionAnalysis() {
     const sloads = this.dnode.findSloads()
     this.endPoints.forEach(({ trace }) => {
       sloads.forEach(sload => {
-        const { variable: loadVariable, childs } = sload.node
+        const loadVariable = sload.getVariable()
         trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
           const subTrace = trace.sub(traceIdx)
           /// sload corresponds to other sstores in other function
@@ -24,7 +27,7 @@ class Analyzer {
             /// dont need to get symbolMembers of loadVariable
             storeVariable.getSymbolMembers().forEach(m => {
               const dnode = new DNode(m, subTrace)
-              childs.push(dnode)
+              sload.addChild(dnode)
             })
             /// since sstore here, we need to analyze sstore dependency 
             // const data = { pc, symbol: storedValue, trace }
@@ -41,8 +44,7 @@ class Analyzer {
     conds.forEach(({ pc, cond }) => {
       const data = { pc, symbol: cond, trace: this.trace }
       const analyzer = new Analyzer(data, this.endPoints)
-      const childs = this.dnode.node.childs
-      childs.push(analyzer.dnode)
+      this.dnode.addChild(analyzer.getdnode())
     })
   }
 
