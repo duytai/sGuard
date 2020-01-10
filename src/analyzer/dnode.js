@@ -49,6 +49,12 @@ class DNode {
         this.node.alias = loadVariable.toString() 
         this.node.variable = loadVariable
         this.trace.eachLocalVariable((storeVariable, storedValue) => {
+          /// If it is exactEqual, return true to break forEach loop 
+          if (storeVariable.exactEqual(loadVariable)) {
+            const dnode = new DNode(storedValue, subTrace)
+            childs.push(dnode)
+            return true
+          }
           if (storeVariable.partialEqual(loadVariable)) {
             const members = [
               ...loadVariable.getSymbolMembers(),
@@ -70,6 +76,12 @@ class DNode {
         this.node.alias = loadVariable.toString() 
         this.node.variable = loadVariable
         this.trace.eachStateVariable((storeVariable, storedValue) => {
+          /// If it is exactEqual, return true to break forEach loop 
+          if (storeVariable.exactEqual(loadVariable)) {
+            const dnode = new DNode(storedValue, subTrace)
+            childs.push(dnode)
+            return true
+          }
           if (storeVariable.partialEqual(loadVariable)) {
             const members = [
               ...loadVariable.getSymbolMembers(),

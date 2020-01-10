@@ -46,6 +46,12 @@ class Variable  {
     return [...this.root.getSymbolMembers(), ...ms]
   }
 
+  exactEqual(other) {
+    const myStr = this.toString()
+    const otherStr = other.toString()
+    return myStr == otherStr && !myStr.includes('*')
+  }
+
   partialEqual(other) {
     const minLen = Math.min(this.members.length, other.members.length)
     for (let i = 0; i < minLen; i ++) {
