@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { prettify } = require('../shared')
+const { prettify, logger } = require('../shared')
 
 class Stack {
   constructor() {
@@ -45,7 +45,12 @@ class Stack {
     return stack
   }
 
+  size() {
+    return this.st.length
+  }
+
   prettify(space = 0) {
+    logger.info('>> Full stack')
     prettify(this.st, space)
   }
 

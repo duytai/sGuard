@@ -4,6 +4,8 @@ const { Evm, Stack, ExecutionPath } = require('./evm')
 const { Trace } = require('./trace')
 const { logger } = require('./shared')
 const { forEach } = require('lodash')
+const Analyzer = require('./analyzer')
+const Oracle = require('./oracle')
 
 assert(process.env.COMPILED)
 const compiled = fs.readFileSync(process.env.COMPILED, 'utf8')
@@ -17,4 +19,22 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const trace = new Trace()
   const pc = 0
   evm.execute(pc, stack, ep, trace)
+  const { checkPoints, endPoints } = evm
+  checkPoints.forEach(({ type, data }) => {
+    switch (type) {
+      case 'CALL': {
+        const analyzer = new Analyzer(data, endPoints)
+        const oracle = new Oracle(analyzer)
+        analyzer.prettify()
+        const bugNames = [
+          'BLOCK_DEP',
+          'TIME_DEP',
+        ]
+        oracle.findBugs(bugNames).forEach(dep => {
+          dep.report()
+        })
+        break
+      }
+    }
+  })
 })
