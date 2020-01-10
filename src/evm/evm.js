@@ -105,10 +105,13 @@ class Evm {
           break
         }
         case 'REVERT':
+        case 'INVALID': {
+          /// Do not insert to endPoints
+          return
+        }
         case 'SELFDESTRUCT':
         case 'RETURN':
-        case 'STOP':
-        case 'INVALID': {
+        case 'STOP': {
           this.endPoints.push({
             ep: ep.clone(),
             trace: trace.clone(),
