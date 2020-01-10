@@ -22,6 +22,16 @@ class Analyzer {
       sloads.forEach(sload => {
         const loadVariable = sload.getVariable()
         trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
+          /// If it is exactEqual, return true to break forEach loop 
+          if (storeVariable.exactEqual(loadVariable)) {
+            if (!visited.includes(pc)) {
+              /// since sstore here, we need to analyze sstore dependency
+              const data = { pc, symbol: storedValue, trace, ep }
+              const analyzer = new Analyzer(data, this.endPoints, visited)
+              sload.addChild(analyzer.getdnode())
+            }
+            return true
+          }
           const subTrace = trace.sub(traceIdx)
           /// sload corresponds to other sstores in other function
           if (storeVariable.partialEqual(loadVariable)) {
