@@ -26,7 +26,11 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
         const analyzer = new Analyzer(data, endPoints)
         const oracle = new Oracle(analyzer)
         analyzer.prettify()
-        oracle.findBugs(['BLOCK_DEP']).forEach(dep => {
+        const bugNames = [
+          'BLOCK_DEP',
+          'TIME_DEP',
+        ]
+        oracle.findBugs(bugNames).forEach(dep => {
           dep.report()
         })
         break
