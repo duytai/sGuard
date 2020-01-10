@@ -26,6 +26,14 @@ class DNode {
     this.node.childs.push(child)
   }
 
+  getSymbol() {
+    return this.node.me
+  }
+
+  getAlias() {
+    return this.node.alias
+  } 
+
   getVariable() {
     return this.node.variable
   }
