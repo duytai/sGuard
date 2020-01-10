@@ -1,5 +1,6 @@
 const assert = require('assert')
 const chalk = require('chalk')
+const { reverse } = require('lodash')
 const {
   prettify,
   logger,
@@ -68,24 +69,26 @@ class Trace {
 
   eachLocalVariable(cb) {
     assert(cb)
-    this.ts.forEach(({ pc, t }, traceIdx) => {
+    for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
+      const { pc, t } = this.ts[traceIdx]
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toLocalVariable(loc, this)
         cb(variable, value, traceIdx, pc)
       }
-    })
+    }
   }
 
   eachStateVariable(cb) {
     assert(cb)
-    this.ts.forEach(({ pc, t }, traceIdx) => {
+    for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
+      const { pc, t } = this.ts[traceIdx]
       if (isStateVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toStateVariable(loc, this)
         cb(variable, value, traceIdx, pc)
       }
-    })
+    }
   }
 
   prettify() {
