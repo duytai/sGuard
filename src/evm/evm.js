@@ -468,6 +468,7 @@ class Evm {
             data: {
               trace: trace.clone(),
               symbol: value,
+              ep: ep.clone(),
               pc,
             },
           })

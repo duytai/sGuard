@@ -4,8 +4,8 @@ const DNode = require('./dnode')
 const { prettify, formatSymbol } = require('../shared')
 
 class Analyzer {
-  constructor({ symbol, trace, pc }, endPoints, visited = []) {
-    assign(this, { symbol, trace, pc, endPoints })
+  constructor({ symbol, trace, pc, ep }, endPoints, visited = []) {
+    assign(this, { symbol, trace, pc, endPoints, ep })
     visited.push(pc)
     this.dnode = new DNode(symbol, trace)
     this.conditionAnalysis(visited)
@@ -18,7 +18,7 @@ class Analyzer {
 
   crossfunctionAnalysis(visited) {
     const sloads = this.dnode.findSloads()
-    this.endPoints.forEach(({ trace }) => {
+    this.endPoints.forEach(({ trace, ep }) => {
       sloads.forEach(sload => {
         const loadVariable = sload.getVariable()
         trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
@@ -32,7 +32,7 @@ class Analyzer {
             })
             if (!visited.includes(pc)) {
               /// since sstore here, we need to analyze sstore dependency
-              const data = { pc, symbol: storedValue, trace }
+              const data = { pc, symbol: storedValue, trace, ep }
               const analyzer = new Analyzer(data, this.endPoints, visited)
               sload.addChild(analyzer.getdnode())
             }
@@ -46,7 +46,7 @@ class Analyzer {
     const conds = this.findConds()
     conds.forEach(({ pc, cond }) => {
       if (!visited.includes(pc)) {
-        const data = { pc, symbol: cond, trace: this.trace }
+        const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
         const analyzer = new Analyzer(data, this.endPoints, visited)
         this.dnode.addChild(analyzer.getdnode())
       }
@@ -85,13 +85,11 @@ class Analyzer {
       })
     })
     const conds = []
-    executionPaths.forEach(ep => {
-      ep.forEach(({ pc, opcode: { name }, stack }) => {
-        if (dJumpis.includes(pc)) {
-          const [label, cond] = stack.clone().popN(2)
-          conds.push({ pc, cond })
-        }
-      })
+    this.ep.ep.forEach(({ pc, opcode: { name }, stack }) => {
+      if (dJumpis.includes(pc)) {
+        const [label, cond] = stack.clone().popN(2)
+        conds.push({ pc, cond })
+      }
     })
     return uniqBy(conds, ({ cond }) => formatSymbol(cond))
   }
