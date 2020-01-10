@@ -31,9 +31,9 @@ class Analyzer {
               sload.addChild(dnode)
             })
             if (!visited.includes(pc)) {
-              /// since sstore here, we need to analyze sstore dependency 
+              /// since sstore here, we need to analyze sstore dependency
               const data = { pc, symbol: storedValue, trace }
-              const analyzer = new Analyzer(data, this.endPoints)
+              const analyzer = new Analyzer(data, this.endPoints, visited)
               sload.addChild(analyzer.getdnode())
             }
           }
