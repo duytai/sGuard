@@ -104,11 +104,11 @@ class Evm {
           stack.dupN(this.bin[pc] - 0x7f)
           break
         }
-        case 'REVERT':
-        case 'INVALID': {
+        case 'REVERT': {
           /// Do not insert to endPoints
           return
         }
+        case 'INVALID':
         case 'SELFDESTRUCT':
         case 'RETURN':
         case 'STOP': {
