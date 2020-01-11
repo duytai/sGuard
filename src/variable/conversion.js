@@ -19,7 +19,13 @@ const toLocalVariable = (t, trace) => {
   assert(t && trace)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMloadConst(t)) {
-    const name = hash(formatSymbol(t)).slice(0, 2)
+    const [loc, loadSize, loadTraceSize] = t.slice(2)
+    assert(isConst(loadTraceSize))
+    const subTrace = trace
+      .sub(loadTraceSize[1].toNumber())
+      .filter(isMstore40)
+    const storedValue = subTrace.last()[3]
+    const name = hash(formatSymbol(storedValue)).slice(0, 2)
     return new Variable(`m_${name}`)
   }
   if (isOpcode(t, 'MLOAD')) {
