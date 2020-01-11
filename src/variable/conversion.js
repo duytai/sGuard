@@ -58,7 +58,9 @@ const toLocalVariable = (t, trace) => {
       stack.push(base)
     }
     if (name == 'SUB') {
-      stack.push(operands[0])
+      const [ base, offset ] = operands
+      properties.push(offset)
+      stack.push(base)
     }
   }
 }
@@ -106,7 +108,9 @@ const toStateVariable = (t, trace) => {
       stack.push(base)
     }
     if (name == 'SUB') {
-      stack.push(operands[0])
+      const [ base, offset ] = operands
+      properties.push(offset)
+      stack.push(base)
     }
   }
 }
