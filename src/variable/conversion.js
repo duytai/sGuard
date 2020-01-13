@@ -28,12 +28,22 @@ const toLocalVariable = (t, trace) => {
     const name = hash(formatSymbol(storedValue)).slice(0, 2)
     return new Variable(`m_${name}`)
   }
+  /// Assign a complicaited data structure to another complicaited data structure 
+  /// We have to search for the origin variable
   if (isOpcode(t, 'MLOAD')) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
-    assert(isConst(loadTraceSize))
     const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const v = toLocalVariable(base, subTrace)
-    return new Variable(v)
+    const loadVariable = toLocalVariable(base, subTrace) 
+    assert(loadVariable)
+    let originVariable = null
+    subTrace.eachLocalVariable((storeVariable, storedValue, traceIdx) => {
+      if (loadVariable.exactEqual(storeVariable)) {
+        originVariable = toLocalVariable(storedValue, trace.sub(traceIdx))
+        return true
+      }
+    })
+    assert(originVariable)
+    return originVariable
   }
   const properties = []
   const stack = [t]
