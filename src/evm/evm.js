@@ -441,6 +441,7 @@ class Evm {
           trace.add(t, pc)
           break
         }
+        case 'STATICCALL':
         case 'DELEGATECALL': {
           const [
             gasLimit,
@@ -453,6 +454,7 @@ class Evm {
           stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
           break
         }
+        case 'CALLCODE':
         case 'CALL': {
           const [
             gasLimit,
