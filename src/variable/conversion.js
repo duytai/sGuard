@@ -15,6 +15,32 @@ const {
   formatSymbol,
 } = require('../shared')
 
+const findLocalAccessPath = (symbol) => {
+  const accessPaths = []
+  const stackOfSymbols = [{ symbol, accessPath: [], hasMore: true }]
+  while (stackOfSymbols.length > 0) {
+    const { symbol, accessPath, hasMore } = stackOfSymbols.pop()
+    if (isMloadConst(symbol)) {
+      accessPaths.push(accessPath)
+    } else {
+      const [type, name, ...params] = symbol
+      params.forEach((param, idx) => {
+        if (['SUB', 'ADD', 'MLOAD'].includes(name)) {
+          stackOfSymbols.push({
+            symbol: param,
+            accessPath: (hasMore && name != 'MLOAD') ? [...accessPath, idx] : [...accessPath],
+            hasMore: hasMore && name != 'MLOAD'
+          })
+        }
+      })
+    }
+  }
+  /// Find shortest accessPath
+  assert(accessPaths.length == 1, `findLocalAccessPath`)
+  assert(accessPaths[0].length > 0, `findLocalAccessPath.length`)
+  return accessPaths[0]
+}
+
 const toLocalVariable = (t, trace) => {
   assert(t && trace)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
@@ -46,39 +72,16 @@ const toLocalVariable = (t, trace) => {
     return originVariable
   }
   const properties = []
-  const stack = [t]
-  while (stack.length > 0) {
-    const [type, name, ...operands] = stack.pop()
-    assert(name == 'ADD' || name == 'SUB', `loc is ${name}`)
-    if (name == 'ADD') {
-      const hasLeftMload = findSymbol(operands[0], isMloadConst).length > 0
-      const hasRightMload = findSymbol(operands[1], isMloadConst).length > 0
-      const constIdx = findIndex(operands, ([type]) => type == 'const')
-      if (!hasLeftMload && !hasRightMload) {
-        assert(false, 'Need an example')
-      }
-      /*
-       * FIXME: both left and right contain mload then left is base
-       * (However it could be right)
-       * */
-      const baseIdx = hasRightMload ? 1 : 0
-      const base = operands[baseIdx]
-      const offset = operands[1 - baseIdx]
-      if (isOpcode(base, 'MLOAD')) {
-        const variable = toLocalVariable(base, trace)
-        properties.push(offset)
-        variable.addN(reverse(properties))
-        return variable
-      }
-      properties.push(offset)
-      stack.push(base)
-    }
-    if (name == 'SUB') {
-      const [ base, offset ] = operands
-      properties.push(offset)
-      stack.push(base)
-    }
-  }
+  const accessPath = findLocalAccessPath(t)
+  let base = t
+  accessPath.forEach(baseIdx => {
+    const [type, name, ...operands] = base
+    base = operands[baseIdx]
+    properties.push(operands[1 - baseIdx])
+  })
+  const variable = toLocalVariable(base, trace)
+  variable.addN(reverse(properties))
+  return variable
 }
 
 const findStateAccessPath = (symbol) => {
@@ -123,7 +126,7 @@ const toStateVariable = (t, trace) => {
   accessPath.forEach(baseIdx => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
-    properties.push(1 - baseIdx)
+    properties.push(operands[1 - baseIdx])
   })
   const variable = toStateVariable(base, trace)
   variable.addN(reverse(properties))
