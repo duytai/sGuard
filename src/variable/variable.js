@@ -29,11 +29,8 @@ class Variable  {
   }
 
   toString() {
-    const isRootVar = this.root.constructor.name == 'Variable'
-    let root = this.root.toString()
-    root = isRootVar ? `[${root}]` : root
     const prop = this.members.map(m => isConst(m) ? m[1].toString(16) : '*').join('.')
-    return [root, prop].filter(p => !!p).join('.')
+    return [this.root, prop].filter(p => !!p).join('.')
   }
 
   prettify() {
@@ -41,9 +38,7 @@ class Variable  {
   }
 
   getSymbolMembers() {
-    const ms = this.members.filter(m => !isConst(m))
-    if (typeof this.root == 'string') return ms
-    return [...this.root.getSymbolMembers(), ...ms]
+    return this.members.filter(m => !isConst(m))
   }
 
   exactEqual(other) {
@@ -61,9 +56,7 @@ class Variable  {
         if (member[1].toNumber() != otherMember[1].toNumber()) return false
       }
     }
-    if (typeof this.root == 'string' || typeof other.root == 'string')
-      return this.root.toString() == other.root.toString()
-    return this.root.partialEqual(other.root) 
+    return this.root == other.root
   }
 }
 

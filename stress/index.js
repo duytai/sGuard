@@ -5,6 +5,8 @@ const Web3 = require('web3')
 const { Evm, Stack, ExecutionPath } = require('../src/evm')
 const { Trace } = require('../src/trace')
 const { logger } = require('../src/shared')
+const Analyzer = require('../src/analyzer')
+const Oracle = require('../src/oracle')
 
 const binFolder = path.join(__dirname, 'bin/')
 const binFiles = fs.readdirSync(binFolder).sort()
@@ -22,7 +24,31 @@ const main = async() => {
     const bin = code.slice(2)
     logger.info(`binLengh: ${bin.length}`)
     const evm = new Evm(Buffer.from(bin, 'hex'))
+    logger.info('>> Start evm')
     evm.execute(pc, stack, ep, trace)
+    logger.info('>> Start analyzer')
+    const { checkPoints, endPoints } = evm
+    logger.info(`>> endPoints   : ${endPoints.length}`)
+    logger.info(`>> checkPoints : ${checkPoints.length}`)
+    checkPoints.forEach(({ type, data }) => {
+      switch (type) {
+        case 'CALL': {
+          const analyzer = new Analyzer(data, endPoints)
+          const oracle = new Oracle(analyzer)
+          analyzer.prettify()
+          const bugNames = [
+            'BLOCK_DEP',
+            'TIME_DEP',
+          ]
+          oracle.findBugs(bugNames).forEach(dep => {
+            dep.report()
+          })
+          break
+        }
+      }
+    })
+    logger.info(`>> endPoints   : ${endPoints.length}`)
+    logger.info(`>> checkPoints : ${checkPoints.length}`)
   } else {
     const binFile = binFiles[allowedContract]
     assert(binFile, 'binFile must exist')

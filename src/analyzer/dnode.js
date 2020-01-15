@@ -7,8 +7,6 @@ const {
   findSymbol,
   formatSymbol,
   isConst,
-  isMloadConst,
-  isSha3Mload0,
 } = require('../shared')
 const {
   toStateVariable,
@@ -108,22 +106,6 @@ class DNode {
       }
       default: {
         const symbols = findSymbol(me, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
-        const hasMloadConst = symbols.find(isMloadConst)
-        const hasSha3Mload0 = symbols.find(isSha3Mload0)
-        assert(!hasMloadConst || !hasSha3Mload0)
-        /// If has MloadConst => convert directly to a variable
-        if (hasMloadConst) {
-          const loadVariable = toLocalVariable(me, this.trace)
-          assert(loadVariable)
-          this.expandLocalVariable(loadVariable, this.trace)
-          return
-        } 
-        if (hasSha3Mload0) {
-          const loadVariable = toStateVariable(me, this.trace)
-          assert(loadVariable)
-          this.expandLocalVariable(loadVariable, this.trace)
-          return
-        }
         symbols.forEach(symbol => {
           const traceSize = symbol[1] == 'SLOAD' ? symbol[3] : symbol[4]
           assert(isConst(traceSize))

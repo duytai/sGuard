@@ -63,7 +63,7 @@ class Evm {
               ep.clone(),
               trace.clone(),
             )
-            if (!ep.findForbiddenJumpdests(jumpdest).includes(jumpdest)) {
+            if (!ep.isForbidden(jumpdest)) {
               if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
                 this.execute(
                   jumpdest,
@@ -82,7 +82,7 @@ class Evm {
           const label = stack.pop()
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
-          if (!ep.findForbiddenJumpdests(jumpdest).includes(jumpdest)) {
+          if (!ep.isForbidden(jumpdest)) {
             if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
               this.execute(
                 jumpdest,
@@ -104,10 +104,7 @@ class Evm {
           stack.dupN(this.bin[pc] - 0x7f)
           break
         }
-        case 'REVERT': {
-          /// Do not insert to endPoints
-          return
-        }
+        case 'REVERT':
         case 'INVALID':
         case 'SELFDESTRUCT':
         case 'RETURN':
