@@ -1,10 +1,11 @@
 const { pickBy } = require('lodash')
 const { logger } = require('../shared')
 
+const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 20
+
 class ExecutionPath {
   constructor() {
     this.ep = []
-    this.MAX_VISITED_BLOCK = 20;
   }
 
   withEp(ep) {
@@ -27,7 +28,7 @@ class ExecutionPath {
       ...this.ep.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
       jumpdest,
     ]
-    return pcs.length >= this.MAX_VISITED_BLOCK 
+    return pcs.length >= MAX_VISITED_BLOCK 
   }
 
   prettify() {
