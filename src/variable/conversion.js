@@ -81,6 +81,28 @@ const toLocalVariable = (t, trace) => {
   }
 }
 
+const findStateAccessPath = (symbol) => {
+  const accessPaths = []
+  const stackOfSymbols = [{ symbol, accessPath: []}]
+  while (stackOfSymbols.length > 0) {
+    const { symbol, accessPath } = stackOfSymbols.pop()
+    if (isSha3Mload0(symbol)) {
+      accessPaths.push(accessPath)
+    } else {
+      const [type, name, ...params] = symbol
+      params.forEach((param, idx) => {
+        if (['SUB', 'ADD'].includes(name)) {
+          stackOfSymbols.push({ symbol: param, accessPath: [...accessPath, idx]})
+        }
+      })
+    }
+  }
+  /// Find shortest accessPath 
+  assert(accessPaths.length == 1, `findStateAccessPath`)
+  assert(accessPaths[0].length > 0, `findStateAccessPath.length`)
+  return accessPaths[0]
+}
+
 const toStateVariable = (t, trace) => {
   assert(t && trace)
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
@@ -96,39 +118,16 @@ const toStateVariable = (t, trace) => {
     return new Variable(`s_${name}`)
   }
   const properties = []
-  const stack = [t]
-  while (stack.length > 0) {
-    const [type, name, ...operands] = stack.pop()
-    assert(name == 'ADD' || name == 'SUB', `loc is ${name}`)
-    if (name == 'ADD') {
-      const hasLeftSha3 = findSymbol(operands[0], isSha3Mload0).length > 0
-      const hasRightSha3 = findSymbol(operands[1], isSha3Mload0).length > 0
-      const constIdx = findIndex(operands, ([type]) => type == 'const')
-      if (!hasLeftSha3 && !hasRightSha3) {
-        prettify([t])
-        assert(false, 'Need an example')
-      }
-      /*
-       * FIXME: both left and right contain mload then right is base
-       * (However it could be left)
-       * */
-      const baseIdx = hasLeftSha3 ? 0 : 1
-      const base = operands[baseIdx]
-      const offset = operands[1 - baseIdx]
-      if (isSha3Mload0(base)) {
-        const variable = toStateVariable(base, trace)
-        variable.addN(reverse([...properties, offset]))
-        return variable
-      }
-      properties.push(offset)
-      stack.push(base)
-    }
-    if (name == 'SUB') {
-      const [ base, offset ] = operands
-      properties.push(offset)
-      stack.push(base)
-    }
-  }
+  const accessPath = findStateAccessPath(t)
+  let base = t
+  accessPath.forEach(baseIdx => {
+    const [type, name, ...operands] = base
+    base = operands[baseIdx]
+    properties.push(1 - baseIdx)
+  })
+  const variable = toStateVariable(base, trace)
+  variable.addN(reverse(properties))
+  return variable
 }
 
 module.exports = {
