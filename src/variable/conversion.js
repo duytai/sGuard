@@ -77,7 +77,9 @@ const toLocalVariable = (t, trace) => {
   accessPath.forEach(baseIdx => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
-    properties.push(operands[1 - baseIdx])
+    if (name != 'SUB') {
+      properties.push(operands[1 - baseIdx])
+    }
   })
   const variable = toLocalVariable(base, trace)
   variable.addN(reverse(properties))
@@ -101,8 +103,8 @@ const findStateAccessPath = (symbol) => {
     }
   }
   /// Find longest accessPath 
-  assert(accessPaths.length == 1, `findStateAccessPath`)
   assert(accessPaths[0].length > 0, `findStateAccessPath.length`)
+  accessPaths.sort((x, y) => y.length - x.length)
   return accessPaths[0]
 }
 
@@ -126,7 +128,9 @@ const toStateVariable = (t, trace) => {
   accessPath.forEach(baseIdx => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
-    properties.push(operands[1 - baseIdx])
+    if (name != 'SUB') {
+      properties.push(operands[1 - baseIdx])
+    }
   })
   const variable = toStateVariable(base, trace)
   variable.addN(reverse(properties))

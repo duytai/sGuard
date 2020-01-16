@@ -8,8 +8,8 @@ class Analyzer {
     assign(this, { symbol, trace, pc, endPoints, ep })
     visited.push(pc)
     this.dnode = new DNode(symbol, trace)
-    // this.conditionAnalysis(visited)
-    // this.crossfunctionAnalysis(visited)
+    this.conditionAnalysis(visited)
+    this.crossfunctionAnalysis(visited)
   }
 
   getdnode() {
