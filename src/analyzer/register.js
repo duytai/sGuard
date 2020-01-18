@@ -12,10 +12,6 @@ class RegisterAnalayzer {
     this.crossfunctionAnalysis(visited)
   }
 
-  getdnode() {
-    return this.dnode
-  }
-
   crossfunctionAnalysis(visited) {
     const sloads = this.dnode.findSloads()
     this.endPoints.forEach(({ trace, ep }) => {
@@ -28,7 +24,7 @@ class RegisterAnalayzer {
               /// since sstore here, we need to analyze sstore dependency
               const data = { pc, symbol: storedValue, trace, ep }
               const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
-              sload.addChild(analyzer.getdnode())
+              sload.addChild(analyzer.dnode)
             }
             return true
           }
@@ -44,7 +40,7 @@ class RegisterAnalayzer {
               /// since sstore here, we need to analyze sstore dependency
               const data = { pc, symbol: storedValue, trace, ep }
               const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
-              sload.addChild(analyzer.getdnode())
+              sload.addChild(analyzer.dnode)
             }
           }
         })
@@ -58,7 +54,7 @@ class RegisterAnalayzer {
       if (!visited.includes(pc)) {
         const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
         const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
-        this.dnode.addChild(analyzer.getdnode())
+        this.dnode.addChild(analyzer.dnode)
       }
     })
   }

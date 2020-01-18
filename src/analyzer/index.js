@@ -10,7 +10,7 @@ class Analyzer {
   }
 
   getdnode() {
-    return this.register.getdnode()
+    return this.register.dnode
   }
 }
 
