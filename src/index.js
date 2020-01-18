@@ -20,21 +20,13 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const pc = 0
   evm.execute(pc, stack, ep, trace)
   const { checkPoints, endPoints } = evm
-  checkPoints.forEach(({ type, data }) => {
-    switch (type) {
-      case 'CALL': {
-        const analyzer = new Analyzer(data, endPoints)
-        const oracle = new Oracle(analyzer)
-        analyzer.prettify()
-        const bugNames = [
-          'BLOCK_DEP',
-          'TIME_DEP',
-        ]
-        oracle.findBugs(bugNames).forEach(dep => {
-          dep.report()
-        })
-        break
-      }
-    }
+  checkPoints.forEach(data => {
+    const analyzer = new Analyzer(data, endPoints)
+    const oracle = new Oracle(analyzer)
+    analyzer.prettify()
+    const bugNames = ['BLOCK_DEP', 'TIME_DEP']
+    oracle.findBugs(bugNames).forEach(dep => {
+      dep.report()
+    })
   })
 })

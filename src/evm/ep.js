@@ -1,3 +1,4 @@
+const assert = require('assert')
 const { pickBy } = require('lodash')
 const { logger } = require('../shared')
 
@@ -37,6 +38,15 @@ class ExecutionPath {
       logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
       stack.prettify(2)
     })
+  }
+
+  get(idx) {
+    assert(idx >= 0 && idx < this.ep.length)
+    return this.ep[idx]
+  }
+
+  size() {
+    return this.ep.length
   }
 }
 

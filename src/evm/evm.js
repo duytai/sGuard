@@ -466,13 +466,8 @@ class Evm {
             outLength,
           ] = stack.popN(ins)
           this.checkPoints.push({
-            type: 'CALL',
-            data: {
-              trace: trace.clone(),
-              symbol: value,
-              ep: ep.clone(),
-              pc,
-            },
+            trace: trace.clone(),
+            ep: ep.clone(),
           })
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break

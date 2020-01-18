@@ -1,8 +1,15 @@
+const assert = require('assert')
 const RegisterAnalyzer = require('./register')
+const StackAnalyzer = require('./stack')
+const { prettify } = require('../shared')
 
 class Analyzer {
-  constructor(data, endPoints) {
-    this.register = new RegisterAnalyzer(data, endPoints)
+  constructor({ ep, trace }, endPoints) {
+    const { stack, opcode: { name }, pc } = ep.get(ep.size() - 1)
+    assert(name == 'CALL')
+    const symbol = stack.get(stack.size() - 3)
+    this.register = new RegisterAnalyzer({ ep, trace, symbol, pc }, endPoints)
+    this.stack = new StackAnalyzer({ ep, trace }, endPoints)
   }
 
   prettify() {
