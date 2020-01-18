@@ -93,7 +93,7 @@ class RegisterAnalayzer {
     const conds = []
     this.ep.ep.forEach(({ pc, opcode: { name }, stack }) => {
       if (dJumpis.includes(pc)) {
-        const [label, cond] = stack.clone().popN(2)
+        const cond = stack.get(stack.size() - 2)
         conds.push({ pc, cond })
       }
     })
