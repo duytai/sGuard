@@ -23,6 +23,15 @@ class ExecutionPath {
     return executionPath
   }
 
+  sub(epSize) {
+    assert(epSize >= 0)
+    assert(epSize <= this.ep.length)
+    const executionPath = new ExecutionPath()
+    const ep = this.ep.slice(0, epSize)
+    executionPath.withTs([...ep])
+    return ep 
+  }
+
   isForbidden(jumpdest) {
     const forbiddenJumpdests = new Set() 
     const pcs = [

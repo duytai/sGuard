@@ -8,8 +8,9 @@ class Analyzer {
     const { stack, opcode: { name }, pc } = ep.get(ep.size() - 1)
     assert(name == 'CALL')
     const symbol = stack.get(stack.size() - 3)
+    const stackPos = stack.size() - 3
     this.register = new RegisterAnalyzer({ ep, trace, symbol, pc }, endPoints)
-    this.stack = new StackAnalyzer({ ep, trace }, endPoints)
+    this.stack = new StackAnalyzer({ ep, trace, stackPos }, endPoints)
   }
 
   prettify() {

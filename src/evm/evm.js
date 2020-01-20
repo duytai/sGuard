@@ -18,7 +18,7 @@ class Evm {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      ep.add({ stack: stack.clone(), opcode, pc })
+      ep.add({ stack: stack.clone(), opcode: { ...opcode, opVal: this.bin[pc] }, pc })
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f

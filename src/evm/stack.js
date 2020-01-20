@@ -55,7 +55,7 @@ class Stack {
   }
 
   prettify(space = 0) {
-    logger.info('>> Full stack')
+    logger.info(`>> Full stack ${this.st.length}`)
     prettify(this.st, space)
   }
 
