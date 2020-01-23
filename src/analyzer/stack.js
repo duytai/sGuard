@@ -5,12 +5,11 @@ const { prettify } = require('../shared')
 class StackAnalyzer {
   constructor({ trace, ep, stackPos }, endPoints) {
     assign(this, { trace, endPoints, ep, stackPos })
-    ep.prettify()
+    ep.prettify(0)
     this.expand(stackPos, ep)
   }
 
   expand(stackPos, ep) {
-    // ep.prettify(0)
     let trackingPos = stackPos
     for (let i = ep.size() - 1; i >= 0; i--) {
       const { stack, opcode: { name, opVal, ins, outs }, pc } = ep.get(i)
@@ -28,17 +27,18 @@ class StackAnalyzer {
         trackingPos = trackingPos - dupN
       }
       if (trackingPos == lastStackPos) {
-        const { stack, opcode: { name, ins }} = ep.get(i - 1)
+        const { stack: prevStack, opcode: { name: prevName, ins: prevIns }} = ep.get(i - 1)
         /// Where inital variable is assigned to variable
-        if (name == 'POP') {
-          console.log('POP')
-          console.log(`pc: ${pc}`)
+        if (prevName == 'POP') {
+          console.log('------')
           console.log(`trackingPos: ${trackingPos}`)
+          console.log(`pc: ${pc}`)
         } else {
           /// the expression is a combination of multiple operands
           /// Analyze each operand
-          if (stack.size() - 1 > lastStackPos) {
-            for (let opIdx = 0; opIdx < ins; opIdx ++) {
+          if (prevStack.size() - 1 > lastStackPos) {
+            // console.log(`&&: minTrackingPos: ${minTrackingPos}`)
+            for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
               const subEp = ep.sub(i)
               this.expand(lastStackPos + opIdx, subEp)
             }
@@ -47,7 +47,6 @@ class StackAnalyzer {
         }
       }
     }
-    // console.log(`pos: ${trackingPos}`)
   }
 }
 
