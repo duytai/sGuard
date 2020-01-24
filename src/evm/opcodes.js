@@ -62,7 +62,7 @@ const opcodes = {
   0x45: { name: 'GASLIMIT', fee: 2, ins: 0, outs: 1 },
 
   // 0x50 range - 'storage' and execution
-  0x50: { name: 'POP', fee: 2, ins: 0, outs: 1 },
+  0x50: { name: 'POP', fee: 2, ins: 0, outs: 0 },
   0x51: { name: 'MLOAD', fee: 3, ins: 1, outs: 1 },
   0x52: { name: 'MSTORE', fee: 3, ins: 2, outs: 0 },
   0x53: { name: 'MSTORE8', fee: 3, ins: 2, outs: 0 },

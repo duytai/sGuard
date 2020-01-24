@@ -35,6 +35,13 @@ const findLocalAccessPath = (symbol) => {
       })
     }
   }
+  if (!accessPaths.length) {
+    /// No MLOAD, base address is a real value 
+    const [type, name, ...params] = symbol
+    assert(name == 'ADD')
+    assert(isConst(params[1]))
+    return [1]
+  }
   /// Find longest accessPath
   assert(accessPaths[0].length > 0, `findLocalAccessPath.length`)
   accessPaths.sort((x, y) => y.length - x.length)
