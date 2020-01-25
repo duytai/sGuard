@@ -10,6 +10,7 @@ const {
   isMloadConst,
   isMstore40,
   isSha3Mload0,
+  isSha3Mload,
   isMstore0,
   isOpcode,
   formatSymbol,
@@ -97,7 +98,7 @@ const findStateAccessPath = (symbol) => {
   const stackOfSymbols = [{ symbol, accessPath: []}]
   while (stackOfSymbols.length > 0) {
     const { symbol, accessPath } = stackOfSymbols.pop()
-    if (isSha3Mload0(symbol)) {
+    if (isSha3Mload(symbol)) {
       accessPaths.push(accessPath)
     } else {
       const [type, name, ...params] = symbol
@@ -129,6 +130,11 @@ const toStateVariable = (t, trace) => {
       .filter(isMstore0)
     const storedValue = subTrace.last()[3]
     const name = hash(formatSymbol(storedValue)).slice(0, 2)
+    return new Variable(`s_${name}`)
+  }
+  if (isSha3Mload(t)) {
+    const [mload] = t.slice(2)
+    const name = hash(formatSymbol(mload)).slice(0, 2)
     return new Variable(`s_${name}`)
   }
   const properties = []

@@ -3,6 +3,8 @@ const isSymbol = symbol => symbol[0] == 'symbol'
 const isConsts = symbols => symbols.reduce((agg, symbol) => agg && isSymbol(symbol), true) 
 const isConstWithValue = (symbol, value) => symbol[0] == 'const' && symbol[1].toNumber() == value
 
+const isOpcode = (t, opcodeName) => t[1] == opcodeName 
+
 const isVariable = (t) => {
   if (isConst(t)) return false
   const [type, name, loc] = t
@@ -57,6 +59,12 @@ const isSha3Mload0 = (t) => {
   return isMload0(t[2])
 }
 
+const isSha3Mload = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'SHA3') return false
+  return isOpcode(t[2], 'MLOAD')
+}
+
 const isSstoreConst = (t) => {
   if (t[0] == 'const') return false
   if (t[1] != 'SSTORE') return false
@@ -72,8 +80,6 @@ const isMstoreGte80 = (t) => {
   return loc[1].toNumber() >= 0x80
 }
 
-const isOpcode = (t, opcodeName) => t[1] == opcodeName 
-
 module.exports = {
   isConst,
   isSymbol,
@@ -88,6 +94,7 @@ module.exports = {
   isMstore40,
   isMstore0,
   isSha3Mload0,
+  isSha3Mload,
   isOpcode,
   isSstoreConst,
   isMstoreGte80,
