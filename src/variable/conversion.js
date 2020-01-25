@@ -43,7 +43,6 @@ const findLocalAccessPath = (symbol) => {
     return [1]
   }
   /// Find longest accessPath
-  assert(accessPaths[0].length > 0, `findLocalAccessPath.length`)
   accessPaths.sort((x, y) => y.length - x.length)
   return accessPaths[0]
 }
@@ -110,7 +109,10 @@ const findStateAccessPath = (symbol) => {
     }
   }
   /// Find longest accessPath 
-  assert(accessPaths[0].length > 0, `findStateAccessPath.length`)
+  if (!accessPaths.length) {
+    prettify([symbol])
+    assert(false)
+  }
   accessPaths.sort((x, y) => y.length - x.length)
   return accessPaths[0]
 }

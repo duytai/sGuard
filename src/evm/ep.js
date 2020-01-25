@@ -44,6 +44,7 @@ class ExecutionPath {
   prettify() {
     logger.info('>> Full ep')
     this.ep.forEach(({ pc, opcode, stack }, idx) => {
+      logger.debug('-----')
       logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
       stack.prettify(2)
     })
