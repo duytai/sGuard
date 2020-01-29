@@ -10,7 +10,6 @@ class RegisterAnalayzer {
     this.dnode = new DNode(symbol, trace)
     this.conditionAnalysis(visited)
     this.crossfunctionAnalysis(visited)
-    console.log(`trackingPos: ${trackingPos}`)
   }
 
   crossfunctionAnalysis(visited) {
@@ -50,7 +49,15 @@ class RegisterAnalayzer {
   }
 
   conditionAnalysis(visited) {
-    const conds = this.findConds()
+    let conds = this.findConds(this.pc)
+    if (this.trackingPos && this.ep) {
+      const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
+      trackingPcs.forEach(trackingPc => {
+        const extConds = this.findConds(trackingPc, this.ep)
+        conds = [...conds, ...extConds]
+      })
+    }
+    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
     conds.forEach(({ pc, cond }) => {
       if (!visited.includes(pc)) {
         const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
@@ -62,10 +69,10 @@ class RegisterAnalayzer {
 
   /// Find jumpi nodes where our `pc` depends on
   /// and collect conditions at that jumpi
-  findConds() {
+  findConds(trackingPc) {
     const executionPaths = this.endPoints.map(({ ep, trace }) => ep.ep)
-    const pcIncludingExecutionPaths = executionPaths.filter(p => p.find(pp => pp.pc == this.pc))
-    const pcExcludingExecutionPaths = executionPaths.filter(p => !p.find(pp => pp.pc == this.pc))
+    const pcIncludingExecutionPaths = executionPaths.filter(p => p.find(pp => pp.pc == trackingPc))
+    const pcExcludingExecutionPaths = executionPaths.filter(p => !p.find(pp => pp.pc == trackingPc))
     const pathToBranchKeys = (p) => {
       const keys = []
       for (let i = 0; i < p.length - 1; i ++) {
@@ -98,7 +105,45 @@ class RegisterAnalayzer {
         conds.push({ pc, cond })
       }
     })
-    return uniqBy(conds, ({ cond }) => formatSymbol(cond))
+    return uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+  }
+
+  /// Find assigments of stack variables 
+  findTrackingPcs(trackingPos, ep) {
+    let result = []
+    for (let i = ep.size() - 1; i >= 0; i--) {
+      const { stack, opcode: { name, opVal, ins, outs }, pc } = ep.get(i)
+      const lastStackPos = stack.size() - 1
+      if (lastStackPos >= trackingPos && name == 'SWAP') {
+        const swapN = opVal - 0x8f
+        if (trackingPos + swapN == lastStackPos) {
+          result.push(pc)
+          trackingPos = trackingPos + swapN
+        } else if (lastStackPos == trackingPos) {
+          trackingPos = trackingPos - swapN
+        }
+      }
+      if (name == 'DUP' && trackingPos == lastStackPos + 1) {
+        const dupN = opVal - 0x7f
+        trackingPos = trackingPos - dupN
+      }
+      if (trackingPos == lastStackPos) {
+        const { stack: prevStack, opcode: { name: prevName, ins: prevIns }} = ep.get(i - 1)
+        /// An expression, need to consider all operands 
+        if (prevIns > 0) {
+          for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
+            const subEp = ep.sub(i)
+            result = [
+              ...result,
+              ...this.findTrackingPcs(lastStackPos + opIdx, subEp)
+            ]
+          }
+          break
+        }
+      }
+      if (trackingPos > lastStackPos) break
+    }
+    return result
   }
 
   prettify() {

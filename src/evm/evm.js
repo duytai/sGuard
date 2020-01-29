@@ -144,7 +144,10 @@ class Evm {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
-          trace.add(t, pc)
+          const epIdx = ep.size() - 1
+          const valueTrackingPos = stack.size() - 1 + 1
+          const keyTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, epIdx, valueTrackingPos, keyTrackingPos)
           break
         }
         case 'MLOAD': {
@@ -157,7 +160,10 @@ class Evm {
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
           const t = ['symbol', name, x, y]
-          trace.add(t, pc)
+          const epIdx = ep.size() - 1
+          const valueTrackingPos = stack.size() - 1 + 1
+          const keyTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, epIdx, valueTrackingPos, keyTrackingPos)
           break
         }
         case 'SLOAD': {
@@ -363,20 +369,6 @@ class Evm {
           stack.push(['const', new BN(this.bin.length)])
           break
         }
-        case 'CODECOPY': {
-          const [memLoc, codeOffset, codeLen] = stack.popN(ins)
-          if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
-            const value = ['symbol', name, codeOffset, codeLen]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t, pc)
-          } else {
-            const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
-            const value = ['const', new BN(code.toString('hex'), 16)]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t, pc)
-          }
-          break
-        }
         case 'EXP': {
           const [base, exponent] = stack.popN(ins)
           if (exponent[0] == 'const' && exponent[1].isZero()) {
@@ -425,20 +417,6 @@ class Evm {
             const r = x[1].xor(y[1])
             stack.push(['const', r])
           }
-          break
-        }
-        case 'CALLDATACOPY': {
-          const [memLoc, dataOffset, dataLen] = stack.popN(ins)
-          const callData = ['symbol', 'CALLDATALOAD', dataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, callData, dataLen]
-          trace.add(t, pc)
-          break
-        }
-        case 'RETURNDATACOPY': {
-          const [memLoc, returnDataOffset, dataLen] = stack.popN(ins)
-          const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen]
-          trace.add(t, pc)
           break
         }
         case 'STATICCALL':
