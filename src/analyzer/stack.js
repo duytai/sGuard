@@ -6,10 +6,10 @@ class StackAnalyzer {
   constructor({ trace, ep, stackPos }, endPoints) {
     assign(this, { trace, endPoints, ep, stackPos })
     ep.prettify(0)
-    this.expand(stackPos, ep)
+    this.findTrackingPositions(stackPos, ep)
   }
 
-  expand(stackPos, ep) {
+  findTrackingPositions(stackPos, ep) {
     let trackingPos = stackPos
     for (let i = ep.size() - 1; i >= 0; i--) {
       const { stack, opcode: { name, opVal, ins, outs }, pc } = ep.get(i)
@@ -17,6 +17,9 @@ class StackAnalyzer {
       if (lastStackPos >= trackingPos && name == 'SWAP') {
         const swapN = opVal - 0x8f
         if (trackingPos + swapN == lastStackPos) {
+          console.log(`SWAP from ${trackingPos} to ${trackingPos + swapN}`)
+          console.log(`AR pc ${pc}`)
+          console.log('----')
           trackingPos = trackingPos + swapN
         } else if (lastStackPos == trackingPos) {
           trackingPos = trackingPos - swapN
@@ -28,27 +31,21 @@ class StackAnalyzer {
       }
       if (trackingPos == lastStackPos) {
         const { stack: prevStack, opcode: { name: prevName, ins: prevIns }} = ep.get(i - 1)
-        /// Where inital variable is assigned to variable
-        if (prevName == 'POP') {
-          console.log('------')
-          console.log(`trackingPos: ${trackingPos}`)
-          console.log(`pc: ${pc}`)
-        } else {
-          /// the expression is a combination of multiple operands
-          /// Analyze each operand
-          // console.log('++++')
-          // console.log(`trackingPos: ${trackingPos}`)
-          // console.log(`pc: ${pc}`)
-          // console.log(`name: ${name}`)
-          if (prevStack.size() - 1 > lastStackPos) {
-            for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
-              const subEp = ep.sub(i)
-              this.expand(lastStackPos + opIdx, subEp)
-            }
-            break
+        /// An expression, need to consider all operands 
+        if (prevIns > 0) {
+          for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
+            const subEp = ep.sub(i)
+            this.findTrackingPositions(lastStackPos + opIdx, subEp)
           }
+          break
         }
       }
+      if (trackingPos > lastStackPos) {
+        // console.log(`pc: ${pc}`)
+        // console.log(`trackingPos: ${trackingPos}`)
+        // console.log(`lastStackPos: ${lastStackPos}`)
+        break
+      } 
     }
   }
 }
