@@ -17,7 +17,7 @@ class RegisterAnalayzer {
     this.endPoints.forEach(({ trace, ep }) => {
       sloads.forEach(sload => {
         const loadVariable = sload.getVariable()
-        trace.eachStateVariable((storeVariable, storedValue, traceIdx, pc) => {
+        trace.eachStateVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc }) => {
           /// If it is exactEqual, return true to break forEach loop 
           if (storeVariable.exactEqual(loadVariable)) {
             if (!visited.includes(pc)) {

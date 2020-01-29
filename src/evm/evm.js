@@ -145,9 +145,9 @@ class Evm {
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
           const epIdx = ep.size() - 1
-          const valueTrackingPos = stack.size() - 1 + 1
-          const keyTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, epIdx, valueTrackingPos, keyTrackingPos)
+          const vTrackingPos = stack.size() - 1 + 1
+          const kTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'MLOAD': {
@@ -161,9 +161,9 @@ class Evm {
           const [x, y] = stack.popN(ins)
           const t = ['symbol', name, x, y]
           const epIdx = ep.size() - 1
-          const valueTrackingPos = stack.size() - 1 + 1
-          const keyTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, epIdx, valueTrackingPos, keyTrackingPos)
+          const vTrackingPos = stack.size() - 1 + 1
+          const kTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'SLOAD': {

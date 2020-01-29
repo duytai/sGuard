@@ -21,8 +21,8 @@ class Trace {
     this.ts = ts
   }
 
-  add(t, pc) {
-    this.ts.push({ pc, t })
+  add(t, pc, { epIdx, vTrackingPos, kTrackingPos }) {
+    this.ts.push({ pc, t, epIdx, vTrackingPos, kTrackingPos })
   }
 
   clone() {
@@ -74,7 +74,7 @@ class Trace {
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toLocalVariable(loc, this)
-        const shouldBreak = cb(variable, value, traceIdx, pc)
+        const shouldBreak = cb({ variable, value, traceIdx, pc })
         if (shouldBreak) break
       }
     }
@@ -87,7 +87,7 @@ class Trace {
       if (isStateVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toStateVariable(loc, this)
-        const shouldBreak = cb(variable, value, traceIdx, pc)
+        const shouldBreak = cb({ variable, value, traceIdx, pc })
         if (shouldBreak) break
       }
     }

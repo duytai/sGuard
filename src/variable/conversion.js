@@ -69,7 +69,7 @@ const toLocalVariable = (t, trace) => {
     const loadVariable = toLocalVariable(base, subTrace) 
     assert(loadVariable)
     let originVariable = null
-    subTrace.eachLocalVariable((storeVariable, storedValue, traceIdx) => {
+    subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx }) => {
       if (loadVariable.exactEqual(storeVariable)) {
         originVariable = toLocalVariable(storedValue, trace.sub(traceIdx))
         return true

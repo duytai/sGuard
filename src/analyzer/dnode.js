@@ -41,7 +41,7 @@ class DNode {
   expandLocalVariable(loadVariable, subTrace) {
     this.node.alias = loadVariable.toString() 
     this.node.variable = loadVariable
-    subTrace.eachLocalVariable((storeVariable, storedValue) => {
+    subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue }) => {
       /// If it is exactEqual, return true to break forEach loop 
       if (storeVariable.exactEqual(loadVariable)) {
         const dnode = new DNode(storedValue, subTrace)
@@ -65,7 +65,7 @@ class DNode {
   expandStateVariable(loadVariable, subTrace) {
     this.node.alias = loadVariable.toString() 
     this.node.variable = loadVariable
-    subTrace.eachStateVariable((storeVariable, storedValue) => {
+    subTrace.eachStateVariable(({ variable: storeVariable, value: storedValue}) => {
       /// If it is exactEqual, return true to break forEach loop 
       if (storeVariable.exactEqual(loadVariable)) {
         const dnode = new DNode(storedValue, subTrace)
