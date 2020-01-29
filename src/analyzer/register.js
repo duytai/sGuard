@@ -4,13 +4,13 @@ const DNode = require('./dnode')
 const { prettify, formatSymbol } = require('../shared')
 
 class RegisterAnalayzer {
-  constructor({ symbol, trace, pc, ep }, endPoints, visited = []) {
-    assign(this, { symbol, trace, pc, endPoints, ep })
+  constructor({ symbol, trace, pc, ep, trackingPos }, endPoints, visited = []) {
+    assign(this, { symbol, trace, pc, endPoints, ep, trackingPos })
     visited.push(pc)
-    trace.prettify()
     this.dnode = new DNode(symbol, trace)
     this.conditionAnalysis(visited)
     this.crossfunctionAnalysis(visited)
+    console.log(`trackingPos: ${trackingPos}`)
   }
 
   crossfunctionAnalysis(visited) {
