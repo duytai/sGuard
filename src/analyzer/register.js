@@ -54,17 +54,16 @@ class RegisterAnalayzer {
 
   conditionAnalysis(visited) {
     let conds = this.findConds(this.pc)
-    if (this.trackingPos) {
-      const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
-      trackingPcs.forEach(trackingPc => {
-        const extConds = this.findConds(trackingPc, this.ep)
-        conds = [...conds, ...extConds]
-      })
-    }
+    const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
+    trackingPcs.forEach(trackingPc => {
+      const extConds = this.findConds(trackingPc, this.ep)
+      conds = [...conds, ...extConds]
+    })
     conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
-    conds.forEach(({ pc, cond }) => {
+    conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       if (!visited.includes(pc)) {
-        const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
+        const subEp = this.ep.sub(epIdx + 1)
+        const data = { pc, symbol: cond, trace: this.trace, ep: subEp, trackingPos }
         const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
         this.dnode.addChild(analyzer.dnode)
       }
@@ -118,7 +117,7 @@ class RegisterAnalayzer {
       const { pc, opcode: { name }, stack } = this.ep.get(i)
       if (controlJumpis.includes(pc)) {
         const cond = stack.get(stack.size() - 2)
-        conds.push({ pc, cond })
+        conds.push({ pc, cond, epIdx: i, trackingPos: stack.size() - 2 })
       }
     }
     return uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)

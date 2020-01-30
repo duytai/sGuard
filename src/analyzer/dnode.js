@@ -41,7 +41,7 @@ class DNode {
   expandLocalVariable(loadVariable, subTrace) {
     this.node.alias = loadVariable.toString() 
     this.node.variable = loadVariable
-    subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue }) => {
+    subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc, epIdx, kTrackingPos, vTrackingPos }) => {
       /// If it is exactEqual, return true to break forEach loop 
       if (storeVariable.exactEqual(loadVariable)) {
         const dnode = new DNode(storedValue, subTrace)
