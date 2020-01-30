@@ -70,11 +70,11 @@ class Trace {
   eachLocalVariable(cb) {
     assert(cb)
     for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
-      const { pc, t } = this.ts[traceIdx]
+      const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toLocalVariable(loc, this)
-        const shouldBreak = cb({ variable, value, traceIdx, pc })
+        const shouldBreak = cb({ variable, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
         if (shouldBreak) break
       }
     }
@@ -83,11 +83,11 @@ class Trace {
   eachStateVariable(cb) {
     assert(cb)
     for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
-      const { pc, t } = this.ts[traceIdx]
+      const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
       if (isStateVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toStateVariable(loc, this)
-        const shouldBreak = cb({ variable, value, traceIdx, pc })
+        const shouldBreak = cb({ variable, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
         if (shouldBreak) break
       }
     }

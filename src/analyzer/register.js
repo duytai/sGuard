@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { intersection, uniqBy, assign } = require('lodash')
+const { intersection, uniqBy, uniq, assign, forEach } = require('lodash')
 const DNode = require('./dnode')
 const { prettify, formatSymbol } = require('../shared')
 
@@ -17,12 +17,13 @@ class RegisterAnalayzer {
     this.endPoints.forEach(({ trace, ep }) => {
       sloads.forEach(sload => {
         const loadVariable = sload.getVariable()
-        trace.eachStateVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc }) => {
+        trace.eachStateVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc, epIdx, kTrackingPos, vTrackingPos }) => {
           /// If it is exactEqual, return true to break forEach loop 
           if (storeVariable.exactEqual(loadVariable)) {
             if (!visited.includes(pc)) {
               /// since sstore here, we need to analyze sstore dependency
-              const data = { pc, symbol: storedValue, trace, ep }
+              const subEp = ep.sub(epIdx + 1)
+              const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: vTrackingPos }
               const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
               sload.addChild(analyzer.dnode)
             }
@@ -50,14 +51,14 @@ class RegisterAnalayzer {
 
   conditionAnalysis(visited) {
     let conds = this.findConds(this.pc)
-    if (this.trackingPos && this.ep) {
-      const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
-      trackingPcs.forEach(trackingPc => {
-        const extConds = this.findConds(trackingPc, this.ep)
-        conds = [...conds, ...extConds]
-      })
-    }
-    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+    // if (this.trackingPos && this.ep) {
+      // const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
+      // trackingPcs.forEach(trackingPc => {
+        // const extConds = this.findConds(trackingPc, this.ep)
+        // conds = [...conds, ...extConds]
+      // })
+    // }
+    // conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
     conds.forEach(({ pc, cond }) => {
       if (!visited.includes(pc)) {
         const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
@@ -70,41 +71,53 @@ class RegisterAnalayzer {
   /// Find jumpi nodes where our `pc` depends on
   /// and collect conditions at that jumpi
   findConds(trackingPc) {
-    const executionPaths = this.endPoints.map(({ ep, trace }) => ep.ep)
-    const pcIncludingExecutionPaths = executionPaths.filter(p => p.find(pp => pp.pc == trackingPc))
-    const pcExcludingExecutionPaths = executionPaths.filter(p => !p.find(pp => pp.pc == trackingPc))
-    const pathToBranchKeys = (p) => {
-      const keys = []
-      for (let i = 0; i < p.length - 1; i ++) {
-        const current = p[i]
-        const next = p[i + 1]
-        if (current.opcode.name == 'JUMPI') {
-          keys.push({ from: current.pc, to: next.pc })
+    const executionPaths = this.endPoints.map(({ ep, trace }) => ep)
+    /// Find previous jumpis 
+    let allPrevJumpis = []
+    const allUnrelatedJumpis = []
+    executionPaths.forEach(ep => {
+      let encounterTrackingPc = false
+      const prevJumpis = []
+      for (let i = 0; i < ep.size(); i++) {
+        const { pc, opcode: { name } } = ep.get(i)
+        if (name == 'JUMPI') prevJumpis.push(pc)
+        if (pc == trackingPc && prevJumpis.length) {
+          allPrevJumpis.push([...prevJumpis])
+          prevJumpis.length = 0 
+          encounterTrackingPc = true
         }
       }
-      return keys 
-    }
-    const dJumpis = []
-    const pcIncludingJumpis = pcIncludingExecutionPaths
-      .reduce((r, p) => [...r, ...pathToBranchKeys(p)], [])
-    const pcExcludingJumpis = pcExcludingExecutionPaths
-      .reduce((r, p) => [...r, ...pathToBranchKeys(p)], [])
-    pcIncludingJumpis.forEach(ikey => {
-      pcExcludingJumpis.forEach(ekey => {
-        if (ikey.from == ekey.from && ikey.to != ekey.to) {
-          if (!dJumpis.includes(ikey.from)) {
-            dJumpis.push(ikey.from)
-          }
-        }
-      })
+      if (!encounterTrackingPc) {
+        allUnrelatedJumpis.push([...prevJumpis])
+      }
     })
+    /// Detect control dependency
+    const controlJumpis = []
+    while (true) {
+      /// If no more jumpi control then break
+      const closestJumpis = uniq(allPrevJumpis.map(p => p[p.length - 1]))
+      if (!closestJumpis.length) break
+      closestJumpis.forEach(jumpi => {
+        allUnrelatedJumpis.forEach(uJumpis => {
+          if (uJumpis.includes(jumpi) && !controlJumpis.includes(jumpi)) {
+            controlJumpis.push(jumpi)
+          }
+        })
+      })
+      /// Update allPrevJumpis
+      allPrevJumpis = allPrevJumpis.filter(p => !controlJumpis.includes(p[p.length - 1]))
+      allPrevJumpis = allPrevJumpis.map(p => p.slice(0, -1))
+      allPrevJumpis = allPrevJumpis.filter(p => p.length)
+    }
+    /// Get condition at jumpi
     const conds = []
-    this.ep.ep.forEach(({ pc, opcode: { name }, stack }) => {
-      if (dJumpis.includes(pc)) {
+    for (let i = 0; i < this.ep.size(); i ++) {
+      const { pc, opcode: { name }, stack } = this.ep.get(i)
+      if (controlJumpis.includes(pc)) {
         const cond = stack.get(stack.size() - 2)
         conds.push({ pc, cond })
       }
-    })
+    }
     return uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
   }
 
