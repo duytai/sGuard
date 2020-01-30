@@ -51,14 +51,14 @@ class RegisterAnalayzer {
 
   conditionAnalysis(visited) {
     let conds = this.findConds(this.pc)
-    // if (this.trackingPos && this.ep) {
-      // const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
-      // trackingPcs.forEach(trackingPc => {
-        // const extConds = this.findConds(trackingPc, this.ep)
-        // conds = [...conds, ...extConds]
-      // })
-    // }
-    // conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+    if (this.trackingPos) {
+      const trackingPcs = this.findTrackingPcs(this.trackingPos, this.ep)
+      trackingPcs.forEach(trackingPc => {
+        const extConds = this.findConds(trackingPc, this.ep)
+        conds = [...conds, ...extConds]
+      })
+    }
+    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
     conds.forEach(({ pc, cond }) => {
       if (!visited.includes(pc)) {
         const data = { pc, symbol: cond, trace: this.trace, ep: this.ep }
