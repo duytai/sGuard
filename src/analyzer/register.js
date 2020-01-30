@@ -34,12 +34,15 @@ class RegisterAnalayzer {
           if (storeVariable.partialEqual(loadVariable)) {
             /// dont need to get symbolMembers of loadVariable
             storeVariable.getSymbolMembers().forEach(m => {
-              const dnode = new DNode(m, subTrace)
-              sload.addChild(dnode)
+              const subEp = ep.sub(epIdx + 1)
+              const data = { pc, symbol: m, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+              const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
+              sload.addChild(analyzer.dnode)
             })
             if (!visited.includes(pc)) {
               /// since sstore here, we need to analyze sstore dependency
-              const data = { pc, symbol: storedValue, trace, ep }
+              const subEp = ep.sub(epIdx + 1)
+              const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: vTrackingPos }
               const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
               sload.addChild(analyzer.dnode)
             }
