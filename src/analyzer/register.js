@@ -22,7 +22,7 @@ class RegisterAnalayzer {
     return `${pc}:${trackingPos}:${formatSymbol(symbol)}`
   }
 
-  expandLocalVariable(loadVariable, subTrace) {
+  expandLocalVariable(loadVariable, subTrace, visited) {
     const node = this.dnode.node;
     node.alias = loadVariable.toString() 
     node.variable = loadVariable
@@ -47,18 +47,31 @@ class RegisterAnalayzer {
     })
   }
 
-  expandStateVariable(loadVariable, subTrace) {
+  expandStateVariable(loadVariable, subTrace, visited) {
     const node = this.dnode.node
     node.alias = loadVariable.toString() 
     node.variable = loadVariable
-    subTrace.eachStateVariable(({ variable: storeVariable, value: storedValue}) => {
+    subTrace.eachStateVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc, epIdx, kTrackingPos, vTrackingPos }) => {
       /// If it is exactEqual, return true to break forEach loop 
       if (storeVariable.exactEqual(loadVariable)) {
-        const dnode = new DNode(storedValue, subTrace)
-        node.childs.push(dnode)
+        if (!visited.includes(this.toVisitedKey(pc, vTrackingPos, storedValue))) {
+          /// since sstore here, we need to analyze sstore dependency
+          const subEp = this.ep.sub(epIdx + 1)
+          const data = { pc, symbol: storedValue, trace: this.trace, ep: subEp, trackingPos: vTrackingPos }
+          const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
+          node.childs.push(analyzer.dnode)
+        }
+        if (!visited.includes(this.toVisitedKey(pc, kTrackingPos, storedValue))) {
+          /// since sstore here, we need to analyze sstore dependency
+          const subEp = this.ep.sub(epIdx + 1)
+          const data = { pc, symbol: storedValue, trace: this.trace, ep: subEp, trackingPos: kTrackingPos }
+          const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
+          node.childs.push(analyzer.dnode)
+        }
         return true
       }
       if (storeVariable.partialEqual(loadVariable)) {
+        assert(false, 'State partialEqual')
         const members = [
           ...loadVariable.getSymbolMembers(),
           ...storeVariable.getSymbolMembers(),
@@ -80,13 +93,13 @@ class RegisterAnalayzer {
         const subTrace = this.trace.sub(me[4][1].toNumber())
         const loadVariable = toLocalVariable(me[2], subTrace)
         assert(loadVariable)
-        this.expandLocalVariable(loadVariable, subTrace)
+        this.expandLocalVariable(loadVariable, subTrace, visited)
         break
       }
       case 'SLOAD': {
         const subTrace = this.trace.sub(me[3][1].toNumber())
         const loadVariable = toStateVariable(me[2], subTrace) 
-        this.expandStateVariable(loadVariable, subTrace)
+        this.expandStateVariable(loadVariable, subTrace, visited)
         break
       }
       default: {
@@ -114,6 +127,13 @@ class RegisterAnalayzer {
               /// since sstore here, we need to analyze sstore dependency
               const subEp = ep.sub(epIdx + 1)
               const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: vTrackingPos }
+              const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
+              sload.addChild(analyzer.dnode)
+            }
+            if (!visited.includes(this.toVisitedKey(pc, kTrackingPos, storedValue))) {
+              /// since sstore here, we need to analyze sstore dependency
+              const subEp = ep.sub(epIdx + 1)
+              const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
               sload.addChild(analyzer.dnode)
             }
