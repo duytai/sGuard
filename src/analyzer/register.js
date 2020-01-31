@@ -8,12 +8,16 @@ const { prettify, formatSymbol } = require('../shared')
 class RegisterAnalayzer {
   constructor({ symbol, trace, pc, ep, trackingPos }, endPoints, visited = []) {
     assign(this, { symbol, trace, pc, endPoints, ep, trackingPos })
-    visited.push(pc)
+    visited.push(this.toVisitedKey(pc, trackingPos, symbol))
     this.condAnalyzer = new ConditionAnalyzer(endPoints, ep)
     this.stackAnalyzer = new StackAnalyzer()
     this.dnode = new DNode(symbol, trace)
     this.conditionAnalysis(visited)
     this.crossfunctionAnalysis(visited)
+  }
+
+  toVisitedKey(pc, trackingPos, symbol) {
+    return `${pc}:${trackingPos}:${formatSymbol(symbol)}`
   }
 
   crossfunctionAnalysis(visited) {
@@ -24,7 +28,7 @@ class RegisterAnalayzer {
         trace.eachStateVariable(({ variable: storeVariable, value: storedValue, traceIdx, pc, epIdx, kTrackingPos, vTrackingPos }) => {
           /// If it is exactEqual, return true to break forEach loop 
           if (storeVariable.exactEqual(loadVariable)) {
-            if (!visited.includes(pc)) {
+            if (!visited.includes(this.toVisitedKey(pc, vTrackingPos, storedValue))) {
               /// since sstore here, we need to analyze sstore dependency
               const subEp = ep.sub(epIdx + 1)
               const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: vTrackingPos }
@@ -38,12 +42,14 @@ class RegisterAnalayzer {
           if (storeVariable.partialEqual(loadVariable)) {
             /// dont need to get symbolMembers of loadVariable
             storeVariable.getSymbolMembers().forEach(m => {
-              const subEp = ep.sub(epIdx + 1)
-              const data = { pc, symbol: m, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
-              const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
-              sload.addChild(analyzer.dnode)
+              if (!visited.includes(this.toVisitedKey(pc, kTrackingPos, m))) {
+                const subEp = ep.sub(epIdx + 1)
+                const data = { pc, symbol: m, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+                const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
+                sload.addChild(analyzer.dnode)
+              }
             })
-            if (!visited.includes(pc)) {
+            if (!visited.includes(this.toVisitedKey(pc, vTrackingPos, storedValue))) {
               /// since sstore here, we need to analyze sstore dependency
               const subEp = ep.sub(epIdx + 1)
               const data = { pc, symbol: storedValue, trace, ep: subEp, trackingPos: vTrackingPos }
