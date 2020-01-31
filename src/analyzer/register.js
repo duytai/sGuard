@@ -66,7 +66,7 @@ class RegisterAnalayzer {
     const trackingPcs = this.stackAnalyzer.findTrackingPcs(this.trackingPos, this.ep)
     const conds = this.condAnalyzer.batchFindConds([this.pc, ...trackingPcs])
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
-      if (!visited.includes(pc)) {
+      if (!visited.includes(this.toVisitedKey(pc, trackingPos, cond))) {
         const subEp = this.ep.sub(epIdx + 1)
         const data = { pc, symbol: cond, trace: this.trace, ep: subEp, trackingPos }
         const analyzer = new RegisterAnalayzer(data, this.endPoints, visited)
