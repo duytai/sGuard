@@ -57,13 +57,8 @@ class RegisterAnalayzer {
   }
 
   conditionAnalysis(visited) {
-    let conds = this.condAnalyzer.findConds(this.pc)
     const trackingPcs = this.stackAnalyzer.findTrackingPcs(this.trackingPos, this.ep)
-    trackingPcs.forEach(trackingPc => {
-      const extConds = this.condAnalyzer.findConds(trackingPc, this.ep)
-      conds = [...conds, ...extConds]
-    })
-    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+    const conds = this.condAnalyzer.batchFindConds([this.pc, ...trackingPcs])
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       if (!visited.includes(pc)) {
         const subEp = this.ep.sub(epIdx + 1)

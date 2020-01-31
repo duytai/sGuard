@@ -6,6 +6,16 @@ class ConditionAnalyzer {
     this.endPoints = endPoints
     this.ep = ep
   }
+
+  batchFindConds(trackingPcs = []) {
+    let conds = []
+    trackingPcs.forEach(trackingPc => {
+      const extConds = this.findConds(trackingPc, this.ep)
+      conds = [...conds, ...extConds]
+    })
+    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+    return conds
+  }
   /// Find jumpi nodes where our `pc` depends on
   /// and collect conditions at that jumpi
   findConds(trackingPc) {
