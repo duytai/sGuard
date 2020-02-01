@@ -4,7 +4,7 @@ const DNode = require('./dnode')
 const ConditionAnalyzer = require('./condition') 
 const StackAnalyzer = require('./stack')
 const { prettify, formatSymbol, findSymbol } = require('../shared')
-const { toStateVariable, toLocalVariable } = require('../variable')
+const { toStateVariable, toLocalVariable, isConst } = require('../variable')
 
 class RegisterAnalayzer {
   constructor({ symbol, trace, pc, ep, trackingPos }, endPoints, visited = []) {

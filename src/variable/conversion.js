@@ -13,7 +13,7 @@ const {
   isSha3Mload,
   isMstore0,
   isOpcode,
-  formatSymbol,
+  formatSymbolWithoutTraceInfo,
 } = require('../shared')
 
 const findLocalAccessPath = (symbol) => {
@@ -58,7 +58,7 @@ const toLocalVariable = (t, trace) => {
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore40)
     const storedValue = subTrace.last()[3]
-    const name = hash(formatSymbol(storedValue)).slice(0, 2)
+    const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
     return new Variable(`m_${name}`)
   }
   /// Assign a complicaited data structure to another complicaited data structure 
@@ -129,12 +129,12 @@ const toStateVariable = (t, trace) => {
       .sub(loadTraceSize[1].toNumber())
       .filter(isMstore0)
     const storedValue = subTrace.last()[3]
-    const name = hash(formatSymbol(storedValue)).slice(0, 2)
+    const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
     return new Variable(`s_${name}`)
   }
   if (isSha3Mload(t)) {
     const [mload] = t.slice(2)
-    const name = hash(formatSymbol(mload)).slice(0, 2)
+    const name = hash(formatSymbolWithoutTraceInfo(mload)).slice(0, 2)
     return new Variable(`s_${name}`)
   }
   const properties = []
