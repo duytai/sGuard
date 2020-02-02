@@ -3,8 +3,8 @@ const { intersection, uniqBy, uniq, assign, forEach } = require('lodash')
 const DNode = require('./dnode')
 const ConditionAnalyzer = require('./condition') 
 const StackAnalyzer = require('./stack')
-const { prettify, formatSymbol, findSymbol } = require('../shared')
-const { toStateVariable, toLocalVariable, isConst } = require('../variable')
+const { prettify, formatSymbol, findSymbol, isConst } = require('../shared')
+const { toStateVariable, toLocalVariable } = require('../variable')
 
 class RegisterAnalayzer {
   constructor({ symbol, trace, pc, ep, trackingPos }, endPoints, visited = []) {
