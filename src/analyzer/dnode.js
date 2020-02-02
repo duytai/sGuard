@@ -31,6 +31,16 @@ class DNode {
     return this.node.variable
   }
 
+  setVariable(v) {
+    assert(v)
+    this.node.variable = v
+  }
+
+  setAlias(a) {
+    assert(a)
+    this.node.alias = a
+  }
+
   findSloads() {
     const cond = (dnode) => {
       const { node: { me, childs } } = dnode
