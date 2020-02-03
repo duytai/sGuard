@@ -11,18 +11,17 @@ class RegisterAnalyzer {
     visited.push(toVisitedKey(pc, trackingPos, symbol))
     assign(
       this,
-      { trace, pc, endPoints, ep, trackingPos, dnode: new DNode(symbol) },
+      { trace, pc, endPoints, ep, trackingPos, dnode: new DNode(symbol), symbol },
     )
     this.internalAnalysis(this, visited)
     this.conditionAnalysis(this, visited)
   }
 
-  internalAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode }, visited) {
-    const me = dnode.getSymbol()
-    switch (me[1]) {
+  internalAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+    switch (symbol[1]) {
       case 'MLOAD': {
-        const subTrace = this.trace.sub(me[4][1].toNumber())
-        const loadVariable = toLocalVariable(me[2], subTrace)
+        const subTrace = this.trace.sub(symbol[4][1].toNumber())
+        const loadVariable = toLocalVariable(symbol[2], subTrace)
         assert(loadVariable)
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
@@ -55,8 +54,8 @@ class RegisterAnalyzer {
         break
       }
       case 'SLOAD': {
-        const subTrace = this.trace.sub(me[3][1].toNumber())
-        const loadVariable = toStateVariable(me[2], subTrace)
+        const subTrace = this.trace.sub(symbol[3][1].toNumber())
+        const loadVariable = toStateVariable(symbol[2], subTrace)
         assert(loadVariable)
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
@@ -89,7 +88,13 @@ class RegisterAnalyzer {
         break
       }
       default: {
-        //TODO
+        const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
+        symbols.forEach(symbol => {
+          const traceSize = symbol[1] == 'SLOAD' ? symbol[3] : symbol[4]
+          assert(isConst(traceSize))
+          const subTrace = this.trace.sub(traceSize[1].toNumber())
+          this.internalAnalysis({ pc, symbol, trackingPos, ep, trace: subTrace, endPoints, dnode }, visited)
+        })
       }
     }
   }
