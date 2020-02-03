@@ -8,6 +8,7 @@ const {
   logger,
   findSymbol,
   isMloadConst,
+  isMstoreConst,
   isMstore40,
   isSha3Mload0,
   isSha3Mload,
@@ -26,7 +27,7 @@ const findLocalAccessPath = (symbol) => {
     } else {
       const [type, name, ...params] = symbol
       params.forEach((param, idx) => {
-        if (['SUB', 'ADD', 'MLOAD'].includes(name)) {
+        if (['SUB', 'ADD', 'MLOAD', 'MUL'].includes(name)) {
           stackOfSymbols.push({
             symbol: param,
             accessPath: (hasMore && name != 'MLOAD') ? [...accessPath, idx] : [...accessPath],
@@ -54,12 +55,13 @@ const toLocalVariable = (t, trace) => {
   if (isMloadConst(t)) {
     const [loc, loadSize, loadTraceSize] = t.slice(2)
     assert(isConst(loadTraceSize))
-    const subTrace = trace
-      .sub(loadTraceSize[1].toNumber())
-      .filter(isMstore40)
-    const storedValue = subTrace.last()[3]
-    const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
-    return new Variable(`m_${name}`)
+    const subTrace = trace.sub(loadTraceSize[1].toNumber()).filter(otherT => {
+      if (!isMstoreConst(otherT)) return false
+      const [otherLoc] = t.slice(2)
+      return otherLoc[1].toNumber() == loc[1].toNumber()
+    })
+    assert(subTrace.size() >= 1, `Must load from ${loc[1].toString(16)}`)
+    return new Variable(`m_${loc[1].toString(16)}`)
   }
   /// Assign a complicaited data structure to another complicaited data structure 
   /// We have to search for the origin variable
