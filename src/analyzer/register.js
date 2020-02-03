@@ -36,7 +36,9 @@ class RegisterAnalyzer {
             kTrackingPos,
             vTrackingPos
           } = opts
-          if (storeVariable.exactEqual(loadVariable)) {
+          /// m[x] = y
+          /// vTrackingPos is y, kTrackingPos is x
+          if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
             const subEp = ep.sub(epIdx + 1)
             if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
               const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: vTrackingPos }
