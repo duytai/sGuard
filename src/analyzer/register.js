@@ -55,7 +55,37 @@ class RegisterAnalyzer {
         break
       }
       case 'SLOAD': {
-        //TODO
+        const subTrace = this.trace.sub(me[3][1].toNumber())
+        const loadVariable = toStateVariable(me[2], subTrace)
+        assert(loadVariable)
+        dnode.setVariable(loadVariable)
+        dnode.setAlias(loadVariable.toString())
+        subTrace.eachStateVariable((opts) => {
+          const {
+            variable: storeVariable,
+            value: storedValue,
+            traceIdx,
+            pc,
+            epIdx,
+            kTrackingPos,
+            vTrackingPos
+          } = opts
+          /// m[x] = y
+          /// vTrackingPos is y, kTrackingPos is x
+          if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
+            const subEp = ep.sub(epIdx + 1)
+            if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
+              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: vTrackingPos }
+              const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+              dnode.addChild(analyzer.dnode)
+            }
+            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedValue))) {
+              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+              const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+              dnode.addChild(analyzer.dnode)
+            }
+          }
+        })
         break
       }
       default: {
