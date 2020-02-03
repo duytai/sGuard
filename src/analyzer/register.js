@@ -15,6 +15,7 @@ class RegisterAnalyzer {
     )
     this.internalAnalysis(this, visited)
     this.conditionAnalysis(this, visited)
+    this.crossfunctionAnalysis(this, visited)
   }
 
   internalAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
@@ -97,6 +98,42 @@ class RegisterAnalyzer {
         })
       }
     }
+  }
+
+  crossfunctionAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+    const sloads = dnode.findSloads()
+    endPoints.forEach(({ trace, ep }) => {
+      sloads.forEach(sload => {
+        const loadVariable = sload.getVariable()
+        trace.eachStateVariable((opts) => {
+          const {
+            variable: storeVariable,
+            value: storedValue,
+            traceIdx,
+            pc,
+            epIdx,
+            kTrackingPos,
+            vTrackingPos
+          } = opts
+          /// m[x] = y
+          /// vTrackingPos is y, kTrackingPos is x
+          if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
+            const subEp = ep.sub(epIdx + 1)
+            const subTrace = trace.sub(traceIdx + 1)
+            if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
+              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: vTrackingPos }
+              const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+              dnode.addChild(analyzer.dnode)
+            }
+            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedValue))) {
+              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+              const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+              dnode.addChild(analyzer.dnode)
+            }
+          }
+        })
+      })
+    })
   }
 
   conditionAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode }, visited) {
