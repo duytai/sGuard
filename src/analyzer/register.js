@@ -30,6 +30,7 @@ class RegisterAnalyzer {
           const {
             variable: storeVariable,
             value: storedValue,
+            loc: storedLoc,
             traceIdx,
             pc,
             epIdx,
@@ -45,8 +46,8 @@ class RegisterAnalyzer {
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
-            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
+              const data = { pc, symbol: storedLoc, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
@@ -64,6 +65,7 @@ class RegisterAnalyzer {
           const {
             variable: storeVariable,
             value: storedValue,
+            loc: storedLoc,
             traceIdx,
             pc,
             epIdx,
@@ -79,8 +81,8 @@ class RegisterAnalyzer {
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
-            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
+              const data = { pc, symbol: storedLoc, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
@@ -109,6 +111,7 @@ class RegisterAnalyzer {
           const {
             variable: storeVariable,
             value: storedValue,
+            loc: storedLoc,
             traceIdx,
             pc,
             epIdx,
@@ -125,8 +128,8 @@ class RegisterAnalyzer {
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
-            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+            if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
+              const data = { pc, symbol: storedLoc, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }

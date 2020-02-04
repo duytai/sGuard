@@ -74,7 +74,7 @@ class Trace {
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toLocalVariable(loc, this)
-        const shouldBreak = cb({ variable, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
+        const shouldBreak = cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
         if (shouldBreak) break
       }
     }
@@ -87,7 +87,7 @@ class Trace {
       if (isStateVariable(t)) {
         const [loc, value] = t.slice(2)
         const variable = toStateVariable(loc, this)
-        const shouldBreak = cb({ variable, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
+        const shouldBreak = cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
         if (shouldBreak) break
       }
     }
