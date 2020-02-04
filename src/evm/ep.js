@@ -1,3 +1,4 @@
+const assert = require('assert')
 const { pickBy } = require('lodash')
 const { logger } = require('../shared')
 
@@ -22,6 +23,15 @@ class ExecutionPath {
     return executionPath
   }
 
+  sub(epSize) {
+    assert(epSize >= 0)
+    assert(epSize <= this.ep.length)
+    const executionPath = new ExecutionPath()
+    const ep = this.ep.slice(0, epSize)
+    executionPath.withEp([...ep])
+    return executionPath 
+  }
+
   isForbidden(jumpdest) {
     const forbiddenJumpdests = new Set() 
     const pcs = [
@@ -34,9 +44,19 @@ class ExecutionPath {
   prettify() {
     logger.info('>> Full ep')
     this.ep.forEach(({ pc, opcode, stack }, idx) => {
+      logger.debug('-----')
       logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
       stack.prettify(2)
     })
+  }
+
+  get(idx) {
+    assert(idx >= 0 && idx < this.ep.length)
+    return this.ep[idx]
+  }
+
+  size() {
+    return this.ep.length
   }
 }
 

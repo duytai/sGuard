@@ -18,7 +18,7 @@ class Evm {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      ep.add({ stack: stack.clone(), opcode, pc })
+      ep.add({ stack: stack.clone(), opcode: { ...opcode, opVal: this.bin[pc] }, pc })
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -144,7 +144,10 @@ class Evm {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
-          trace.add(t, pc)
+          const epIdx = ep.size() - 1
+          const vTrackingPos = stack.size() - 1 + 1
+          const kTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'MLOAD': {
@@ -157,7 +160,10 @@ class Evm {
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
           const t = ['symbol', name, x, y]
-          trace.add(t, pc)
+          const epIdx = ep.size() - 1
+          const vTrackingPos = stack.size() - 1 + 1
+          const kTrackingPos = stack.size() - 1 + 2
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'SLOAD': {
@@ -363,20 +369,6 @@ class Evm {
           stack.push(['const', new BN(this.bin.length)])
           break
         }
-        case 'CODECOPY': {
-          const [memLoc, codeOffset, codeLen] = stack.popN(ins)
-          if (codeOffset[0] != 'const' || codeLen[0] != 'const') {
-            const value = ['symbol', name, codeOffset, codeLen]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t, pc)
-          } else {
-            const code = this.bin.slice(codeOffset[1].toNumber(), codeOffset[1].toNumber() + codeLen[1].toNumber())
-            const value = ['const', new BN(code.toString('hex'), 16)]
-            const t = ['symbol', 'MSTORE', memLoc, value, codeLen]
-            trace.add(t, pc)
-          }
-          break
-        }
         case 'EXP': {
           const [base, exponent] = stack.popN(ins)
           if (exponent[0] == 'const' && exponent[1].isZero()) {
@@ -427,20 +419,6 @@ class Evm {
           }
           break
         }
-        case 'CALLDATACOPY': {
-          const [memLoc, dataOffset, dataLen] = stack.popN(ins)
-          const callData = ['symbol', 'CALLDATALOAD', dataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, callData, dataLen]
-          trace.add(t, pc)
-          break
-        }
-        case 'RETURNDATACOPY': {
-          const [memLoc, returnDataOffset, dataLen] = stack.popN(ins)
-          const returnData = ['symbol', 'RETURNDATA', returnDataOffset]
-          const t = ['symbol', 'MSTORE', memLoc, returnData, dataLen]
-          trace.add(t, pc)
-          break
-        }
         case 'STATICCALL':
         case 'DELEGATECALL': {
           const [
@@ -466,13 +444,8 @@ class Evm {
             outLength,
           ] = stack.popN(ins)
           this.checkPoints.push({
-            type: 'CALL',
-            data: {
-              trace: trace.clone(),
-              symbol: value,
-              ep: ep.clone(),
-              pc,
-            },
+            trace: trace.clone(),
+            ep: ep.clone(),
           })
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break

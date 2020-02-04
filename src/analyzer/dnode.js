@@ -8,17 +8,10 @@ const {
   formatSymbol,
   isConst,
 } = require('../shared')
-const {
-  toStateVariable,
-  toLocalVariable,
-  toVariable,
-} = require('../variable')
 
 class DNode {
-  constructor(symbol, trace) {
+  constructor(symbol) {
     this.node = { me: symbol, childs: [], alias: 'N/A', variable: null }
-    this.trace = trace
-    this.expand()
   }
 
   addChild(child) {
@@ -38,81 +31,14 @@ class DNode {
     return this.node.variable
   }
 
-  expandLocalVariable(loadVariable, subTrace) {
-    this.node.alias = loadVariable.toString() 
-    this.node.variable = loadVariable
-    subTrace.eachLocalVariable((storeVariable, storedValue) => {
-      /// If it is exactEqual, return true to break forEach loop 
-      if (storeVariable.exactEqual(loadVariable)) {
-        const dnode = new DNode(storedValue, subTrace)
-        this.node.childs.push(dnode)
-        return true
-      }
-      if (storeVariable.partialEqual(loadVariable)) {
-        const members = [
-          ...loadVariable.getSymbolMembers(),
-          ...storeVariable.getSymbolMembers(),
-          storedValue,
-        ]
-        members.forEach(m => {
-          const dnode = new DNode(m, subTrace)
-          this.node.childs.push(dnode)
-        })
-      }
-    })
+  setVariable(v) {
+    assert(v)
+    this.node.variable = v
   }
 
-  expandStateVariable(loadVariable, subTrace) {
-    this.node.alias = loadVariable.toString() 
-    this.node.variable = loadVariable
-    subTrace.eachStateVariable((storeVariable, storedValue) => {
-      /// If it is exactEqual, return true to break forEach loop 
-      if (storeVariable.exactEqual(loadVariable)) {
-        const dnode = new DNode(storedValue, subTrace)
-        this.node.childs.push(dnode)
-        return true
-      }
-      if (storeVariable.partialEqual(loadVariable)) {
-        const members = [
-          ...loadVariable.getSymbolMembers(),
-          ...storeVariable.getSymbolMembers(),
-          storedValue,
-        ]
-        members.forEach(m => {
-          const dnode = new DNode(m, subTrace)
-          this.node.childs.push(dnode)
-        })
-      }
-    })
-  }
-
-  expand() {
-    const { me, childs } = this.node 
-    assert(!childs.length)
-    switch (me[1]) {
-      case 'MLOAD': {
-        const subTrace = this.trace.sub(me[4][1].toNumber())
-        const loadVariable = toLocalVariable(me[2], subTrace)
-        assert(loadVariable)
-        this.expandLocalVariable(loadVariable, subTrace)
-        break
-      }
-      case 'SLOAD': {
-        const subTrace = this.trace.sub(me[3][1].toNumber())
-        const loadVariable = toStateVariable(me[2], subTrace) 
-        this.expandStateVariable(loadVariable, subTrace)
-        break
-      }
-      default: {
-        const symbols = findSymbol(me, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
-        symbols.forEach(symbol => {
-          const traceSize = symbol[1] == 'SLOAD' ? symbol[3] : symbol[4]
-          assert(isConst(traceSize))
-          const dnode = new DNode(symbol, this.trace.sub(traceSize[1].toNumber()));
-          childs.push(dnode)
-        })
-      }
-    }
+  setAlias(a) {
+    assert(a)
+    this.node.alias = a
   }
 
   findSloads() {
