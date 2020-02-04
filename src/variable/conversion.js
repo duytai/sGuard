@@ -5,14 +5,16 @@ const hash = require('object-hash')
 const {
   prettify,
   isConst,
+  isConstWithValue,
   logger,
   findSymbol,
   isMloadConst,
   isMstoreConst,
   isMstore40,
+  isMstore20,
+  isMstore0,
   isSha3Mload0,
   isSha3Mload,
-  isMstore0,
   isOpcode,
   formatSymbolWithoutTraceInfo,
 } = require('../shared')
@@ -127,12 +129,25 @@ const toStateVariable = (t, trace) => {
     const [mload] = t.slice(2)
     const [base, loadSize, loadTraceSize] = mload.slice(2)
     assert(isConst(loadTraceSize))
-    const subTrace = trace
-      .sub(loadTraceSize[1].toNumber())
-      .filter(isMstore0)
-    const storedValue = subTrace.last()[3]
-    const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
-    return new Variable(`s_${name}`)
+    assert(isConst(loadSize))
+    if (isConstWithValue(loadSize, 0x40)) {
+      /// Mapping type
+      /// 0x00 is member and 0x20 is base
+      const subTrace = trace
+        .sub(loadTraceSize[1].toNumber())
+        .filter(isMstore20)
+      const storedValue = subTrace.last()[3]
+      const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
+      return new Variable(`s_${name}`)
+    } else {
+      /// Other types including array
+      const subTrace = trace
+        .sub(loadTraceSize[1].toNumber())
+        .filter(isMstore0)
+      const storedValue = subTrace.last()[3]
+      const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
+      return new Variable(`s_${name}`)
+    }
   }
   if (isSha3Mload(t)) {
     const [mload] = t.slice(2)

@@ -59,6 +59,12 @@ const isMstore0 = (t) => {
   return isConstWithValue(t[2], 0x00)
 }
 
+const isMstore20 = (t) => {
+  if (t[0] == 'const') return false
+  if (t[1] != 'MSTORE') return false
+  return isConstWithValue(t[2], 0x20)
+}
+
 const isSha3Mload0 = (t) => {
   if (t[0] == 'const') return false
   if (t[1] != 'SHA3') return false
@@ -99,6 +105,7 @@ module.exports = {
   isMloadConst,
   isMstoreConst,
   isMstore40,
+  isMstore20,
   isMstore0,
   isSha3Mload0,
   isSha3Mload,
