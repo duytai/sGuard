@@ -19,7 +19,7 @@ class RegisterAnalyzer {
     this.crossfunctionAnalysis(this, visited)
   }
 
-  expand(loadVariable, { ep, subTrace, endPoints, dnode }, opts, visited) {
+  expand(loadVariable, { loadEp, storedEp, subTrace, endPoints, dnode }, opts, visited) {
     const {
       variable: storeVariable,
       value: storedValue,
@@ -33,7 +33,7 @@ class RegisterAnalyzer {
     /// Expand member of loadVariable
     const loadMembers = loadVariable.getMembers()
     loadMembers.forEach(({ trackingPos, epIdx, symbol }) => {
-      const subEp = ep.sub(epIdx + 1)
+      const subEp = loadEp.sub(epIdx + 1)
       const data = { symbol, trace: subTrace, ep: subEp, trackingPos }
       const analyzer = new RegisterAnalyzer(data, endPoints, visited)
       dnode.addChild(analyzer.dnode)
@@ -41,16 +41,16 @@ class RegisterAnalyzer {
     /// m[x] = y
     /// vTrackingPos is y, kTrackingPos is x
     if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
-      const storedEp = ep.sub(epIdx + 1)
-      const storedTrace = subTrace.sub(traceIdx + 1)
-      assert(pc == storedEp.last().pc)
+      const sEp = storedEp.sub(epIdx + 1)
+      const sTrace = subTrace.sub(traceIdx + 1)
+      assert(pc == sEp.last().pc)
       if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
-        const data = { symbol: storedValue, trace: storedTrace, ep: storedEp, trackingPos: vTrackingPos }
+        const data = { symbol: storedValue, trace: sTrace, ep: sEp, trackingPos: vTrackingPos }
         const analyzer = new RegisterAnalyzer(data, endPoints, visited)
         dnode.addChild(analyzer.dnode)
       }
       if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
-        const data = { symbol: storedLoc, trace: storedTrace, ep: storedEp, trackingPos: kTrackingPos }
+        const data = { symbol: storedLoc, trace: sTrace, ep: sEp, trackingPos: kTrackingPos }
         const analyzer = new RegisterAnalyzer(data, endPoints, visited)
         dnode.addChild(analyzer.dnode)
       }
@@ -66,7 +66,7 @@ class RegisterAnalyzer {
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
         subTrace.eachLocalVariable((opts) => {
-          this.expand(loadVariable, { ep, subTrace, endPoints, dnode }, opts, visited)
+          this.expand(loadVariable, { loadEp: ep, storedEp: ep, subTrace, endPoints, dnode }, opts, visited)
         })
         break
       }
@@ -77,7 +77,7 @@ class RegisterAnalyzer {
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
         subTrace.eachStateVariable((opts) => {
-          this.expand(loadVariable, { ep, subTrace, endPoints, dnode }, opts, visited)
+          this.expand(loadVariable, { loadEp: ep, storedEp: ep, subTrace, endPoints, dnode }, opts, visited)
         })
         break
       }
@@ -95,13 +95,13 @@ class RegisterAnalyzer {
     }
   }
 
-  crossfunctionAnalysis({ trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+  crossfunctionAnalysis({ trackingPos, ep: loadEp, trace, endPoints, dnode, symbol }, visited) {
     const sloads = dnode.findSloads()
-    endPoints.forEach(({ trace, ep }) => {
+    endPoints.forEach(({ trace, ep: storedEp }) => {
       sloads.forEach(sload => {
         const loadVariable = sload.getVariable()
         trace.eachStateVariable((opts) => {
-          this.expand(loadVariable, { ep, subTrace: trace, endPoints, dnode }, opts, visited)
+          this.expand(loadVariable, { loadEp, storedEp, subTrace: trace, endPoints, dnode }, opts, visited)
         })
       })
     })
