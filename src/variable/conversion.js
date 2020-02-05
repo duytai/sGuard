@@ -51,8 +51,8 @@ const findLocalAccessPath = (symbol) => {
   return accessPaths[0]
 }
 
-const toLocalVariable = (t, trace, trackingPos) => {
-  assert(t && trace && trackingPos >= 0)
+const toLocalVariable = (t, trace, trackingPos, epIdx) => {
+  assert(t && trace && trackingPos >= 0 && epIdx >= 0)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMloadConst(t)) {
     const [loc, loadSize, loadTraceSize] = t.slice(2)
@@ -65,23 +65,25 @@ const toLocalVariable = (t, trace, trackingPos) => {
     assert(subTrace.size() >= 1, `Must load from ${loc[1].toString(16)}`)
     return new Variable(`m_${loc[1].toString(16)}`)
   }
+  /// TODO: test this case later
+  /// TODO: epIdx
   /// Assign a complicaited data structure to another complicaited data structure 
   /// We have to search for the origin variable
-  if (isOpcode(t, 'MLOAD')) {
-    const [base, loadSize, loadTraceSize] = t.slice(2)
-    const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const loadVariable = toLocalVariable(base, subTrace, trackingPos) 
-    assert(loadVariable)
-    let originVariable = null
-    subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx }) => {
-      if (loadVariable.exactEqual(storeVariable)) {
-        originVariable = toLocalVariable(storedValue, trace.sub(traceIdx), trackingPos)
-        return true
-      }
-    })
-    assert(originVariable)
-    return originVariable
-  }
+  // if (isOpcode(t, 'MLOAD')) {
+    // const [base, loadSize, loadTraceSize] = t.slice(2)
+    // const subTrace = trace.sub(loadTraceSize[1].toNumber())
+    // const loadVariable = toLocalVariable(base, subTrace, trackingPos, epIdx)
+    // assert(loadVariable)
+    // let originVariable = null
+    // subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx }) => {
+      // if (loadVariable.exactEqual(storeVariable)) {
+        // originVariable = toLocalVariable(storedValue, trace.sub(traceIdx), trackingPos, epIdx)
+        // return true
+      // }
+    // })
+    // assert(originVariable)
+    // return originVariable
+  // }
   const properties = []
   const accessPath = findLocalAccessPath(t)
   let base = t
@@ -89,10 +91,10 @@ const toLocalVariable = (t, trace, trackingPos) => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
     if (name != 'SUB') {
-      properties.push({ trackingPos, symbol: operands[1 - baseIdx] })
+      properties.push({ trackingPos, symbol: operands[1 - baseIdx], epIdx })
     }
   })
-  const variable = toLocalVariable(base, trace, trackingPos)
+  const variable = toLocalVariable(base, trace, trackingPos, epIdx)
   variable.addN(reverse(properties))
   return variable
 }
@@ -122,8 +124,8 @@ const findStateAccessPath = (symbol) => {
   return accessPaths[0]
 }
 
-const toStateVariable = (t, trace, trackingPos) => {
-  assert(t && trace && trackingPos >= 0)
+const toStateVariable = (t, trace, trackingPos, epIdx) => {
+  assert(t && trace && trackingPos >= 0 && epIdx >= 0)
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
@@ -143,8 +145,8 @@ const toStateVariable = (t, trace, trackingPos) => {
       subTrace = trace
         .sub(loadTraceSize[1].toNumber())
         .filter(isMstore0)
-      const { t, vTrackingPos } = subTrace.last()
-      const property = { trackingPos: vTrackingPos, symbol: t[3] }
+      const { t, vTrackingPos, epIdx } = subTrace.last()
+      const property = { trackingPos: vTrackingPos, symbol: t[3], epIdx }
       variable.addN([property])
       return variable
     } else {
@@ -169,10 +171,10 @@ const toStateVariable = (t, trace, trackingPos) => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
     if (name != 'SUB') {
-      properties.push({ trackingPos, symbol: operands[1 - baseIdx]})
+      properties.push({ trackingPos, symbol: operands[1 - baseIdx], epIdx })
     }
   })
-  const variable = toStateVariable(base, trace, trackingPos)
+  const variable = toStateVariable(base, trace, trackingPos, epIdx)
   variable.addN(reverse(properties))
   return variable
 }

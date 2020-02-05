@@ -15,6 +15,9 @@ class Variable  {
 
   addN(ms) {
     assert(ms.length > 0)
+    ms.forEach(({ trackingPos, epIdx, symbol }) => {
+      assert(trackingPos >= 0 && epIdx >= 0 && !!symbol)
+    })
     this.members = [...this.members, ...ms]
   }
 
