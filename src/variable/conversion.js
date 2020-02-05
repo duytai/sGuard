@@ -51,8 +51,8 @@ const findLocalAccessPath = (symbol) => {
   return accessPaths[0]
 }
 
-const toLocalVariable = (t, trace) => {
-  assert(t && trace)
+const toLocalVariable = (t, trace, trackingPos) => {
+  assert(t && trace && trackingPos >= 0)
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`) 
   if (isMloadConst(t)) {
     const [loc, loadSize, loadTraceSize] = t.slice(2)
@@ -70,12 +70,12 @@ const toLocalVariable = (t, trace) => {
   if (isOpcode(t, 'MLOAD')) {
     const [base, loadSize, loadTraceSize] = t.slice(2)
     const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const loadVariable = toLocalVariable(base, subTrace) 
+    const loadVariable = toLocalVariable(base, subTrace, trackingPos) 
     assert(loadVariable)
     let originVariable = null
     subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx }) => {
       if (loadVariable.exactEqual(storeVariable)) {
-        originVariable = toLocalVariable(storedValue, trace.sub(traceIdx))
+        originVariable = toLocalVariable(storedValue, trace.sub(traceIdx), trackingPos)
         return true
       }
     })
@@ -92,7 +92,7 @@ const toLocalVariable = (t, trace) => {
       properties.push(operands[1 - baseIdx])
     }
   })
-  const variable = toLocalVariable(base, trace)
+  const variable = toLocalVariable(base, trace, trackingPos)
   variable.addN(reverse(properties))
   return variable
 }
@@ -122,8 +122,8 @@ const findStateAccessPath = (symbol) => {
   return accessPaths[0]
 }
 
-const toStateVariable = (t, trace) => {
-  assert(t && trace)
+const toStateVariable = (t, trace, trackingPos) => {
+  assert(t && trace && trackingPos >= 0)
   if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
   if (isSha3Mload0(t)) {
     const [mload] = t.slice(2)
@@ -164,7 +164,7 @@ const toStateVariable = (t, trace) => {
       properties.push(operands[1 - baseIdx])
     }
   })
-  const variable = toStateVariable(base, trace)
+  const variable = toStateVariable(base, trace, trackingPos)
   variable.addN(reverse(properties))
   return variable
 }

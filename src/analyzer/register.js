@@ -22,7 +22,7 @@ class RegisterAnalyzer {
     switch (symbol[1]) {
       case 'MLOAD': {
         const subTrace = this.trace.sub(symbol[4][1].toNumber())
-        const loadVariable = toLocalVariable(symbol[2], subTrace)
+        const loadVariable = toLocalVariable(symbol[2], subTrace, trackingPos)
         assert(loadVariable)
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
@@ -57,7 +57,7 @@ class RegisterAnalyzer {
       }
       case 'SLOAD': {
         const subTrace = this.trace.sub(symbol[3][1].toNumber())
-        const loadVariable = toStateVariable(symbol[2], subTrace)
+        const loadVariable = toStateVariable(symbol[2], subTrace, trackingPos)
         assert(loadVariable)
         dnode.setVariable(loadVariable)
         dnode.setAlias(loadVariable.toString())
