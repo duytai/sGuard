@@ -30,6 +30,14 @@ class RegisterAnalyzer {
       kTrackingPos,
       vTrackingPos
     } = opts
+    /// Expand member of loadVariable
+    const loadMembers = loadVariable.getMembers()
+    loadMembers.forEach(({ trackingPos, epIdx, symbol }) => {
+      const subEp = ep.sub(epIdx + 1)
+      const data = { symbol, trace: subTrace, ep: subEp, trackingPos }
+      const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+      dnode.addChild(analyzer.dnode)
+    })
     /// m[x] = y
     /// vTrackingPos is y, kTrackingPos is x
     if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
