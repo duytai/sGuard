@@ -64,7 +64,7 @@ class Trace {
 
   last() {
     assert(this.ts.length > 0)
-    return this.ts[this.ts.length - 1].t
+    return this.ts[this.ts.length - 1]
   }
 
   eachLocalVariable(cb) {

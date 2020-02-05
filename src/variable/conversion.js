@@ -132,19 +132,27 @@ const toStateVariable = (t, trace, trackingPos) => {
     assert(isConst(loadSize))
     if (isConstWithValue(loadSize, 0x40)) {
       /// Mapping type
-      /// 0x00 is member and 0x20 is base
-      const subTrace = trace
+      /// 0x20 is base
+      let subTrace = trace
         .sub(loadTraceSize[1].toNumber())
         .filter(isMstore20)
-      const storedValue = subTrace.last()[3]
+      const storedValue = subTrace.last().t[3]
       const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
-      return new Variable(`s_${name}`)
+      const variable = new Variable(`s_${name}`)
+      /// 0x00 is member
+      subTrace = trace
+        .sub(loadTraceSize[1].toNumber())
+        .filter(isMstore0)
+      const { t, vTrackingPos } = subTrace.last()
+      const property = { trackingPos: vTrackingPos, symbol: t[3] }
+      variable.addN([property])
+      return variable
     } else {
       /// Other types including array
       const subTrace = trace
         .sub(loadTraceSize[1].toNumber())
         .filter(isMstore0)
-      const storedValue = subTrace.last()[3]
+      const storedValue = subTrace.last().t[3]
       const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
       return new Variable(`s_${name}`)
     }
