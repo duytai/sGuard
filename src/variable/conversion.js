@@ -89,7 +89,7 @@ const toLocalVariable = (t, trace, trackingPos) => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
     if (name != 'SUB') {
-      properties.push(operands[1 - baseIdx])
+      properties.push({ trackingPos, symbol: operands[1 - baseIdx] })
     }
   })
   const variable = toLocalVariable(base, trace, trackingPos)
@@ -161,7 +161,7 @@ const toStateVariable = (t, trace, trackingPos) => {
     const [type, name, ...operands] = base
     base = operands[baseIdx]
     if (name != 'SUB') {
-      properties.push(operands[1 - baseIdx])
+      properties.push({ trackingPos, symbol: operands[1 - baseIdx]})
     }
   })
   const variable = toStateVariable(base, trace, trackingPos)
