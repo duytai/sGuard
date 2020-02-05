@@ -54,6 +54,14 @@ class RegisterAnalyzer {
         const analyzer = new RegisterAnalyzer(data, endPoints, visited)
         dnode.addChild(analyzer.dnode)
       }
+      /// Expand member of storeVariable 
+      const storeMembers = storeVariable.getMembers()
+      storeMembers.forEach(({ trackingPos, epIdx, symbol }) => {
+        const subEp = storedEp.sub(epIdx + 1)
+        const data = { symbol, trace: subTrace, ep: subEp, trackingPos }
+        const analyzer = new RegisterAnalyzer(data, endPoints, visited)
+        dnode.addChild(analyzer.dnode)
+      })
     }
   }
 
