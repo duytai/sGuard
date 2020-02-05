@@ -55,6 +55,11 @@ class ExecutionPath {
     return this.ep[idx]
   }
 
+  last() {
+    assert(this.ep.length > 0)
+    return this.ep[this.ep.length - 1]
+  }
+
   size() {
     return this.ep.length
   }

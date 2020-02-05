@@ -7,18 +7,19 @@ const { prettify, formatSymbol, findSymbol, isConst, toVisitedKey } = require('.
 const { toStateVariable, toLocalVariable } = require('../variable')
 
 class RegisterAnalyzer {
-  constructor({ symbol, trace, pc, ep, trackingPos }, endPoints, visited = []) {
+  constructor({ symbol, trace, ep, trackingPos }, endPoints, visited = []) {
+    const { pc } = ep.last()
     visited.push(toVisitedKey(pc, trackingPos, symbol))
     assign(
       this,
-      { trace, pc, endPoints, ep, trackingPos, dnode: new DNode(symbol), symbol },
+      { trace, endPoints, ep, trackingPos, dnode: new DNode(symbol), symbol },
     )
     this.internalAnalysis(this, visited)
     this.conditionAnalysis(this, visited)
     this.crossfunctionAnalysis(this, visited)
   }
 
-  internalAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+  internalAnalysis({ trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
     switch (symbol[1]) {
       case 'MLOAD': {
         const subTrace = this.trace.sub(symbol[4][1].toNumber())
@@ -42,13 +43,14 @@ class RegisterAnalyzer {
           if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
             const storedEp = ep.sub(epIdx + 1)
             const storedTrace = subTrace.sub(traceIdx + 1)
+            assert(pc == storedEp.last().pc)
             if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: storedTrace, ep: storedEp, trackingPos: vTrackingPos }
+              const data = { symbol: storedValue, trace: storedTrace, ep: storedEp, trackingPos: vTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
             if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
-              const data = { pc, symbol: storedLoc, trace: storedTrace, ep: storedEp, trackingPos: kTrackingPos }
+              const data = { symbol: storedLoc, trace: storedTrace, ep: storedEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
@@ -78,13 +80,14 @@ class RegisterAnalyzer {
           if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
             const storedEp = ep.sub(epIdx + 1)
             const storedTrace = subTrace.sub(traceIdx + 1)
+            assert(pc == storedEp.last().pc)
             if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: storedTrace, ep: storedEp, trackingPos: vTrackingPos }
+              const data = { symbol: storedValue, trace: storedTrace, ep: storedEp, trackingPos: vTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
             if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
-              const data = { pc, symbol: storedLoc, trace: storedTrace, ep: storedEp, trackingPos: kTrackingPos }
+              const data = { symbol: storedLoc, trace: storedTrace, ep: storedEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
@@ -98,13 +101,13 @@ class RegisterAnalyzer {
           const traceSize = symbol[1] == 'SLOAD' ? symbol[3] : symbol[4]
           assert(isConst(traceSize))
           const subTrace = this.trace.sub(traceSize[1].toNumber())
-          this.internalAnalysis({ pc, symbol, trackingPos, ep, trace: subTrace, endPoints, dnode }, visited)
+          this.internalAnalysis({ symbol, trackingPos, ep, trace: subTrace, endPoints, dnode }, visited)
         })
       }
     }
   }
 
-  crossfunctionAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+  crossfunctionAnalysis({ trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
     const sloads = dnode.findSloads()
     endPoints.forEach(({ trace, ep }) => {
       sloads.forEach(sload => {
@@ -125,13 +128,14 @@ class RegisterAnalyzer {
           if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
             const subEp = ep.sub(epIdx + 1)
             const subTrace = trace.sub(traceIdx + 1)
+            assert(pc == subEp.last().pc)
             if (!visited.includes(toVisitedKey(pc, vTrackingPos, storedValue))) {
-              const data = { pc, symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: vTrackingPos }
+              const data = { symbol: storedValue, trace: subTrace, ep: subEp, trackingPos: vTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
             if (!visited.includes(toVisitedKey(pc, kTrackingPos, storedLoc))) {
-              const data = { pc, symbol: storedLoc, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
+              const data = { symbol: storedLoc, trace: subTrace, ep: subEp, trackingPos: kTrackingPos }
               const analyzer = new RegisterAnalyzer(data, endPoints, visited)
               dnode.addChild(analyzer.dnode)
             }
@@ -141,7 +145,8 @@ class RegisterAnalyzer {
     })
   }
 
-  conditionAnalysis({ pc, trackingPos, ep, trace, endPoints, dnode }, visited) {
+  conditionAnalysis({ trackingPos, ep, trace, endPoints, dnode }, visited) {
+    const { pc } = ep.last()
     const stackAnalyzer = new StackAnalyzer()
     const condAnalyzer = new ConditionAnalyzer(endPoints, ep)
     const trackingPcs = stackAnalyzer.findTrackingPcs(trackingPos, ep)
@@ -149,7 +154,8 @@ class RegisterAnalyzer {
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       if (!visited.includes(toVisitedKey(pc, trackingPos, cond))) {
         const subEp = ep.sub(epIdx + 1)
-        const data = { pc, symbol: cond, trace, ep: subEp, trackingPos }
+        assert(subEp.last().pc == pc)
+        const data = { symbol: cond, trace, ep: subEp, trackingPos }
         const analyzer = new RegisterAnalyzer(data, endPoints, visited)
         dnode.addChild(analyzer.dnode)
       }
