@@ -9,7 +9,7 @@ const {
 
 const findLocalAccessPath = (symbol) => {
   const accessPaths = []
-  const stackOfSymbols = [{ symbol, accessPath: [], hasMore: true }]
+  const stackOfSymbols = [{ symbol, accessPath: [] }]
   while (stackOfSymbols.length > 0) {
     const { symbol, accessPath, hasMore } = stackOfSymbols.pop()
     if (isMload(symbol)) {
@@ -17,11 +17,10 @@ const findLocalAccessPath = (symbol) => {
     } else {
       const [type, name, ...params] = symbol
       params.forEach((param, idx) => {
-        if (['SUB', 'ADD', 'MLOAD', 'MUL'].includes(name)) {
+        if (['SUB', 'ADD', 'MUL'].includes(name)) {
           stackOfSymbols.push({
             symbol: param,
-            accessPath: (hasMore && name != 'MLOAD') ? [...accessPath, idx] : [...accessPath],
-            hasMore: hasMore && name != 'MLOAD'
+            accessPath: [...accessPath, idx],
           })
         }
       })
@@ -58,11 +57,10 @@ const splitVariable = (t, trace, trackingPos, epIdx) => {
     if (isMload(t)) {
       const [loc, loadSize, loadTraceSize] = t.slice(2)
       assert(isConst(loadTraceSize))
-      const subTrace = trace.sub(loadTraceSize[1].toNumber())
       stackOfSymbols.push({ t: loc, trace, trackingPos, epIdx })
       stackOfVariables.push({
         type: 'MLOAD',
-        value: { t: loc, trace, trackingPos, epIdx }
+        value: { t, trace, trackingPos, epIdx }
       })
       mloadIndexes.push(stackOfVariables.length - 1)
       continue
@@ -115,9 +113,13 @@ const toLocalVariable = (t, trace, trackingPos, epIdx) => {
       continue
     }
   }
-  if (others.length) {
-    console.log(`come here`)
-  }
+  // if (others.length > 0) {
+    // const [{ type, value: { t, trace, trackingPos, epIdx }}] = others
+    // const [loc, loadSize, loadTraceSize] = t.slice(2)
+    // const subTrace = trace.sub(loadTraceSize[1].toNumber())
+    // subTrace.eachLocalVariable(({ variable: storeVariable, value: storedValue, traceIdx }) => {
+    // })
+  // }
   return v
 }
 module.exports = toLocalVariable

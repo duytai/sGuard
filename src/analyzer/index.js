@@ -8,8 +8,6 @@ class Analyzer {
     assert(name == 'CALL')
     const symbol = stack.get(stack.size() - 3)
     const trackingPos = stack.size() - 3
-    prettify(trace.ts.map(({ t }) => t))
-    prettify([symbol])
     this.register = new RegisterAnalyzer({ ep, trace, symbol, trackingPos }, endPoints)
   }
 
