@@ -39,10 +39,11 @@ const findLocalAccessPath = (symbol) => {
   return accessPaths[0]
 }
 
-const toLocalVariable = (t, trace, trackingPos, epIdx) => {
+const splitVariable = (t, trace, trackingPos, epIdx) => {
   const item = { t, trace, trackingPos, epIdx }
   const stackOfSymbols = [item]
   const stackOfVariables = []
+  const mloadIndexes = []
   while (stackOfSymbols.length > 0) {
     const { t, trace, trackingPos, epIdx } = stackOfSymbols.pop()
     assert(t && trace && trackingPos >= 0 && epIdx >= 0)
@@ -63,6 +64,7 @@ const toLocalVariable = (t, trace, trackingPos, epIdx) => {
         type: 'MLOAD',
         value: { t: loc, trace, trackingPos, epIdx }
       })
+      mloadIndexes.push(stackOfVariables.length - 1)
       continue
     }
     const properties = []
@@ -82,53 +84,40 @@ const toLocalVariable = (t, trace, trackingPos, epIdx) => {
     })
   }
   stackOfVariables.reverse()
-  // const secondMloadIdx = stackOfVariables
-    // .map(({ type }, idx) => type == 'MLOAD' ? idx : -1)
-    // .filter(idx => idx >= 0)[1] ||
-  // const firstSegment = stackOfVariables.slice(0, secondMloadIdx)
-  // const secondSegment = stackOfVariables.slice(secondMloadIdx)
-  // console.log(firstSegment)
-  // console.log(secondSegment)
-  // const mloadCounter = stackOfVariables.filter(({ type }) => type == 'MLOAD').length
-  // switch (mloadCounter) {
-    // case 0: {
-      // assert(stackOfVariables[0].type == 'VAR')
-      // const { value: v } = stackOfVariables.shift()
-      // assert(stackOfVariables.length <= 1)
-      // if (stackOfVariables.length) {
-        // const { value: properties } = stackOfVariables.shift()
-        // v.addN(properties)
-      // }
-      // return v
-    // }
-    // case 1: {
-      // assert(stackOfVariables[0].type == 'VAR')
-      // const { value: v } = stackOfVariables.shift()
-      // assert(stackOfVariables[0].type == 'MLOAD')
-      // stackOfVariables.shift()
-      // assert(stackOfVariables.length <= 1)
-      // if (stackOfVariables.length) {
-        // const { value: properties } = stackOfVariables.shift()
-        // v.addN(properties)
-      // }
-      // return v
-    // }
-    // default: {
-      // console.log(`mloadCounter: ${mloadCounter}`)
-      // console.log(stackOfVariables)
-      // assert(false)
-      // break
-    // }
-  // }
-  /// Find second position of mload
-  // let mloadCounter = 0
-  // for (let i = 0; i < stackOfVariables.length; i++) {
-    // const { type } = stackOfVariables[i]
-    // if (type == 'MLOAD') mloadCounter ++
-    // if (mloadCounter == 2) {
-      // break
-    // }
-  // }
+  let mloadCounter = 0
+  for (let i = 0; i < stackOfVariables.length; i++) {
+    const { type } = stackOfVariables[i]
+    if (type == 'MLOAD') mloadCounter ++
+    if (mloadCounter == 2) {
+      return [
+        stackOfVariables.slice(0, i),
+        stackOfVariables.slice(i),
+      ]
+    }
+  }
+  return [
+    stackOfVariables,
+    [],
+  ]
+}
 
+const toLocalVariable = (t, trace, trackingPos, epIdx) => {
+  const [stackOfVariables, others] = splitVariable(t, trace, trackingPos, epIdx) 
+  let v = null
+  while (stackOfVariables.length > 0) {
+    const { value, type } = stackOfVariables.shift()
+    if (type == 'VAR') {
+      v = value
+      continue
+    }
+    if (type == 'PROP') {
+      v.addN(value)
+      continue
+    }
+  }
+  if (others.length) {
+    console.log(`come here`)
+  }
+  return v
 }
 module.exports = toLocalVariable
