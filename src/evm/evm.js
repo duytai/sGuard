@@ -1,7 +1,7 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
-const { logger, prettify } = require('../shared')
+const { logger, prettify, isMstore40 } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -154,7 +154,14 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
-          stack.push(['symbol', name, memLoc, size, traceSize])
+          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
+            const subTrace = trace.filter(isMstore40)
+            const { t } = subTrace.last()
+            assert(t[3][0] == 'const')
+            stack.push(t[3])
+          } else {
+            stack.push(['symbol', name, memLoc, size, traceSize])
+          }
           break
         }
         case 'SSTORE': {
