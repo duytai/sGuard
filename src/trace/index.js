@@ -8,7 +8,7 @@ const {
   isStateVariable,
 } = require('../shared')
 const {
-  toLocalVariable,
+  toLocalVariables,
   toStateVariable,
 } = require('../variable')
 
@@ -73,9 +73,11 @@ class Trace {
       const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
-        const variable = toLocalVariable(loc, this, kTrackingPos, epIdx)
-        const shouldBreak = cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
-        if (shouldBreak) break
+        const variables = toLocalVariables(loc, this, kTrackingPos, epIdx)
+        assert(variables.length > 0)
+        variables.forEach(variable => {
+          cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
+        })
       }
     }
   }
@@ -96,10 +98,13 @@ class Trace {
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
     this.ts.forEach(({ pc, t, kTrackingPos, epIdx }) => {
+      prettify([t])
       if (isLocalVariable(t)) {
-        const variable = toLocalVariable(t[2], this, kTrackingPos, epIdx)
-        assert(variable)
-        variable.prettify()
+        const variables = toLocalVariables(t[2], this, kTrackingPos, epIdx)
+        assert(variables.length > 0)
+        variables.forEach(variable => {
+          variable.prettify()
+        })
       }
       if (isStateVariable(t)) {
         const variable = toStateVariable(t[2], this, kTrackingPos, epIdx)

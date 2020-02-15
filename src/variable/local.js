@@ -10,7 +10,7 @@ const {
 
 const sumAll = (constSymbols) => constSymbols.reduce((r, n) => r + n[1].toNumber(), 0) 
 
-const toLocalVariable = (t, trace, trackingPos, epIdx) => {
+const toLocalVariables = (t, trace, trackingPos, epIdx) => {
   if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`)
   const bases = []
   const variables = []
@@ -37,10 +37,13 @@ const toLocalVariable = (t, trace, trackingPos, epIdx) => {
         mainStack.push(t)
         break
       }
+      default: {
+        assert(false, `dont know ${name}`)
+      }
     }
   }
   assert(variables.length > 0)
   /// TODO: return all variables, not the first member
-  return variables[0]
+  return variables
 }
-module.exports = toLocalVariable
+module.exports = toLocalVariables

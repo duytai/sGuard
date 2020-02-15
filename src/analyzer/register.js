@@ -4,7 +4,7 @@ const DNode = require('./dnode')
 const ConditionAnalyzer = require('./condition') 
 const StackAnalyzer = require('./stack')
 const { prettify, formatSymbol, findSymbol, isConst, toVisitedKey } = require('../shared')
-const { toStateVariable, toLocalVariable } = require('../variable')
+const { toStateVariable, toLocalVariables } = require('../variable')
 
 class RegisterAnalyzer {
   constructor({ symbol, trace, ep, trackingPos }, endPoints, visited = []) {
@@ -69,12 +69,14 @@ class RegisterAnalyzer {
     switch (symbol[1]) {
       case 'MLOAD': {
         const subTrace = this.trace.sub(symbol[4][1].toNumber())
-        const loadVariable = toLocalVariable(symbol[2], subTrace, trackingPos, ep.size() - 1)
-        assert(loadVariable)
-        dnode.setVariable(loadVariable)
-        dnode.setAlias(loadVariable.toString())
-        subTrace.eachLocalVariable((opts) => {
-          this.expand(loadVariable, { loadEp: ep, storedEp: ep, subTrace, endPoints, dnode }, opts, visited)
+        const loadVariables = toLocalVariables(symbol[2], subTrace, trackingPos, ep.size() - 1)
+        assert(loadVariables.length > 0)
+        loadVariables.forEach(loadVariable => {
+          dnode.setVariable(loadVariable)
+          dnode.setAlias(loadVariable.toString())
+          subTrace.eachLocalVariable((opts) => {
+            this.expand(loadVariable, { loadEp: ep, storedEp: ep, subTrace, endPoints, dnode }, opts, visited)
+          })
         })
         break
       }
