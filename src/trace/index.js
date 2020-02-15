@@ -96,7 +96,6 @@ class Trace {
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
     this.ts.forEach(({ pc, t, kTrackingPos, epIdx }) => {
-      prettify([t])
       if (isLocalVariable(t)) {
         const variable = toLocalVariable(t[2], this, kTrackingPos, epIdx)
         assert(variable)
