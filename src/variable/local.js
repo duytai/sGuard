@@ -11,9 +11,9 @@ const {
 const sumAll = (constSymbols) => constSymbols.reduce((r, n) => r + n[1].toNumber(), 0) 
 
 const toLocalVariables = (t, trace, trackingPos, epIdx) => {
-  if (isConst(t)) return new Variable(`m_${t[1].toString(16)}`)
-  const bases = []
+  if (isConst(t)) return [new Variable(`m_${t[1].toString(16)}`)]
   const variables = []
+  const bases = []
   const mainStack = [t]
   while (mainStack.length > 0) {
     const t = mainStack.pop()
