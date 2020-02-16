@@ -21,6 +21,10 @@ const toLocalVariables = (t, trace, trackingPos, epIdx) => {
 
   while (mainStack.length > 0) {
     const t = mainStack.pop()
+    if (isConst(t)) {
+      baseStack.push(t)
+      continue
+    }
     switch (t[1]) {
       case 'MLOAD': {
         const [loc, loadSize, loadTraceSize] = t.slice(2)
@@ -40,12 +44,14 @@ const toLocalVariables = (t, trace, trackingPos, epIdx) => {
         propStack.push({ symbol: t, trackingPos, epIdx })
         break
       }
+      /// ADD(A, B)
+      /// A = ADD/MUL => mainStack
+      /// B = const/MLOAD => mainStack 
+      /// However B must be calculated before A
       case 'ADD': {
         const params = t.slice(2)
-        const constIndex = findIndex(params, (param) => isConst(param))
-        assert(constIndex != -1)
-        baseStack.push(params[constIndex])
-        mainStack.push(params[1 - constIndex])
+        mainStack.push(params[1])
+        mainStack.push(params[0])
         break
       }
       default: {
@@ -61,14 +67,15 @@ const toLocalVariables = (t, trace, trackingPos, epIdx) => {
     const loadVariable = new Variable(`m_${sumAll(bases).toString(16)}`)
     const subTrace = trace.sub(loadTraceSize[1].toNumber())
     const temp = []
+    loadVariable.prettify()
     subTrace.eachLocalVariable((opts) => {
       const { variable: storeVariable, value: storedValue } = opts
       if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
         temp.push({ storedValue, storeVariable })
       }
     })
-    assert(temp.length > 0)
     /// TODO: handle more storedValues
+    assert(temp.length > 0, `No dependency, you are trying to access invalid address`)
     baseStack.push(temp[0].storedValue)
     variables.push(temp[0].storeVariable)
   }
