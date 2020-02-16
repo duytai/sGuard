@@ -1,4 +1,5 @@
 const assert = require('assert')
+const BN = require('bn.js')
 const { reverse, findIndex } = require('lodash')
 const Variable = require('./variable')
 const {
@@ -67,17 +68,25 @@ const toLocalVariables = (t, trace, trackingPos, epIdx) => {
     const loadVariable = new Variable(`m_${sumAll(bases).toString(16)}`)
     const subTrace = trace.sub(loadTraceSize[1].toNumber())
     const temp = []
-    loadVariable.prettify()
     subTrace.eachLocalVariable((opts) => {
       const { variable: storeVariable, value: storedValue } = opts
       if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
         temp.push({ storedValue, storeVariable })
       }
     })
-    /// TODO: handle more storedValues
-    assert(temp.length > 0, `No dependency, you are trying to access invalid address`)
-    baseStack.push(temp[0].storedValue)
-    variables.push(temp[0].storeVariable)
+    switch (temp.length) {
+      case 0: {
+        /// access to unknown memory address 
+        baseStack.push(['const', new BN(0)])
+        break
+      }
+      default: {
+        /// TODO: handle more storedValues
+        baseStack.push(temp[0].storedValue)
+        variables.push(temp[0].storeVariable)
+        break
+      }
+    }
   }
   const v = new Variable(`m_${sumAll(baseStack).toString(16)}`) 
   !!propStack.length && v.addN(propStack)
