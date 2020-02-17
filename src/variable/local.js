@@ -56,7 +56,7 @@ const toLocalVariables = (t, trace, trackingPos, epIdx) => {
         break
       }
       default: {
-        assert(false, `dont know ${name}`)
+        assert(false, `dont know ${t[1]}`)
       }
     }
   }
