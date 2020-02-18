@@ -140,6 +140,16 @@ class Evm {
           stack.push(['symbol', name, stack.pop()])
           break
         }
+        case 'CALLDATACOPY': {
+          const [memLoc, dataOffset, dataLength] = stack.popN(ins)
+          const memValue = ['symbol', 'CALLDATALOAD', dataOffset]
+          const t = ['symbol', 'MSTORE', memLoc, memValue, dataLength]
+          const epIdx = ep.size() - 1
+          const vTrackingPos = stack.size() - 1 + 2
+          const kTrackingPos = stack.size() - 1 + 3
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
+          break
+        }
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
