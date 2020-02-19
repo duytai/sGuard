@@ -143,11 +143,7 @@ class Evm {
         case 'CALLDATALOAD': {
           const dataOffset = stack.pop()
           const size = ['const', new BN(32)]
-          if (dataOffset[0] == 'const' && dataOffset[1].isZero()) {
-            stack.push(['symbol', name, dataOffset, size])
-          } else {
-            stack.push(['const', new BN(PARAM_SIZE)])
-          }
+          stack.push(['symbol', name, dataOffset, size])
           break
         }
         case 'CALLDATACOPY': {
@@ -174,14 +170,14 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
-          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
-            const subTrace = trace.filter(isMstore40)
-            const { t } = subTrace.last()
-            assert(t[3][0] == 'const')
-            stack.push(t[3])
-          } else {
+          // if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
+            // const subTrace = trace.filter(isMstore40)
+            // const { t } = subTrace.last()
+            // assert(t[3][0] == 'const')
+            // stack.push(t[3])
+          // } else {
             stack.push(['symbol', name, memLoc, size, traceSize])
-          }
+          // }
           break
         }
         case 'SSTORE': {
