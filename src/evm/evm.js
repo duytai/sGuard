@@ -6,12 +6,29 @@ const { logger, prettify, isMstore40 } = require('../shared')
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
 const PARAM_SIZE = new BN(10)
+const STORAGE_SIZE = new BN(10)
 
 class Evm {
   constructor(bin) {
     this.bin = bin
     this.checkPoints = []
     this.endPoints = []
+    this.sLoc = new Set() 
+  }
+
+  updatesLoc(v) {
+    if (this.sLoc.has(v)) return false
+    this.sLoc.add(v)
+    return true
+  }
+
+  restart(stack, ep, trace) {
+    stack.clear()
+    ep.clear()
+    trace.clear()
+    this.checkPoints.length = 0
+    this.endPoints.length = 0
+    return -1
   }
 
   execute(pc = 0, stack, ep, trace) {
@@ -165,6 +182,14 @@ class Evm {
         }
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
+          if (memLoc[0] == 'const' && memLoc[1].isZero()) {
+            assert(memValue[0] == 'const')
+            const v = memValue[1].toNumber()
+            if (this.updatesLoc(v)) {
+              pc = this.restart(stack, ep, trace)
+              break
+            }
+          }
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
           const epIdx = ep.size() - 1
@@ -177,14 +202,14 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
-          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
-            const subTrace = trace.filter(isMstore40)
-            const { t } = subTrace.last()
-            assert(t[3][0] == 'const')
-            stack.push(t[3])
-          } else {
+          // if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
+            // const subTrace = trace.filter(isMstore40)
+            // const { t } = subTrace.last()
+            // assert(t[3][0] == 'const')
+            // stack.push(t[3])
+          // } else {
             stack.push(['symbol', name, memLoc, size, traceSize])
-          }
+          // }
           break
         }
         case 'SSTORE': {

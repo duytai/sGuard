@@ -9,6 +9,10 @@ class ExecutionPath {
     this.ep = []
   }
 
+  clear() {
+    this.ep.length = 0
+  }
+
   withEp(ep) {
     this.ep = ep
   }

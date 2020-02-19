@@ -17,6 +17,10 @@ class Trace {
     this.ts = []
   }
 
+  clear() {
+    this.ts.length = 0
+  }
+
   withTs(ts) {
     this.ts = ts
   }
