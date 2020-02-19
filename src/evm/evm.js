@@ -5,6 +5,7 @@ const { logger, prettify, isMstore40 } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
+const PARAM_SIZE = new BN(10)
 
 class Evm {
   constructor(bin) {
@@ -133,16 +134,25 @@ class Evm {
           break
         }
         case 'BALANCE':
-        case 'CALLDATALOAD':
         case 'EXTCODESIZE':
         case 'EXTCODEHASH':
         case 'BLOCKHASH': {
           stack.push(['symbol', name, stack.pop()])
           break
         }
+        case 'CALLDATALOAD': {
+          const dataOffset = stack.pop()
+          const size = ['const', new BN(32)]
+          if (dataOffset[0] == 'const' && dataOffset[1].isZero()) {
+            stack.push(['symbol', name, dataOffset, size])
+          } else {
+            stack.push(['const', new BN(PARAM_SIZE)])
+          }
+          break
+        }
         case 'CALLDATACOPY': {
           const [memLoc, dataOffset, dataLength] = stack.popN(ins)
-          const memValue = ['symbol', 'CALLDATALOAD', dataOffset]
+          const memValue = ['symbol', 'CALLDATALOAD', dataOffset, dataLength]
           const t = ['symbol', 'MSTORE', memLoc, memValue, dataLength]
           const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 2
