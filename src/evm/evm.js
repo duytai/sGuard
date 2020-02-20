@@ -11,8 +11,8 @@ const {
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const PARAM_LEN = new BN(10)
-const STORAGE_LEN = new BN(5)
+const DEFAULT_PARAM_LEN = new BN(10)
+const DEFAULT_STORAGE_LEN = new BN(5)
 
 class Evm {
   constructor(bin) {
@@ -20,7 +20,10 @@ class Evm {
     this.checkPoints = []
     this.endPoints = []
     this.halt = false
-    this.dynamicLenSloc = new Set([]) 
+    this.dynamicLen = {
+      sloc: new Set([]),
+      param: new Set([]),
+    }
   }
 
   start(pc = 0, stack, ep, trace) {
@@ -33,11 +36,41 @@ class Evm {
     } while (this.halt)
   }
 
-  updateDynamicLenSloc(loc) {
-    if (this.dynamicLenSloc.has(loc)) return false
-    this.dynamicLenSloc.add(loc)
+  updateDynamicLen(loc, name) {
+    const d = this.dynamicLen[name]
+    if (d.has(loc)) return false
+    d.add(loc)
     return true
   }
+
+  isHaltable(expression) {
+    const sloadReg = /SLOAD\((\d+)/g
+    const matches = findAllMatches(expression, sloadReg)
+    if (matches.length > 0) {
+      const locs = matches.map(mat => parseInt(mat[1]))
+      const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLen(next, 'sloc'), false)
+      if (isUpdated) {
+        this.halt = true
+        return true 
+      } 
+    }
+    return false
+  }
+
+  // haltByCalldataload(expression) {
+    // const calldataloadReg = /CALLDATALOAD\((\d+)/g
+    // const matches = findAllMatches(expression, calldataloadReg)
+    // if (matches.length > 0) {
+      // const locs = matches.map(mat => parseInt(mat[1]))
+      // assert(false)
+      // const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLenSloc(next), false)
+      // if (isUpdated) {
+        // this.halt = true
+        // break
+      // }
+    // }
+    // return false
+  // }
 
   execute(pc = 0, stack, ep, trace) {
     while (true && !this.halt) {
@@ -168,14 +201,7 @@ class Evm {
         case 'CALLDATALOAD': {
           const dataOffset = stack.pop()
           const size = ['const', new BN(32)]
-          if (dataOffset[0] == 'const') {
-            const offset = dataOffset[1].toNumber()
-            if (offset == 0 || (offset - 4) % 0x20 == 0) {
-              stack.push(['symbol', name, dataOffset, size])
-              break
-            }
-          }
-          stack.push(['const', new BN(PARAM_LEN)])
+          stack.push(['symbol', name, dataOffset, size])
           break
         }
         case 'CALLDATACOPY': {
@@ -206,17 +232,7 @@ class Evm {
             const subTrace = trace.filter(isMstore40)
             const { t } = subTrace.last()
             if (t[3][0] == 'symbol') {
-              /// Find sload
-              const sloadReg = /SLOAD\((\d+)/g
-              const matches = findAllMatches(formatSymbol(t[3]), sloadReg)
-              if (matches.length > 0) {
-                const locs = matches.map(mat => parseInt(mat[1]))
-                const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLenSloc(next), false)
-                if (isUpdated) {
-                  this.halt = true
-                  break
-                } 
-              }
+              if (this.isHaltable(formatSymbol(t[3]))) break
               prettify([t])
               assert(false, `Unknown memory segment`)
             }
@@ -233,7 +249,7 @@ class Evm {
           /// to avoid default value
           if (x[0] == 'const') {
             const loc = x[1].toNumber()
-            this.dynamicLenSloc.delete(loc)
+            this.dynamicLen.sloc.delete(loc)
           }
           const t = ['symbol', name, x, y]
           const epIdx = ep.size() - 1
@@ -247,8 +263,8 @@ class Evm {
           /// Replace storage value with concrete value
           if (storageLoc[0] == 'const') {
             const loc = storageLoc[1].toNumber()
-            if (this.dynamicLenSloc.has(loc)) {
-              stack.push(['const', new BN(STORAGE_LEN)])
+            if (this.dynamicLen.sloc.has(loc)) {
+              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
               break
             }
           }
