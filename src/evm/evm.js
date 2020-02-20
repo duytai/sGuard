@@ -20,7 +20,7 @@ class Evm {
     this.checkPoints = []
     this.endPoints = []
     this.halt = false
-    this.sLoc = new Set([]) 
+    this.dynamicLenSloc = new Set([]) 
   }
 
   start(pc = 0, stack, ep, trace) {
@@ -33,9 +33,9 @@ class Evm {
     } while (this.halt)
   }
 
-  updatesLoc(loc) {
-    if (this.sLoc.has(loc)) return false
-    this.sLoc.add(loc)
+  updateDynamicLenSloc(loc) {
+    if (this.dynamicLenSloc.has(loc)) return false
+    this.dynamicLenSloc.add(loc)
     return true
   }
 
@@ -211,7 +211,7 @@ class Evm {
               const matches = findAllMatches(formatSymbol(t[3]), sloadReg)
               if (matches.length > 0) {
                 const locs = matches.map(mat => parseInt(mat[1]))
-                const isUpdated = locs.reduce((ret, next) => ret || this.updatesLoc(next), false)
+                const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLenSloc(next), false)
                 if (isUpdated) {
                   this.halt = true
                   break
@@ -229,11 +229,11 @@ class Evm {
         }
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
-          /// Remove sLoc when variable length is updated
+          /// Remove dynamicLenSloc when variable length is updated
           /// to avoid default value
           if (x[0] == 'const') {
             const loc = x[1].toNumber()
-            this.sLoc.delete(loc)
+            this.dynamicLenSloc.delete(loc)
           }
           const t = ['symbol', name, x, y]
           const epIdx = ep.size() - 1
@@ -247,7 +247,7 @@ class Evm {
           /// Replace storage value with concrete value
           if (storageLoc[0] == 'const') {
             const loc = storageLoc[1].toNumber()
-            if (this.sLoc.has(loc)) {
+            if (this.dynamicLenSloc.has(loc)) {
               stack.push(['const', new BN(STORAGE_LEN)])
               break
             }
