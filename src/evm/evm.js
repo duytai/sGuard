@@ -23,16 +23,14 @@ class Evm {
     this.sLoc = new Set([]) 
   }
 
-  isHalted() {
-    return this.halt
-  }
-
   start(pc = 0, stack, ep, trace) {
-    this.halt = false
-    stack.clear()
-    ep.clear()
-    trace.clear()
-    this.execute(pc, stack, ep, trace)
+    do {
+      this.halt = false
+      stack.clear()
+      ep.clear()
+      trace.clear()
+      this.execute(pc, stack, ep, trace)
+    } while (this.halt)
   }
 
   updatesLoc(loc) {
@@ -231,6 +229,12 @@ class Evm {
         }
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
+          /// Remove sLoc when variable length is updated
+          /// to avoid default value
+          if (x[0] == 'const') {
+            const loc = x[1].toNumber()
+            this.sLoc.delete(loc)
+          }
           const t = ['symbol', name, x, y]
           const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 1
