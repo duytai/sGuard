@@ -109,16 +109,13 @@ class Evm {
               trace.clone(),
             )
             if (!ep.isForbidden(jumpdest)) {
-              if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-                this.execute(
-                  jumpdest,
-                  stack.clone(),
-                  ep.clone(),
-                  trace.clone(),
-                )
-              } else {
-                logger.error('INVALID JUMPI')
-              }
+              assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+              this.execute(
+                jumpdest,
+                stack.clone(),
+                ep.clone(),
+                trace.clone(),
+              )
             }
           }
           return
