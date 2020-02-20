@@ -6,7 +6,6 @@ const {
   prettify,
   isMstore40,
   formatSymbol,
-  findAllMatches,
 } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -44,33 +43,20 @@ class Evm {
   }
 
   isHaltable(expression) {
-    const sloadReg = /SLOAD\((\d+)/g
-    const matches = findAllMatches(expression, sloadReg)
-    if (matches.length > 0) {
-      const locs = matches.map(mat => parseInt(mat[1]))
-      const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLen(next, 'sloc'), false)
-      if (isUpdated) {
-        this.halt = true
-        return true 
-      } 
-    }
-    return false
+    const options = [
+      { opcode: 'SLOAD', propName: 'sloc' },
+      { opcode: 'CALLDATALOAD', propName: 'param' }
+    ]
+    options.forEach(({ opcode, propName }) => {
+      const reg = new RegExp(`${opcode}\\((\\d+)`, 'i')
+      const match = reg.exec(expression)
+      if (match) {
+        const loc = parseInt(match[1], 16)
+        this.halt = this.halt || this.updateDynamicLen(loc, propName)
+      }
+    })
+    return this.halt
   }
-
-  // haltByCalldataload(expression) {
-    // const calldataloadReg = /CALLDATALOAD\((\d+)/g
-    // const matches = findAllMatches(expression, calldataloadReg)
-    // if (matches.length > 0) {
-      // const locs = matches.map(mat => parseInt(mat[1]))
-      // assert(false)
-      // const isUpdated = locs.reduce((ret, next) => ret || this.updateDynamicLenSloc(next), false)
-      // if (isUpdated) {
-        // this.halt = true
-        // break
-      // }
-    // }
-    // return false
-  // }
 
   execute(pc = 0, stack, ep, trace) {
     while (true && !this.halt) {
@@ -201,6 +187,13 @@ class Evm {
         case 'CALLDATALOAD': {
           const dataOffset = stack.pop()
           const size = ['const', new BN(32)]
+          if (dataOffset[0] == 'const') {
+            const loc = dataOffset[1].toNumber()
+            if (this.dynamicLen.param.has(loc)) {
+              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
+              break
+            }
+          }
           stack.push(['symbol', name, dataOffset, size])
           break
         }
