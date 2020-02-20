@@ -1,12 +1,18 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
-const { logger, prettify, isMstore40 } = require('../shared')
+const {
+  logger,
+  prettify,
+  isMstore40,
+  formatSymbol,
+  findAllMatches,
+} = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const PARAM_SIZE = new BN(10)
-const STORAGE_SIZE = new BN(10)
+const PARAM_LEN = new BN(10)
+const STORAGE_LEN = new BN(5)
 
 class Evm {
   constructor(bin) {
@@ -16,9 +22,9 @@ class Evm {
     this.sLoc = new Set() 
   }
 
-  updatesLoc(v) {
-    if (this.sLoc.has(v)) return false
-    this.sLoc.add(v)
+  updatesLoc(loc) {
+    if (this.sLoc.has(loc)) return false
+    this.sLoc.add(loc)
     return true
   }
 
@@ -167,7 +173,7 @@ class Evm {
               break
             }
           }
-          stack.push(['const', new BN(PARAM_SIZE)])
+          stack.push(['const', new BN(PARAM_LEN)])
           break
         }
         case 'CALLDATACOPY': {
@@ -194,14 +200,30 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
-          // if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
-            // const subTrace = trace.filter(isMstore40)
-            // const { t } = subTrace.last()
-            // assert(t[3][0] == 'const')
-            // stack.push(t[3])
-          // } else {
+          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
+            const subTrace = trace.filter(isMstore40)
+            const { t } = subTrace.last()
+            if (t[3][0] == 'symbol') {
+              /// Find sload
+              const sloadReg = /SLOAD\((\d+)/g
+              const matches = findAllMatches(formatSymbol(t[3]), sloadReg)
+              if (matches.length > 0) {
+                const locs = matches.map(mat => parseInt(mat[1]))
+                const isUpdated = locs.reduce((ret, next) => ret || this.updatesLoc(next), false)
+                if (isUpdated) {
+                  console.log(`RESTART-----`)
+                  pc = this.restart(stack, ep, trace)
+                  break
+                }
+              }
+              prettify([t])
+              assert(false, `Unknown memory segment`)
+            }
+            assert(t[3][0] == 'const')
+            stack.push(t[3])
+          } else {
             stack.push(['symbol', name, memLoc, size, traceSize])
-          // }
+          }
           break
         }
         case 'SSTORE': {
@@ -215,6 +237,14 @@ class Evm {
         }
         case 'SLOAD': {
           const storageLoc = stack.pop()
+          /// Replace storage value with concrete value
+          if (storageLoc[0] == 'const') {
+            const loc = storageLoc[1].toNumber()
+            if (this.sLoc.has(loc)) {
+              stack.push(['const', new BN(STORAGE_LEN)])
+              break
+            }
+          }
           const traceSize = ['const', new BN(trace.size())]
           stack.push(['symbol', name, storageLoc, traceSize])
           break

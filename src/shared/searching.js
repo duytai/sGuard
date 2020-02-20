@@ -10,6 +10,18 @@ const findSymbol = (symbol, cond) => {
   )
 }
 
+/// Find all matches
+const findAllMatches = (str, reg) => {
+  const result = []
+  do {
+    matches = reg.exec(str)
+    if (matches) {
+      result.push(matches)
+    }
+  } while(matches)
+  return result
+}
+
 /// Find outOfIndex condition
 const findIndexRange = (ep, bin, opcodes) => {
   let isAssert = false
@@ -33,5 +45,6 @@ const findIndexRange = (ep, bin, opcodes) => {
 module.exports = {
   findSymbol,
   findIndexRange,
+  findAllMatches,
 }
 
