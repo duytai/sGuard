@@ -18,7 +18,12 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const ep = new ExecutionPath()
   const trace = new Trace()
   const pc = 0
-  evm.execute(pc, stack, ep, trace)
+
+  /// Found new concrete value, re-execute
+  do {
+    evm.start(pc, stack, ep, trace)
+  } while (evm.isHalted())
+
   const { checkPoints, endPoints } = evm
   checkPoints.forEach(data => {
     const analyzer = new Analyzer(data, endPoints)

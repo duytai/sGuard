@@ -19,7 +19,20 @@ class Evm {
     this.bin = bin
     this.checkPoints = []
     this.endPoints = []
-    this.sLoc = new Set() 
+    this.halt = false
+    this.sLoc = new Set([]) 
+  }
+
+  isHalted() {
+    return this.halt
+  }
+
+  start(pc = 0, stack, ep, trace) {
+    this.halt = false
+    stack.clear()
+    ep.clear()
+    trace.clear()
+    this.execute(pc, stack, ep, trace)
   }
 
   updatesLoc(loc) {
@@ -28,17 +41,8 @@ class Evm {
     return true
   }
 
-  restart(stack, ep, trace) {
-    stack.clear()
-    ep.clear()
-    trace.clear()
-    this.checkPoints.length = 0
-    this.endPoints.length = 0
-    return -1
-  }
-
   execute(pc = 0, stack, ep, trace) {
-    while (true) {
+    while (true && !this.halt) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
@@ -211,10 +215,9 @@ class Evm {
                 const locs = matches.map(mat => parseInt(mat[1]))
                 const isUpdated = locs.reduce((ret, next) => ret || this.updatesLoc(next), false)
                 if (isUpdated) {
-                  console.log(`RESTART-----`)
-                  pc = this.restart(stack, ep, trace)
+                  this.halt = true
                   break
-                }
+                } 
               }
               prettify([t])
               assert(false, `Unknown memory segment`)
