@@ -182,14 +182,6 @@ class Evm {
         }
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
-          if (memLoc[0] == 'const' && memLoc[1].isZero()) {
-            assert(memValue[0] == 'const')
-            const v = memValue[1].toNumber()
-            if (this.updatesLoc(v)) {
-              pc = this.restart(stack, ep, trace)
-              break
-            }
-          }
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
           const epIdx = ep.size() - 1
