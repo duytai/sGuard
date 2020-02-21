@@ -543,7 +543,7 @@ class Evm {
         }
         default: {
           logger.error(`Missing ${name}`)
-          const inputs = ins.length > 0 ? stack.popN(ins) : []
+          const inputs = ins > 0 ? stack.popN(ins) : []
           assert(outs <= 1)
           if (outs) {
             stack.push(['symbol', name, ...inputs])
