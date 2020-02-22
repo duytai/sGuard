@@ -44,6 +44,19 @@ class Trace {
     return trace
   }
 
+  memValueAt(loc) {
+    assert(loc && loc[0] == 'const')
+    for (let i = this.ts.length - 1; i >= 0; i --) {
+      const { t } = this.ts[i]
+      if (t[1] == 'MSTORE') {
+        if (t[2][0] == 'const' && t[2][1].eq(loc[1])) {
+          return t[3]
+        }
+      }
+    }
+    return null
+  }
+
   values() {
     this.ts.forEach(({ pc, t }) => assert(['MSTORE', 'SSTORE'].includes(t[1])))
     return this.ts.map(({ pc, t }) => t[3])
