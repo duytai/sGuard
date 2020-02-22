@@ -1,8 +1,11 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const chalk = require('chalk')
+const { uniq } = require('lodash')
 const { logger, isConst } = require('../shared')
 
+/// FIXME: a member is a sum of all other constant members 
+/// to compare between two variable
 class Variable  {
   constructor(root) {
     assert(root)
@@ -12,24 +15,14 @@ class Variable  {
 
   addN(ms) {
     assert(ms.length > 0)
-    const symbols = ms.filter(m => !isConst(m))
-    switch (symbols.length) {
-      case 0: {
-        const sum = ms.reduce((r, n) => r + n[1].toNumber(), 0)
-        if (sum > 0) return this.members.push(['const', new BN(sum)])
-        break
-      }
-      case 1: {
-        return this.members.push(symbols[0])
-      }
-      default: {
-        assert(false, 'accept only one symbol')
-      }
-    }
+    ms.forEach(({ trackingPos, epIdx, symbol }) => {
+      assert(trackingPos >= 0 && epIdx >= 0 && !!symbol)
+    })
+    this.members = [...this.members, ...ms]
   }
 
   toString() {
-    const prop = this.members.map(m => isConst(m) ? m[1].toString(16) : '*').join('.')
+    const prop = this.members.map(({ symbol }) => isConst(symbol) ? symbol[1].toString(16) : '*').join('.')
     return [this.root, prop].filter(p => !!p).join('.')
   }
 
@@ -37,8 +30,8 @@ class Variable  {
     logger.debug(chalk.green.bold(this.toString()))
   }
 
-  getSymbolMembers() {
-    return this.members.filter(m => !isConst(m))
+  getMembers() {
+    return [...this.members]
   }
 
   exactEqual(other) {

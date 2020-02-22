@@ -6,6 +6,10 @@ class Stack {
     this.st = []
   }
 
+  clear() {
+    this.st.length = 0
+  }
+
   withSt(st) {
     this.st = st
   }

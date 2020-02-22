@@ -18,7 +18,8 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const ep = new ExecutionPath()
   const trace = new Trace()
   const pc = 0
-  evm.execute(pc, stack, ep, trace)
+
+  evm.start(pc, stack, ep, trace)
   const { checkPoints, endPoints } = evm
   checkPoints.forEach(data => {
     const analyzer = new Analyzer(data, endPoints)

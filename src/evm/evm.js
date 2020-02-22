@@ -1,20 +1,65 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
-const { logger, prettify } = require('../shared')
+const {
+  logger,
+  prettify,
+  isMstore40,
+  formatSymbol,
+} = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
+const DEFAULT_PARAM_LEN = new BN(10)
+const DEFAULT_STORAGE_LEN = new BN(5)
 
 class Evm {
   constructor(bin) {
     this.bin = bin
     this.checkPoints = []
     this.endPoints = []
+    this.halt = false
+    this.dynamicLen = {
+      sloc: new Set([]),
+      param: new Set([]),
+    }
+  }
+
+  start(pc = 0, stack, ep, trace) {
+    do {
+      this.halt = false
+      stack.clear()
+      ep.clear()
+      trace.clear()
+      this.execute(pc, stack, ep, trace)
+    } while (this.halt)
+  }
+
+  updateDynamicLen(loc, name) {
+    const d = this.dynamicLen[name]
+    if (d.has(loc)) return false
+    d.add(loc)
+    return true
+  }
+
+  isHaltable(expression) {
+    const options = [
+      { opcode: 'SLOAD', propName: 'sloc' },
+      { opcode: 'CALLDATALOAD', propName: 'param' }
+    ]
+    options.forEach(({ opcode, propName }) => {
+      const reg = new RegExp(`${opcode}\\((\\d+)`, 'i')
+      const match = reg.exec(expression)
+      if (match) {
+        const loc = parseInt(match[1], 16)
+        this.halt = this.halt || this.updateDynamicLen(loc, propName)
+      }
+    })
+    return this.halt
   }
 
   execute(pc = 0, stack, ep, trace) {
-    while (true) {
+    while (true && !this.halt) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
@@ -64,16 +109,13 @@ class Evm {
               trace.clone(),
             )
             if (!ep.isForbidden(jumpdest)) {
-              if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-                this.execute(
-                  jumpdest,
-                  stack.clone(),
-                  ep.clone(),
-                  trace.clone(),
-                )
-              } else {
-                logger.error('INVALID JUMPI')
-              }
+              assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+              this.execute(
+                jumpdest,
+                stack.clone(),
+                ep.clone(),
+                trace.clone(),
+              )
             }
           }
           return
@@ -128,16 +170,39 @@ class Evm {
         case 'COINBASE':
         case 'GASLIMIT':
         case 'CALLDATASIZE':
+        case 'SELFBALANCE':
         case 'RETURNDATASIZE': {
           stack.push(['symbol', name])
           break
         }
         case 'BALANCE':
-        case 'CALLDATALOAD':
         case 'EXTCODESIZE':
         case 'EXTCODEHASH':
         case 'BLOCKHASH': {
           stack.push(['symbol', name, stack.pop()])
+          break
+        }
+        case 'CALLDATALOAD': {
+          const dataOffset = stack.pop()
+          const size = ['const', new BN(32)]
+          if (dataOffset[0] == 'const') {
+            const loc = dataOffset[1].toNumber()
+            if (this.dynamicLen.param.has(loc)) {
+              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
+              break
+            }
+          }
+          stack.push(['symbol', name, dataOffset, size])
+          break
+        }
+        case 'CALLDATACOPY': {
+          const [memLoc, dataOffset, dataLength] = stack.popN(ins)
+          const memValue = ['symbol', 'CALLDATALOAD', dataOffset, dataLength]
+          const t = ['symbol', 'MSTORE', memLoc, memValue, dataLength]
+          const epIdx = ep.size() - 1
+          const vTrackingPos = stack.size() - 1 + 2
+          const kTrackingPos = stack.size() - 1 + 3
+          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'MSTORE': {
@@ -154,11 +219,29 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
-          stack.push(['symbol', name, memLoc, size, traceSize])
+          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
+            const subTrace = trace.filter(isMstore40)
+            const { t } = subTrace.last()
+            if (t[3][0] == 'symbol') {
+              if (this.isHaltable(formatSymbol(t[3]))) break
+              prettify([t])
+              assert(false, `Unknown memory segment`)
+            }
+            assert(t[3][0] == 'const')
+            stack.push(t[3])
+          } else {
+            stack.push(['symbol', name, memLoc, size, traceSize])
+          }
           break
         }
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
+          /// Remove dynamicLenSloc when variable length is updated
+          /// to avoid default value
+          if (x[0] == 'const') {
+            const loc = x[1].toNumber()
+            this.dynamicLen.sloc.delete(loc)
+          }
           const t = ['symbol', name, x, y]
           const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 1
@@ -168,6 +251,14 @@ class Evm {
         }
         case 'SLOAD': {
           const storageLoc = stack.pop()
+          /// Replace storage value with concrete value
+          if (storageLoc[0] == 'const') {
+            const loc = storageLoc[1].toNumber()
+            if (this.dynamicLen.sloc.has(loc)) {
+              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
+              break
+            }
+          }
           const traceSize = ['const', new BN(trace.size())]
           stack.push(['symbol', name, storageLoc, traceSize])
           break
@@ -452,7 +543,7 @@ class Evm {
         }
         default: {
           logger.error(`Missing ${name}`)
-          const inputs = stack.popN(ins)
+          const inputs = ins > 0 ? stack.popN(ins) : []
           assert(outs <= 1)
           if (outs) {
             stack.push(['symbol', name, ...inputs])

@@ -4,11 +4,13 @@ const { prettify } = require('../shared')
 
 class Analyzer {
   constructor({ ep, trace }, endPoints) {
-    const { stack, opcode: { name }, pc } = ep.get(ep.size() - 1)
+    const { stack, opcode: { name } } = ep.get(ep.size() - 1)
     assert(name == 'CALL')
     const symbol = stack.get(stack.size() - 3)
     const trackingPos = stack.size() - 3
-    this.register = new RegisterAnalyzer({ ep, trace, symbol, pc, trackingPos }, endPoints)
+    prettify(trace.ts.map(({ t }) => t))
+    prettify([symbol])
+    this.register = new RegisterAnalyzer({ ep, trace, symbol, trackingPos }, endPoints)
   }
 
   prettify() {

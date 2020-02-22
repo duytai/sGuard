@@ -60,6 +60,7 @@ const opcodes = {
   0x43: { name: 'NUMBER', fee: 2, ins: 0, outs: 1 },
   0x44: { name: 'DIFFICULTY', fee: 2, ins: 0, outs: 1 },
   0x45: { name: 'GASLIMIT', fee: 2, ins: 0, outs: 1 },
+  0x47: { name: 'SELFBALANCE', fee: 2, ins: 0, outs: 1 },
 
   // 0x50 range - 'storage' and execution
   0x50: { name: 'POP', fee: 2, ins: 0, outs: 0 },

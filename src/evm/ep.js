@@ -9,6 +9,10 @@ class ExecutionPath {
     this.ep = []
   }
 
+  clear() {
+    this.ep.length = 0
+  }
+
   withEp(ep) {
     this.ep = ep
   }
@@ -53,6 +57,11 @@ class ExecutionPath {
   get(idx) {
     assert(idx >= 0 && idx < this.ep.length)
     return this.ep[idx]
+  }
+
+  last() {
+    assert(this.ep.length > 0)
+    return this.ep[this.ep.length - 1]
   }
 
   size() {
