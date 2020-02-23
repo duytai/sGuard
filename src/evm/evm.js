@@ -193,13 +193,14 @@ class Evm {
           const memLoc = stack.pop()
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
+          const epSize = ['const', new BN(ep.size())]
           if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
             const t = trace.memValueAt(memLoc)
             if (this.isHaltable(formatSymbol(t))) break
             assert(t[0] == 'const')
             stack.push(t)
           } else {
-            stack.push(['symbol', name, memLoc, size, traceSize])
+            stack.push(['symbol', name, memLoc, size, traceSize, epSize])
           }
           break
         }
@@ -229,7 +230,8 @@ class Evm {
             }
           }
           const traceSize = ['const', new BN(trace.size())]
-          stack.push(['symbol', name, storageLoc, traceSize])
+          const epSize = ['const', new BN(ep.size())]
+          stack.push(['symbol', name, storageLoc, traceSize, epSize])
           break
         }
         case 'ISZERO': {
@@ -422,7 +424,8 @@ class Evm {
         case 'SHA3': {
           const [x, y] = stack.popN(ins)
           const traceSize = ['const', new BN(trace.size())]
-          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, traceSize]])
+          const epSize = ['const', new BN(ep.size())]
+          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, traceSize, epSize]])
           break
         }
         case 'CODESIZE': {

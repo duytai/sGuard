@@ -16,8 +16,7 @@ class Register {
     switch (symbol[1]) {
       case 'MLOAD': {
         const loadTraceSize = symbol[4][1].toNumber()
-        const t = this.ep.trace.get(loadTraceSize - 1) 
-        console.log(t)
+        console.log(loadTraceSize)
         assert(false)
         const loadVariables = toLocalVariables(symbol[2], subTrace, ep)
         assert(loadVariables.length > 0)
