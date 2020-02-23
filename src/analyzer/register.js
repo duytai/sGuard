@@ -69,7 +69,7 @@ class RegisterAnalyzer {
     switch (symbol[1]) {
       case 'MLOAD': {
         const subTrace = this.trace.sub(symbol[4][1].toNumber())
-        const loadVariables = toLocalVariables(symbol[2], subTrace, trackingPos, ep.size() - 1)
+        const loadVariables = toLocalVariables(symbol[2], subTrace)
         assert(loadVariables.length > 0)
         loadVariables.forEach(loadVariable => {
           dnode.setVariable(loadVariable)

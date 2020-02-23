@@ -90,7 +90,7 @@ class Trace {
       const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
       if (isLocalVariable(t)) {
         const [loc, value] = t.slice(2)
-        const variables = toLocalVariables(loc, this, kTrackingPos, epIdx)
+        const variables = toLocalVariables(loc, this)
         assert(variables.length > 0)
         variables.forEach(variable => {
           cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
@@ -117,7 +117,7 @@ class Trace {
     this.ts.forEach(({ pc, t, kTrackingPos, epIdx }) => {
       prettify([t])
       if (isLocalVariable(t)) {
-        const variables = toLocalVariables(t[2], this, kTrackingPos, epIdx)
+        const variables = toLocalVariables(t[2], this)
         assert(variables.length > 0)
         variables.forEach(variable => {
           variable.prettify()
