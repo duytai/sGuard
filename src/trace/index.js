@@ -84,34 +84,6 @@ class Trace {
     return this.ts[this.ts.length - 1]
   }
 
-  eachLocalVariable(cb) {
-    assert(cb)
-    for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
-      const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
-      if (isLocalVariable(t)) {
-        const [loc, value] = t.slice(2)
-        const variables = toLocalVariables(loc, this)
-        assert(variables.length > 0)
-        variables.forEach(variable => {
-          cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
-        })
-      }
-    }
-  }
-
-  eachStateVariable(cb) {
-    assert(cb)
-    for (let traceIdx = this.ts.length - 1; traceIdx >= 0; traceIdx --) {
-      const { pc, t, epIdx, vTrackingPos, kTrackingPos } = this.ts[traceIdx]
-      if (isStateVariable(t)) {
-        const [loc, value] = t.slice(2)
-        const variable = toStateVariable(loc, this, kTrackingPos, epIdx)
-        const shouldBreak = cb({ variable, loc, value, traceIdx, pc, epIdx, vTrackingPos, kTrackingPos })
-        if (shouldBreak) break
-      }
-    }
-  }
-
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
     this.ts.forEach(({ pc, t, kTrackingPos, epIdx }) => {

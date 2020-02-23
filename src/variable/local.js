@@ -62,7 +62,7 @@ const toLocalVariables = (t, trace) => {
     /// Have to find boundary of props
     console.log('--BOUNDARY--')
     prettify(props)
-    assert(false)
+    // assert(false)
   }
 
   return []
