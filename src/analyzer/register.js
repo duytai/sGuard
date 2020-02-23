@@ -33,7 +33,6 @@ class Register {
   }
 
   prettify() {
-    this.ep.trace.prettify()
     this.dnode.prettify()
   }
 }

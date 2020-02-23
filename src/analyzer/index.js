@@ -9,7 +9,7 @@ class Analyzer {
       case 'CALL': {
         const trackingPos = stack.size() - 3
         const symbol = stack.get(trackingPos)
-        prettify(trace.ts.map(({ t }) => t))
+        trace.prettify()
         prettify([symbol])
         this.register = new Register(symbol, ep, endPoints)
         break

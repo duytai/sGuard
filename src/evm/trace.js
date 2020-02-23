@@ -69,21 +69,7 @@ class Trace {
 
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
-    this.ts.forEach(({ pc, t, kTrackingPos }) => {
-      prettify([t])
-      if (isLocalVariable(t)) {
-        const variables = toLocalVariables(t[2], this)
-        assert(variables.length > 0)
-        variables.forEach(variable => {
-          variable.prettify()
-        })
-      }
-      if (isStateVariable(t)) {
-        const variable = toStateVariable(t[2], this)
-        assert(variable)
-        variable.prettify()
-      }
-    })
+    prettify(this.ts.map(({ t }) => t))
   }
 }
 
