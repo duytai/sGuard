@@ -1,6 +1,7 @@
 const BN = require('bn.js')
 const assert = require('assert')
 const opcodes = require('./opcodes')
+const Ep = require('./ep')
 const {
   logger,
   prettify,
@@ -25,13 +26,12 @@ class Evm {
     }
   }
 
-  start(pc = 0, stack, ep, trace) {
+  start() {
+    const ep = new Ep()
     do {
-      this.halt = false
-      stack.clear()
       ep.clear()
-      trace.clear()
-      this.execute(pc, stack, ep, trace)
+      this.halt = false
+      this.execute(0, ep)
     } while (this.halt)
   }
 
@@ -58,12 +58,13 @@ class Evm {
     return this.halt
   }
 
-  execute(pc = 0, stack, ep, trace) {
+  execute(pc = 0, ep) {
     while (true && !this.halt) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      ep.add({ stack: stack.clone(), opcode: { ...opcode, opVal: this.bin[pc] }, pc })
+      const { stack, trace } = ep
+      ep.add({ opcode: { ...opcode, opVal: this.bin[pc] }, pc })
       switch (name) {
         case 'PUSH': {
           const dataLen = this.bin[pc] - 0x5f
@@ -87,35 +88,15 @@ class Evm {
           if (cond[0] == 'const') {
             if (!cond[1].isZero()) {
               assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-              this.execute(
-                jumpdest,
-                stack.clone(),
-                ep.clone(),
-                trace.clone(),
-              )
+              this.execute(jumpdest, ep.clone())
             } else {
-              this.execute(
-                pc + 1,
-                stack.clone(),
-                ep.clone(),
-                trace.clone(),
-              )
+              this.execute(pc + 1, ep.clone())
             }
           } else {
-            this.execute(
-              pc + 1,
-              stack.clone(),
-              ep.clone(),
-              trace.clone(),
-            )
+            this.execute(pc + 1, ep.clone())
             if (!ep.isForbidden(jumpdest)) {
               assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-              this.execute(
-                jumpdest,
-                stack.clone(),
-                ep.clone(),
-                trace.clone(),
-              )
+              this.execute(jumpdest, ep.clone())
             }
           }
           return
@@ -125,16 +106,8 @@ class Evm {
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
           if (!ep.isForbidden(jumpdest)) {
-            if (this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST') {
-              this.execute(
-                jumpdest,
-                stack.clone(),
-                ep.clone(),
-                trace.clone(),
-              )
-            } else {
-              logger.error('INVALID JUMP')
-            }
+            assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
+            this.execute(jumpdest, ep.clone())
           }
           return
         }
@@ -199,20 +172,18 @@ class Evm {
           const [memLoc, dataOffset, dataLength] = stack.popN(ins)
           const memValue = ['symbol', 'CALLDATALOAD', dataOffset, dataLength]
           const t = ['symbol', 'MSTORE', memLoc, memValue, dataLength]
-          const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 2
           const kTrackingPos = stack.size() - 1 + 3
-          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
+          trace.add(t, pc, { vTrackingPos, kTrackingPos })
           break
         }
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
-          const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 1
           const kTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
+          trace.add(t, pc, { vTrackingPos, kTrackingPos })
           break
         }
         case 'MLOAD': {
@@ -243,10 +214,9 @@ class Evm {
             this.dynamicLen.sloc.delete(loc)
           }
           const t = ['symbol', name, x, y]
-          const epIdx = ep.size() - 1
           const vTrackingPos = stack.size() - 1 + 1
           const kTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, { epIdx, vTrackingPos, kTrackingPos })
+          trace.add(t, pc, { vTrackingPos, kTrackingPos })
           break
         }
         case 'SLOAD': {

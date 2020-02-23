@@ -1,39 +1,46 @@
 const assert = require('assert')
 const { pickBy } = require('lodash')
 const { logger } = require('../shared')
+const Stack = require('./stack')
+const Trace = require('./trace')
 
 const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 20
 
-class ExecutionPath {
+class Ep {
   constructor() {
     this.ep = []
+    this.stack = new Stack() 
+    this.trace = new Trace()
   }
 
   clear() {
     this.ep.length = 0
+    this.stack.clear()
+    this.trace.clear()
   }
 
-  withEp(ep) {
-    this.ep = ep
-  }
-
-  add({ stack, opcode, pc }) {
-    this.ep.push({ stack, opcode, pc })
+  add({ opcode, pc }) {
+    const stack = this.stack.clone()
+    const trace = this.trace.clone()
+    this.ep.push({ stack, trace, opcode, pc })
   }
 
   clone() {
-    const executionPath = new ExecutionPath()
-    executionPath.withEp([...this.ep])
-    return executionPath
+    const ep = new Ep()
+    ep.ep = [...this.ep]
+    ep.trace = this.trace.clone()
+    ep.stack = this.stack.clone()
+    return ep
   }
 
   sub(epSize) {
     assert(epSize >= 0)
     assert(epSize <= this.ep.length)
-    const executionPath = new ExecutionPath()
-    const ep = this.ep.slice(0, epSize)
-    executionPath.withEp([...ep])
-    return executionPath 
+    const ep = new Ep()
+    ep.ep = this.ep.slice(0, epSize)
+    ep.trace = assert(false)
+    ep.stack = assert(false)
+    return ep
   }
 
   isForbidden(jumpdest) {
@@ -69,4 +76,4 @@ class ExecutionPath {
   }
 }
 
-module.exports = ExecutionPath
+module.exports = Ep 

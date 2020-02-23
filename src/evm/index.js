@@ -1,9 +1,11 @@
 const Evm = require('./evm')
 const Stack = require('./stack')
-const ExecutionPath = require('./ep')
+const Trace = require('./trace')
+const Ep = require('./ep')
 
 module.exports = {
   Evm,
   Stack,
-  ExecutionPath,
+  Ep,
+  Trace,
 } 

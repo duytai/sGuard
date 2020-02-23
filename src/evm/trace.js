@@ -25,8 +25,8 @@ class Trace {
     this.ts = ts
   }
 
-  add(t, pc, { epIdx, vTrackingPos, kTrackingPos }) {
-    this.ts.push({ pc, t, epIdx, vTrackingPos, kTrackingPos })
+  add(t, pc, { vTrackingPos, kTrackingPos }) {
+    this.ts.push({ pc, t, vTrackingPos, kTrackingPos })
   }
 
   clone() {
@@ -57,24 +57,6 @@ class Trace {
     return null
   }
 
-  values() {
-    this.ts.forEach(({ pc, t }) => assert(['MSTORE', 'SSTORE'].includes(t[1])))
-    return this.ts.map(({ pc, t }) => t[3])
-  }
-
-  keys() {
-    this.ts.forEach(({ pc, t }) => assert(['MSTORE', 'SSTORE'].includes(t[1])))
-    return this.ts.map(({ pc, t }) => t[2])
-  }
-
-  filter(cond) {
-    assert(cond)
-    const trace = new Trace()
-    const ts = this.ts.filter(({ t }) => cond(t))
-    trace.withTs([...ts])
-    return trace
-  }
-
   size() {
     return this.ts.length
   }
@@ -86,7 +68,7 @@ class Trace {
 
   prettify() {
     logger.info(chalk.yellow.bold(`>> Full traces ${this.ts.length}`))
-    this.ts.forEach(({ pc, t, kTrackingPos, epIdx }) => {
+    this.ts.forEach(({ pc, t, kTrackingPos }) => {
       prettify([t])
       if (isLocalVariable(t)) {
         const variables = toLocalVariables(t[2], this)
@@ -96,7 +78,7 @@ class Trace {
         })
       }
       if (isStateVariable(t)) {
-        const variable = toStateVariable(t[2], this, kTrackingPos, epIdx)
+        const variable = toStateVariable(t[2], this)
         assert(variable)
         variable.prettify()
       }
@@ -104,6 +86,4 @@ class Trace {
   }
 }
 
-module.exports = {
-  Trace,
-} 
+module.exports = Trace
