@@ -6,7 +6,7 @@ const StackAnalyzer = require('./stack')
 const { prettify, formatSymbol, findSymbol, isConst, toVisitedKey } = require('../shared')
 const { toStateVariables, toLocalVariables } = require('../variable')
 
-class RegisterAnalyzer {
+class Register {
   constructor(symbol, ep, endPoints) {
     assign(this, { dnode: new DNode(symbol), ep, endPoints })
     this.internalAnalysis(symbol, ep)
@@ -38,4 +38,4 @@ class RegisterAnalyzer {
   }
 }
 
-module.exports = RegisterAnalyzer
+module.exports = Register 
