@@ -1,16 +1,6 @@
 const assert = require('assert')
 const chalk = require('chalk')
-const { reverse } = require('lodash')
-const {
-  prettify,
-  logger,
-  isLocalVariable,
-  isStateVariable,
-} = require('../shared')
-const {
-  toLocalVariables,
-  toStateVariable,
-} = require('../variable')
+const { prettify, logger } = require('../shared')
 
 class Trace {
   constructor() {
@@ -21,8 +11,8 @@ class Trace {
     this.ts.length = 0
   }
 
-  add(t, pc, { vTrackingPos, kTrackingPos }) {
-    this.ts.push({ pc, t, vTrackingPos, kTrackingPos })
+  add({ pc, t, epIdx, vTrackingPos, kTrackingPos }) {
+    this.ts.push({ pc, t, epIdx, vTrackingPos, kTrackingPos })
   }
 
   clone() {

@@ -175,7 +175,8 @@ class Evm {
           const t = ['symbol', 'MSTORE', memLoc, memValue, dataLength]
           const vTrackingPos = stack.size() - 1 + 2
           const kTrackingPos = stack.size() - 1 + 3
-          trace.add(t, pc, { vTrackingPos, kTrackingPos })
+          const epIdx = ep.size() - 1
+          trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'MSTORE': {
@@ -184,7 +185,8 @@ class Evm {
           const t = ['symbol', name, memLoc, memValue, size]
           const vTrackingPos = stack.size() - 1 + 1
           const kTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, { vTrackingPos, kTrackingPos })
+          const epIdx = ep.size() - 1
+          trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'MLOAD': {
@@ -212,7 +214,8 @@ class Evm {
           const t = ['symbol', name, x, y]
           const vTrackingPos = stack.size() - 1 + 1
           const kTrackingPos = stack.size() - 1 + 2
-          trace.add(t, pc, { vTrackingPos, kTrackingPos })
+          const epIdx = ep.size() - 1
+          trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
           break
         }
         case 'SLOAD': {

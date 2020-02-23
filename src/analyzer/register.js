@@ -9,20 +9,23 @@ const { toStateVariables, toLocalVariables } = require('../variable')
 class Register {
   constructor(symbol, ep, endPoints) {
     assign(this, { dnode: new DNode(symbol), ep, endPoints })
-    this.internalAnalysis(symbol, ep)
+    this.internalAnalysis(symbol)
   }
 
   internalAnalysis(symbol) {
     switch (symbol[1]) {
       case 'MLOAD': {
-        const subTrace = this.ep.trace.sub(symbol[4][1].toNumber())
-        const loadVariables = toLocalVariables(symbol[2], subTrace)
+        const loadTraceSize = symbol[4][1].toNumber()
+        const t = this.ep.trace.get(loadTraceSize - 1) 
+        console.log(t)
+        assert(false)
+        const loadVariables = toLocalVariables(symbol[2], subTrace, ep)
         assert(loadVariables.length > 0)
         break
       }
       case 'SLOAD': {
         const subTrace = this.ep.trace.sub(symbol[3][1].toNumber())
-        const loadVariables = toStateVariables(symbol[2], subTrace, trackingPos, ep.size() - 1)
+        const loadVariables = toStateVariables(symbol[2], ep)
         assert(loadVariable.length > 0)
         break
       }

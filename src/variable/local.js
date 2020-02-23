@@ -9,9 +9,11 @@ const {
   isMload,
 } = require('../shared')
 
-const toLocalVariables = (t, trace) => {
+const toLocalVariables = (t, ep) => {
   if (isConst(t)) return [new Variable(`m_${t[1].toString(16)}`)]
 
+  prettify([t])
+  const subTrace = ep.trace.sub(t[4][1].toNumber())
   const mainStack = [t]
   const pointerStack = []
   const propStack = []
