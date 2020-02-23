@@ -33,6 +33,10 @@ class Evm {
       this.halt = false
       this.execute(0, ep)
     } while (this.halt)
+    return {
+      checkPoints: this.checkPoints,
+      endPoints: this.endPoints,
+    }
   }
 
   updateDynamicLen(loc, name) {
@@ -124,10 +128,7 @@ class Evm {
         case 'SELFDESTRUCT':
         case 'RETURN':
         case 'STOP': {
-          this.endPoints.push({
-            ep: ep.clone(),
-            trace: trace.clone(),
-          })
+          this.endPoints.push(ep.clone())
           return
         }
         case 'MSIZE':
