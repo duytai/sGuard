@@ -1,5 +1,4 @@
 const assert = require('assert')
-const { pickBy } = require('lodash')
 const { logger } = require('../shared')
 const Stack = require('./stack')
 const Trace = require('./trace')
@@ -38,8 +37,9 @@ class Ep {
     assert(epSize <= this.ep.length)
     const ep = new Ep()
     ep.ep = this.ep.slice(0, epSize)
-    ep.trace = assert(false)
-    ep.stack = assert(false)
+    const { stack, trace } = ep.ep[ep.ep.length - 1]
+    ep.stack = stack.clone()
+    ep.trace = trace.clone()
     return ep
   }
 

@@ -10,10 +10,6 @@ class Stack {
     this.st.length = 0
   }
 
-  withSt(st) {
-    this.st = st
-  }
-
   push(t) {
     this.st.push(t)
   }
@@ -45,7 +41,7 @@ class Stack {
 
   clone() {
     const stack = new Stack()
-    stack.withSt([...this.st])
+    stack.st = [...this.st]
     return stack
   }
 

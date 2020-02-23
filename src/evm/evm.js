@@ -59,11 +59,11 @@ class Evm {
   }
 
   execute(pc = 0, ep) {
+    const { stack, trace } = ep
     while (true && !this.halt) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) return
       const { name, ins, outs } = opcode
-      const { stack, trace } = ep
       ep.add({ opcode: { ...opcode, opVal: this.bin[pc] }, pc })
       switch (name) {
         case 'PUSH': {
@@ -191,15 +191,10 @@ class Evm {
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
           if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
-            const subTrace = trace.filter(isMstore40)
-            const { t } = subTrace.last()
-            if (t[3][0] == 'symbol') {
-              if (this.isHaltable(formatSymbol(t[3]))) break
-              prettify([t])
-              assert(false, `Unknown memory segment`)
-            }
-            assert(t[3][0] == 'const')
-            stack.push(t[3])
+            const t = trace.memValueAt(memLoc)
+            if (this.isHaltable(formatSymbol(t))) break
+            assert(t[0] == 'const')
+            stack.push(t)
           } else {
             stack.push(['symbol', name, memLoc, size, traceSize])
           }
@@ -504,10 +499,7 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          this.checkPoints.push({
-            trace: trace.clone(),
-            ep: ep.clone(),
-          })
+          this.checkPoints.push(ep.clone())
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }

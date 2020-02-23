@@ -21,17 +21,13 @@ class Trace {
     this.ts.length = 0
   }
 
-  withTs(ts) {
-    this.ts = ts
-  }
-
   add(t, pc, { vTrackingPos, kTrackingPos }) {
     this.ts.push({ pc, t, vTrackingPos, kTrackingPos })
   }
 
   clone() {
     const trace = new Trace()
-    trace.withTs([...this.ts])
+    trace.ts = [...this.ts]
     return trace
   }
 
@@ -40,7 +36,7 @@ class Trace {
     assert(traceSize <= this.ts.length)
     const trace = new Trace()
     const ts = this.ts.slice(0, traceSize)
-    trace.withTs([...ts])
+    trace.ts = [...ts]
     return trace
   }
 
@@ -54,7 +50,7 @@ class Trace {
         }
       }
     }
-    return null
+    assert(false, `not found 0x${loc[1].toNumber()}`)
   }
 
   size() {
