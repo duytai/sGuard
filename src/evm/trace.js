@@ -53,13 +53,18 @@ class Trace {
     assert(false, `not found 0x${loc[1].toNumber()}`)
   }
 
-  size() {
-    return this.ts.length
+  get(idx) {
+    assert(idx >= 0 && idx <= this.ts.length)
+    return this.ts[idx]
   }
 
   last() {
     assert(this.ts.length > 0)
     return this.ts[this.ts.length - 1]
+  }
+
+  size() {
+    return this.ts.length
   }
 
   prettify() {

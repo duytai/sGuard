@@ -54,6 +54,11 @@ class Stack {
     return this.st[idx]
   }
 
+  last() {
+    assert(this.st.length > 0)
+    return this.st[this.st.length - 1]
+  }
+
   prettify(space = 0) {
     logger.info(`>> Full stack ${this.st.length}`)
     prettify(this.st, space)
