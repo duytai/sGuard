@@ -7,26 +7,21 @@ const { prettify, formatSymbol, findSymbol, isConst, toVisitedKey } = require('.
 const { toStateVariables, toLocalVariables } = require('../variable')
 
 class RegisterAnalyzer {
-  constructor({ symbol, trace, ep, trackingPos }, endPoints, visited = []) {
-    const { pc } = ep.last()
-    visited.push(toVisitedKey(pc, trackingPos, symbol))
-    assign(
-      this,
-      { trace, endPoints, ep, trackingPos, dnode: new DNode(symbol), symbol },
-    )
-    this.internalAnalysis(this, visited)
+  constructor(symbol, ep, endPoints) {
+    assign(this, { dnode: new DNode(symbol), ep, endPoints })
+    this.internalAnalysis(symbol, ep)
   }
 
-  internalAnalysis({ trackingPos, ep, trace, endPoints, dnode, symbol }, visited) {
+  internalAnalysis(symbol) {
     switch (symbol[1]) {
       case 'MLOAD': {
-        const subTrace = this.trace.sub(symbol[4][1].toNumber())
+        const subTrace = this.ep.trace.sub(symbol[4][1].toNumber())
         const loadVariables = toLocalVariables(symbol[2], subTrace)
         assert(loadVariables.length > 0)
         break
       }
       case 'SLOAD': {
-        const subTrace = this.trace.sub(symbol[3][1].toNumber())
+        const subTrace = this.ep.trace.sub(symbol[3][1].toNumber())
         const loadVariables = toStateVariables(symbol[2], subTrace, trackingPos, ep.size() - 1)
         assert(loadVariable.length > 0)
         break
@@ -38,7 +33,7 @@ class RegisterAnalyzer {
   }
 
   prettify() {
-    this.trace.prettify()
+    this.ep.trace.prettify()
     this.dnode.prettify()
   }
 }

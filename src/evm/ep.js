@@ -52,15 +52,6 @@ class Ep {
     return pcs.length >= MAX_VISITED_BLOCK 
   }
 
-  prettify() {
-    logger.info('>> Full ep')
-    this.ep.forEach(({ pc, opcode, stack }, idx) => {
-      logger.debug('-----')
-      logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
-      stack.prettify(2)
-    })
-  }
-
   get(idx) {
     assert(idx >= 0 && idx < this.ep.length)
     return this.ep[idx]
@@ -73,6 +64,15 @@ class Ep {
 
   size() {
     return this.ep.length
+  }
+
+  prettify() {
+    logger.info('>> Full ep')
+    this.ep.forEach(({ pc, opcode, stack }, idx) => {
+      logger.debug('-----')
+      logger.debug(`${pc} | ${Number(pc).toString(16)}\t${opcode.name}`)
+      stack.prettify(2)
+    })
   }
 }
 

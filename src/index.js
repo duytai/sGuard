@@ -13,9 +13,8 @@ forEach(JSON.parse(compiled).contracts, (contractJson, name) => {
   const evm = new Evm(bin)
   console.log(`++++++++++ Analyzing contract: ${name} ++++++++++`)
   const { checkPoints, endPoints } = evm.start()
-  checkPoints.forEach(data => {
-    console.log(data)
-    // const analyzer = new Analyzer(data, endPoints)
-    // analyzer.prettify()
+  checkPoints.forEach(ep => {
+    const analyzer = new Analyzer(ep, endPoints)
+    analyzer.prettify()
   })
 })
