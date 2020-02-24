@@ -33,12 +33,12 @@ class Trace {
 
   filter(cond) {
     assert(cond)
-    return reverse(this.ts).filter(t => cond(t))
+    return reverse([...this.ts]).filter(t => cond(t))
   }
 
   find(cond) {
     assert(cond)
-    return reverse(this.ts).find(t => cond(t))
+    return reverse([...this.ts]).find(t => cond(t))
   }
 
   memValueAt(loc) {

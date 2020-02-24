@@ -22,6 +22,14 @@ class LocalVariable {
     return right[1].toNumber()
   }
 
+  findUniqMemstores(ep) {
+    ep.trace.prettify()
+    console.log('----')
+    ep.trace.filter(({ t }) => {
+      prettify([t])
+    })
+  }
+
   convert(t, ep) {
     if (isConst(t)) return [new Variable(`m_${t[1].toString(16)}`)]
 
@@ -32,30 +40,34 @@ class LocalVariable {
 
     while (mainStack.length > 0) {
       const t = mainStack.pop()
-      if (isConst(t)) {
-        pointerStack.push(t)
-        continue
-      }
-      switch(t[1]) {
-        case 'MLOAD': {
-          const [loc, loadSize, _, epSize] = t.slice(2)
-          markerStack.push({
-            pointerIdx: pointerStack.length,
-            propIdx: propStack.length,
-            epSize,
-          })
-          mainStack.push(loc)
-          break
-        }
-        case 'ADD': {
-          const operands = t.slice(2)
-          assert(operands[0][1] == 'MUL')
-          propStack.push(operands[0])
-          mainStack.push(operands[1])
+      switch (t[0]) {
+        case 'const': {
+          pointerStack.push(t)
           break
         }
         default: {
-          assert(false, `dont know ${t[1]}`)
+          switch(t[1]) {
+            case 'MLOAD': {
+              const [loc, loadSize, _, epSize] = t.slice(2)
+              markerStack.push({
+                pointerIdx: pointerStack.length,
+                propIdx: propStack.length,
+                epSize,
+              })
+              mainStack.push(loc)
+              break
+            }
+            case 'ADD': {
+              const operands = t.slice(2)
+              assert(operands[0][1] == 'MUL')
+              propStack.push(operands[0])
+              mainStack.push(operands[1])
+              break
+            }
+            default: {
+              assert(false, `dont know ${t[1]}`)
+            }
+          }
         }
       }
     }
@@ -70,6 +82,7 @@ class LocalVariable {
       /// Find array size to detect possible overlap with previous data segment 
       const arraySize = this.findArraySize(subEp)
       console.log(`s: ${arraySize}`)
+      this.findUniqMemstores(subEp)
       assert(false)
     }
     return []

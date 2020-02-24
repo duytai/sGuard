@@ -48,12 +48,12 @@ class Stack {
 
   filter(cond) {
     assert(cond)
-    return reverse(this.st).filter(t => cond(t))
+    return reverse([...this.st]).filter(t => cond(t))
   }
 
   find(cond) {
     assert(cond)
-    return reverse(this.st).find(t => cond(t))
+    return reverse([...this.st]).find(t => cond(t))
   }
 
   size() {

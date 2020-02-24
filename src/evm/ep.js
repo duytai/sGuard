@@ -55,12 +55,12 @@ class Ep {
 
   filter(cond) {
     assert(cond)
-    return reverse(this.ep).filter(ep => cond(ep))
+    return reverse([...this.ep]).filter(ep => cond(ep))
   }
 
   find(cond) {
     assert(cond)
-    return reverse(this.ep).find(ep => cond(ep))
+    return reverse([...this.ep]).find(ep => cond(ep))
   }
 
   get(idx) {
