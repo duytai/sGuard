@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { reverse } = require('lodash')
 const { logger } = require('../shared')
 const Stack = require('./stack')
 const Trace = require('./trace')
@@ -50,6 +51,16 @@ class Ep {
       jumpdest,
     ]
     return pcs.length >= MAX_VISITED_BLOCK 
+  }
+
+  filter(cond) {
+    assert(cond)
+    return reverse(this.ep).filter(ep => cond(ep))
+  }
+
+  find(cond) {
+    assert(cond)
+    return reverse(this.ep).find(ep => cond(ep))
   }
 
   get(idx) {

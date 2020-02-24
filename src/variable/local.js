@@ -10,16 +10,12 @@ const {
 } = require('../shared')
 
 const findArraySize = (ep) => {
-  for (let i = ep.size() - 1; i >= 0; i --) {
-    const { opcode: { name }, stack } = ep.get(i)
-    if (name == 'JUMPI') {
-      const cond = stack.get(stack.size() - 2)
-      const [_, name, left, right] = cond
-      assert(name == 'LT')
-      assert(isConst(right))
-      return right[1].toNumber() 
-    }
-  }
+  const { stack } = ep.find(({ opcode: { name }}) => name == 'JUMPI')
+  const cond = stack.get(stack.size() - 2)
+  const [_, name, left, right] = cond
+  assert(name == 'LT')
+  assert(isConst(right))
+  return right[1].toNumber()
 }
 
 const toLocalVariables = (t, ep) => {
@@ -69,7 +65,6 @@ const toLocalVariables = (t, ep) => {
     const storedValue = subEp.trace.memValueAt(pointer)
     /// Find array size to detect possible overlap with previous data segment 
     const arraySize = findArraySize(subEp)
-    const memstores = findAllMemstores(subEp) 
     console.log(`s: ${arraySize}`)
     assert(false)
   }
