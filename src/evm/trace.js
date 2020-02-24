@@ -47,8 +47,8 @@ class Trace {
       const [_, name, targetLoc, value] = t
       return name == 'MSTORE' && targetLoc[0] == 'const' && targetLoc[1].eq(loc[1])
     })
-    assert(r, `not found 0x${loc[1].toString(16)}`)
-    return r.t[3]
+    if (r) return r.t[3]
+    assert(false, `Access to uninitialized memory location: 0x${loc[1].toString(16)}`)
   }
 
   get(idx) {
