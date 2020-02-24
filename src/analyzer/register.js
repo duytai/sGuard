@@ -15,15 +15,15 @@ class Register {
   internalAnalysis(symbol) {
     switch (symbol[1]) {
       case 'MLOAD': {
-        const loadTraceSize = symbol[4][1].toNumber()
-        console.log(loadTraceSize)
-        assert(false)
-        const loadVariables = toLocalVariables(symbol[2], subTrace, ep)
+        const epSize = symbol[5][1].toNumber()
+        const ep = this.ep.sub(epSize)
+        const loadVariables = toLocalVariables(symbol[2], ep)
         assert(loadVariables.length > 0)
         break
       }
       case 'SLOAD': {
-        const subTrace = this.ep.trace.sub(symbol[3][1].toNumber())
+        const epSize = symbol[5][1].toNumber()
+        const ep = this.ep.sub(epSize)
         const loadVariables = toStateVariables(symbol[2], ep)
         assert(loadVariable.length > 0)
         break

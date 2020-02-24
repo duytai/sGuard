@@ -9,11 +9,22 @@ const {
   isMload,
 } = require('../shared')
 
+const findArraySize = (ep) => {
+  for (let i = ep.size() - 1; i >= 0; i --) {
+    const { opcode: { name }, stack } = ep.get(i)
+    if (name == 'JUMPI') {
+      const cond = stack.get(stack.size() - 2)
+      const [_, name, left, right] = cond
+      assert(name == 'LT')
+      assert(isConst(right))
+      return right[1].toNumber() 
+    }
+  }
+}
+
 const toLocalVariables = (t, ep) => {
   if (isConst(t)) return [new Variable(`m_${t[1].toString(16)}`)]
 
-  prettify([t])
-  const subTrace = ep.trace.sub(t[4][1].toNumber())
   const mainStack = [t]
   const pointerStack = []
   const propStack = []
@@ -27,22 +38,19 @@ const toLocalVariables = (t, ep) => {
     }
     switch(t[1]) {
       case 'MLOAD': {
-        const [loc, loadSize, loadTraceSize] = t.slice(2)
+        const [loc, loadSize, _, epSize] = t.slice(2)
         markerStack.push({
-          baseIdx: pointerStack.length,
+          pointerIdx: pointerStack.length,
           propIdx: propStack.length,
-          loadTraceSize,
+          epSize,
         })
         mainStack.push(loc)
         break
       }
-      case 'MUL': {
-        propStack.push(t)
-        break
-      }
       case 'ADD': {
         const operands = t.slice(2)
-        mainStack.push(operands[0])
+        assert(operands[0][1] == 'MUL')
+        propStack.push(operands[0])
         mainStack.push(operands[1])
         break
       }
@@ -53,18 +61,17 @@ const toLocalVariables = (t, ep) => {
   }
 
   while (markerStack.length > 0) {
-    const { baseIdx, propIdx, loadTraceSize } = markerStack.pop() 
-    const pointers = pointerStack.splice(baseIdx)
-    const props = propStack.splice(propIdx)
-    assert(pointers.length == 1)
-    const pointer = pointers[0]
-    const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const storedValue = subTrace.memValueAt(pointer)
-    assert(storedValue)
-    /// Have to find boundary of props
-    console.log('--BOUNDARY--')
-    prettify(props)
-    // assert(false)
+    const { pointerIdx, propIdx, epSize } = markerStack.pop() 
+    const [pointer] = pointerStack.splice(pointerIdx)
+    const [prop] = propStack.splice(propIdx)
+    const subEp = ep.sub(epSize[1].toNumber())
+    assert(pointer && prop)
+    const storedValue = subEp.trace.memValueAt(pointer)
+    /// Find array size to detect possible overlap with previous data segment 
+    const arraySize = findArraySize(subEp)
+    const memstores = findAllMemstores(subEp) 
+    console.log(`s: ${arraySize}`)
+    assert(false)
   }
 
   return []

@@ -1,5 +1,6 @@
 const assert = require('assert')
 const chalk = require('chalk')
+const { reverse } = require('lodash')
 const { prettify, logger } = require('../shared')
 
 class Trace {
@@ -30,17 +31,24 @@ class Trace {
     return trace
   }
 
+  filter(cond) {
+    assert(cond)
+    return reverse(this.ts).filter(t => cond(t))
+  }
+
+  find(cond) {
+    assert(cond)
+    return reverse(this.ts).find(t => cond(t))
+  }
+
   memValueAt(loc) {
     assert(loc && loc[0] == 'const')
-    for (let i = this.ts.length - 1; i >= 0; i --) {
-      const { t } = this.ts[i]
-      if (t[1] == 'MSTORE') {
-        if (t[2][0] == 'const' && t[2][1].eq(loc[1])) {
-          return t[3]
-        }
-      }
-    }
-    assert(false, `not found 0x${loc[1].toNumber()}`)
+    const r = this.find(({ t }) => {
+      const [_, name, targetLoc, value] = t
+      return name == 'MSTORE' && targetLoc[0] == 'const' && targetLoc[1].eq(loc[1])
+    })
+    assert(r, `not found 0x${loc[1].toNumber()}`)
+    return r.t[3]
   }
 
   get(idx) {
