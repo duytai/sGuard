@@ -1,12 +1,7 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const { reverse, findIndex, range } = require('lodash')
-const {
-  prettify,
-  isConst,
-  isConstWithValue,
-  isMload,
-} = require('../shared')
+const { prettify, isConst } = require('../shared')
 
 class LocalVariable {
   constructor(t, ep) {
@@ -17,8 +12,11 @@ class LocalVariable {
   findArraySize(ep) {
     const { stack } = ep.find(({ opcode: { name }}) => name == 'LT')
     const ret = stack.get(stack.size() - 2)
-    assert(isConst(ret))
-    return ret[1].toNumber()
+    if (isConst(ret)) return ret[1].toNumber()
+    assert(ret[1] == 'MLOAD')
+    const value = ep.trace.memValueAt(ret[2])
+    assert(isConst(value))
+    return value[1].toNumber()
   }
 
   convert(t, ep) {
