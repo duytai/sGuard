@@ -4,8 +4,13 @@ const Variable = require('./variable')
 const hash = require('object-hash')
 const { prettify, isConst } = require('../shared')
 
-const toStateVariables = (t, trace) => {
-  assert(false, `TODO: implementation`)
-}
+class StateVariableConversion {
+  constructor() {
+    this.variables = []
+  }
 
-module.exports = toStateVariables
+  getVariables() {
+    return this.variables
+  }
+}
+module.exports = StateVariableConversion 
