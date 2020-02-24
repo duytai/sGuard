@@ -4,7 +4,7 @@ const DNode = require('./dnode')
 const ConditionAnalyzer = require('./condition') 
 const StackAnalyzer = require('./stack')
 const { prettify, formatSymbol, findSymbol, isConst, toVisitedKey } = require('../shared')
-const { StateVariableConversion, LocalVariableConversion } = require('../variable')
+const { StateVariable, LocalVariable } = require('../variable')
 
 class Register {
   constructor(symbol, ep, endPoints) {
@@ -17,17 +17,13 @@ class Register {
       case 'MLOAD': {
         const epSize = symbol[5][1].toNumber()
         const ep = this.ep.sub(epSize)
-        const localVariableConversion = new LocalVariableConversion(symbol[2], ep)
-        const loadVariables = localVariableConversion.getVariables()
-        assert(loadVariables.length > 0)
+        const localVariable = new LocalVariable(symbol[2], ep)
         break
       }
       case 'SLOAD': {
         const epSize = symbol[5][1].toNumber()
         const ep = this.ep.sub(epSize)
-        const stateVariableConversion = new StateVariableConversion(symbol[2], ep)
-        const loadVariables = stateVariableConversion.getVariables(symbol[2], ep)
-        assert(loadVariable.length > 0)
+        const stateVariable = new StateVariable(symbol[2], ep)
         break
       }
       default: {

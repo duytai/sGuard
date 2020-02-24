@@ -1,7 +1,6 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const { reverse, findIndex } = require('lodash')
-const Variable = require('./variable')
 const {
   prettify,
   isConst,
@@ -9,13 +8,9 @@ const {
   isMload,
 } = require('../shared')
 
-class LocalVariableConversion {
+class LocalVariable {
   constructor(t, ep) {
-    this.variables = this.convert(t, ep)
-  }
-
-  getVariables() {
-    return this.variables
+    this.convert(t, ep)
   }
 
   findArraySize(ep) {
@@ -81,4 +76,4 @@ class LocalVariableConversion {
   }
 }
 
-module.exports = LocalVariableConversion 
+module.exports = LocalVariable 
