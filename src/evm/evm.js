@@ -1,4 +1,5 @@
 const BN = require('bn.js')
+const utils = require('ethereumjs-util')
 const assert = require('assert')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
@@ -223,6 +224,7 @@ class Evm {
           const storageLoc = stack.pop()
           /// Replace storage value with concrete value
           if (storageLoc[0] == 'const') {
+            prettify([storageLoc])
             const loc = storageLoc[1].toNumber()
             if (this.dynamicLen.sloc.has(loc)) {
               stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
@@ -425,7 +427,13 @@ class Evm {
           const [x, y] = stack.popN(ins)
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
-          stack.push(['symbol', name, ['symbol', 'MLOAD', x, y, traceSize, epSize]])
+          if (y[1].eq(new BN(0x20))) {
+            const data = trace.memValueAt(x)[1].toArrayLike(Buffer, 'be', 32)
+            const r = new BN(utils.keccak256(data))
+            stack.push(['const', r])
+          } else {
+            assert(false)
+          }
           break
         }
         case 'CODESIZE': {
