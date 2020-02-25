@@ -56,8 +56,7 @@ class Evm {
       const reg = new RegExp(`${opcode}\\((\\d+)`, 'i')
       const match = reg.exec(expression)
       if (match) {
-        const loc = parseInt(match[1], 16)
-        this.halt = this.halt || this.updateDynamicLen(loc, propName)
+        this.halt = this.halt || this.updateDynamicLen(match[1], propName)
       }
     })
     return this.halt
@@ -161,7 +160,7 @@ class Evm {
           const dataOffset = stack.pop()
           const size = ['const', new BN(32)]
           if (dataOffset[0] == 'const') {
-            const loc = dataOffset[1].toNumber()
+            const loc = dataOffset[1].toString(16)
             if (this.dynamicLen.param.has(loc)) {
               stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
               break
@@ -198,6 +197,7 @@ class Evm {
           if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
             const t = trace.memValueAt(memLoc)
             if (this.isHaltable(formatSymbol(t))) break
+            prettify([t])
             assert(t[0] == 'const')
             stack.push(t)
           } else {
@@ -210,7 +210,7 @@ class Evm {
           /// Remove dynamicLenSloc when variable length is updated
           /// to avoid default value
           if (x[0] == 'const') {
-            const loc = x[1].toNumber()
+            const loc = x[1].toString(16)
             this.dynamicLen.sloc.delete(loc)
           }
           const t = ['symbol', name, x, y]
@@ -224,8 +224,7 @@ class Evm {
           const storageLoc = stack.pop()
           /// Replace storage value with concrete value
           if (storageLoc[0] == 'const') {
-            prettify([storageLoc])
-            const loc = storageLoc[1].toNumber()
+            const loc = storageLoc[1].toString(16)
             if (this.dynamicLen.sloc.has(loc)) {
               stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
               break
