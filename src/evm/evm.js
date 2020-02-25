@@ -21,10 +21,6 @@ class Evm {
     this.checkPoints = []
     this.endPoints = []
     this.halt = false
-    this.dynamicLen = {
-      sloc: new Set([]),
-      param: new Set([]),
-    }
   }
 
   start() {
@@ -38,28 +34,6 @@ class Evm {
       checkPoints: this.checkPoints,
       endPoints: this.endPoints,
     }
-  }
-
-  updateDynamicLen(loc, name) {
-    const d = this.dynamicLen[name]
-    if (d.has(loc)) return false
-    d.add(loc)
-    return true
-  }
-
-  isHaltable(expression) {
-    const options = [
-      { opcode: 'SLOAD', propName: 'sloc' },
-      { opcode: 'CALLDATALOAD', propName: 'param' }
-    ]
-    options.forEach(({ opcode, propName }) => {
-      const reg = new RegExp(`${opcode}\\((\\d+)`, 'i')
-      const match = reg.exec(expression)
-      if (match) {
-        this.halt = this.halt || this.updateDynamicLen(match[1], propName)
-      }
-    })
-    return this.halt
   }
 
   execute(pc = 0, ep) {
@@ -160,13 +134,13 @@ class Evm {
           const dataOffset = stack.pop()
           const size = ['const', new BN(32)]
           if (dataOffset[0] == 'const') {
-            const loc = dataOffset[1].toString(16)
-            if (this.dynamicLen.param.has(loc)) {
-              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
+            const offset = dataOffset[1].toNumber()
+            if (offset == 0 || (offset - 4) % 0x20 == 0) {
+              stack.push(['symbol', name, dataOffset, size])
               break
             }
           }
-          stack.push(['symbol', name, dataOffset, size])
+          stack.push(['const', new BN(DEFAULT_PARAM_LEN)])
           break
         }
         case 'CALLDATACOPY': {
@@ -196,8 +170,6 @@ class Evm {
           const epSize = ['const', new BN(ep.size())]
           if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
             const t = trace.memValueAt(memLoc)
-            if (this.isHaltable(formatSymbol(t))) break
-            prettify([t])
             assert(t[0] == 'const')
             stack.push(t)
           } else {
@@ -207,12 +179,6 @@ class Evm {
         }
         case 'SSTORE': {
           const [x, y] = stack.popN(ins)
-          /// Remove dynamicLenSloc when variable length is updated
-          /// to avoid default value
-          if (x[0] == 'const') {
-            const loc = x[1].toString(16)
-            this.dynamicLen.sloc.delete(loc)
-          }
           const t = ['symbol', name, x, y]
           const vTrackingPos = stack.size() - 1 + 1
           const kTrackingPos = stack.size() - 1 + 2
@@ -222,14 +188,6 @@ class Evm {
         }
         case 'SLOAD': {
           const storageLoc = stack.pop()
-          /// Replace storage value with concrete value
-          if (storageLoc[0] == 'const') {
-            const loc = storageLoc[1].toString(16)
-            if (this.dynamicLen.sloc.has(loc)) {
-              stack.push(['const', new BN(DEFAULT_STORAGE_LEN)])
-              break
-            }
-          }
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
           stack.push(['symbol', name, storageLoc, traceSize, epSize])
