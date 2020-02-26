@@ -6,7 +6,7 @@ const { prettify, isConst } = require('../shared')
 class LocalVariable {
   constructor(t, ep) {
     const locs = this.convert(t, ep)
-    prettify(locs)
+    // prettify(locs)
   }
 
   findArraySize(ep) {
