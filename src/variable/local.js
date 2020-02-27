@@ -1,13 +1,10 @@
 const assert = require('assert')
 const BN = require('bn.js')
-const { reverse, findIndex, range } = require('lodash')
+const { range } = require('lodash')
 const { prettify, isConst } = require('../shared')
+const Variable = require('./variable')
 
-class LocalVariable {
-  constructor(t, ep) {
-    const locs = this.convert(t, ep)
-    // prettify(locs)
-  }
+class LocalVariable extends Variable {
 
   findArraySize(ep) {
     const { stack } = ep.find(({ opcode: { name }}) => name == 'LT')

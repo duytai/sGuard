@@ -405,6 +405,7 @@ class Evm {
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
           const mload = ['symbol', 'MLOAD', x, y, traceSize, epSize]
+          assert(x[0] == 'const' && x[1].isZero())
           stack.push(['symbol', name, mload])
           break
         }
