@@ -1,4 +1,6 @@
-const { prettify } = require('./prettify')
+const assert = require('assert')
+const { uniqBy } = require('lodash')
+const { prettify, formatSymbol } = require('./prettify')
 const BN = require('bn.js')
 
 const findSymbol = (symbol, cond) => {
@@ -10,28 +12,25 @@ const findSymbol = (symbol, cond) => {
   )
 }
 
-/// Find outOfIndex condition
-const findIndexRange = (ep, bin, opcodes) => {
-  let isAssert = false
-  for (let i = ep.size() - 1; i >= 0; i--) {
-    const { stack, opcode: { name }, pc } = ep.get(i)
-    if (name == 'JUMPI') {
-      const opcode = opcodes[bin[pc + 1]]
-      if (opcode.name == 'INVALID') isAssert = true
-    }
-    if (name == 'LT' && isAssert) {
-      const left = stack.get(stack.size() - 1)
-      const right = stack.get(stack.size() - 2)
-      prettify([left, right])
-      console.log('-----')
-      if (right[0] == 'const') return right
+const findOpcodeParams = (opcodeName, symbol) => {
+  const ret = []
+  let stack = [symbol]
+  while (stack.length > 0) {
+    const symbol = stack.pop()
+    const [type, name, ...operands] = symbol
+    if (type == 'symbol') {
+      if (name == opcodeName) {
+        ret.push(symbol)
+        continue
+      }
+      stack = stack.concat(operands)
     }
   }
-  return ['const', new BN(0)]
+  return uniqBy(ret,formatSymbol)
 }
 
 module.exports = {
   findSymbol,
-  findIndexRange,
+  findOpcodeParams,
 }
 

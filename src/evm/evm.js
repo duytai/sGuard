@@ -3,17 +3,11 @@ const utils = require('ethereumjs-util')
 const assert = require('assert')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
-const {
-  logger,
-  prettify,
-  isMstore40,
-  formatSymbol,
-} = require('../shared')
+const { logger, prettify, findOpcodeParams, formatSymbol } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const DEFAULT_PARAM_LEN = new BN(10)
-const DEFAULT_STORAGE_LEN = new BN(10)
+const DEFAULT_LEN = ['const', new BN(10)]
 
 class Evm {
   constructor(bin) {
@@ -21,6 +15,7 @@ class Evm {
     this.checkPoints = []
     this.endPoints = []
     this.halt = false
+    this.lenInSloads = []
   }
 
   start() {
@@ -140,7 +135,7 @@ class Evm {
               break
             }
           }
-          stack.push(['const', DEFAULT_PARAM_LEN])
+          stack.push(DEFAULT_LEN)
           break
         }
         case 'CALLDATACOPY': {
@@ -170,7 +165,13 @@ class Evm {
           const epSize = ['const', new BN(ep.size())]
           if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
             const t = trace.memValueAt(memLoc)
-            prettify([t])
+            if (t[0] != 'const') {
+              findOpcodeParams('SLOAD', t).forEach(sload => {
+                this.lenInSloads.push(formatSymbol(sload[2]))
+              })
+              this.halt = true
+              break
+            }
             assert(t[0] == 'const')
             stack.push(t)
           } else {
@@ -189,10 +190,12 @@ class Evm {
         }
         case 'SLOAD': {
           const storageLoc = stack.pop()
-          // if (formatSymbol(storageLoc) == 'ADD(0,ADD(290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563,CALLDATALOAD(4,20)))') {
-            // stack.push(['const', new BN(0)])
-            // break
-          // }
+          const found = this.lenInSloads.find(l => l == formatSymbol(storageLoc))
+          if (found) {
+            /// TODO: must disable when someone update to len field
+            stack.push(DEFAULT_LEN)
+            break
+          }
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
           stack.push(['symbol', name, storageLoc, traceSize, epSize])
@@ -390,6 +393,8 @@ class Evm {
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
           if (y[1].eq(new BN(0x20))) {
+            trace.prettify()
+            prettify([x])
             const data = trace.memValueAt(x)[1].toArrayLike(Buffer, 'be', 32)
             const r = new BN(utils.keccak256(data))
             stack.push(['const', r])
