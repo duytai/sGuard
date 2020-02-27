@@ -21,6 +21,7 @@ class Evm {
   start() {
     const ep = new Ep()
     do {
+      console.log(this.lenInSloads)
       ep.clear()
       this.halt = false
       this.execute(0, ep)
@@ -150,6 +151,23 @@ class Evm {
         }
         case 'MSTORE': {
           const [memLoc, memValue] = stack.popN(ins)
+          /// make sure all loc == 0x40 must contain only concrete value
+          if (memLoc[0] == 'const') {
+            if (memLoc[1].eq(new BN(0x40))) {
+              if (memValue[0] != 'const') {
+                const sloads = findOpcodeParams('SLOAD', memValue)
+                sloads.forEach(sload => {
+                  this.lenInSloads.push(formatSymbol(sload[2]))
+                })
+                if (sloads.length > 0) {
+                  this.halt = true
+                  break
+                }
+                prettify([memLoc, memValue])
+                assert(false)
+              }
+            }
+          }
           const size = ['const', new BN(32)]
           const t = ['symbol', name, memLoc, memValue, size]
           const vTrackingPos = stack.size() - 1 + 1
@@ -163,20 +181,14 @@ class Evm {
           const size = ['const', new BN(32)]
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
-          if (memLoc[0] == 'const' && memLoc[1].toNumber() == 0x40) {
-            const t = trace.memValueAt(memLoc)
-            if (t[0] != 'const') {
-              findOpcodeParams('SLOAD', t).forEach(sload => {
-                this.lenInSloads.push(formatSymbol(sload[2]))
-              })
-              this.halt = true
+          if (memLoc[0] == 'const') {
+            /// Load stored value when loc == 0x40
+            if (memLoc[1].eq(new BN(0x40))) {
+              stack.push(trace.memValueAt(memLoc))
               break
             }
-            assert(t[0] == 'const')
-            stack.push(t)
-          } else {
-            stack.push(['symbol', name, memLoc, size, traceSize, epSize])
           }
+          stack.push(['symbol', name, memLoc, size, traceSize, epSize])
           break
         }
         case 'SSTORE': {
@@ -392,15 +404,8 @@ class Evm {
           const [x, y] = stack.popN(ins)
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
-          if (y[1].eq(new BN(0x20))) {
-            trace.prettify()
-            prettify([x])
-            const data = trace.memValueAt(x)[1].toArrayLike(Buffer, 'be', 32)
-            const r = new BN(utils.keccak256(data))
-            stack.push(['const', r])
-          } else {
-            assert(false)
-          }
+          const mload = ['symbol', 'MLOAD', x, y, traceSize, epSize]
+          stack.push(['symbol', name, mload])
           break
         }
         case 'CODESIZE': {
