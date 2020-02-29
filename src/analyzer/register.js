@@ -17,17 +17,21 @@ class Register {
     assert(symbol && dnode)
     switch (symbol[1]) {
       case 'MLOAD': {
-        const epSize = symbol[5][1].toNumber()
-        const ep = this.ep.sub(epSize)
-        const localVariable = new LocalVariable(symbol[2], ep)
-        dnode.addChild(new DNode(symbol))
+        const subEpSize = symbol[5][1].toNumber()
+        const subEp = this.ep.sub(subEpSize)
+        const localVariable = new LocalVariable(symbol[2], subEp)
+        // const subRegister = new Register(symbol, subEp, this.endPoints)
+        // dnode.addChild(subRegister.dnode)
         break
       }
       case 'SLOAD': {
-        const epSize = symbol[4][1].toNumber()
-        const ep = this.ep.sub(epSize)
-        const stateVariable = new StateVariable(symbol[2], ep)
-        dnode.addChild(new DNode(symbol))
+        const subEpSize = symbol[4][1].toNumber()
+        const subEp = this.ep.sub(subEpSize)
+        const stateVariable = new StateVariable(symbol[2], subEp)
+        subEp.eachStateVariable(({ variable: otherVariable }) => {
+          const v = stateVariable.eq(otherVariable)
+          console.log(`v: ${v}`)
+        })
         break
       }
       default: {

@@ -1,6 +1,7 @@
 const assert = require('assert')
 const { reverse } = require('lodash')
-const { logger } = require('../shared')
+const { logger, prettify } = require('../shared')
+const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
 
@@ -75,6 +76,18 @@ class Ep {
 
   size() {
     return this.ep.length
+  }
+
+  eachStateVariable(cb) {
+    assert(cb)
+    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+      const [_, name, loc] = t
+      if (name == 'SSTORE') {
+        const subEp = this.sub(epIdx + 1)
+        const variable = new StateVariable(loc, subEp)
+        cb({ variable })
+      }
+    })
   }
 
   prettify() {

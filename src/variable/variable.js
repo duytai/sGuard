@@ -6,21 +6,12 @@ class Variable {
   constructor(t, ep) {
     assert(t && ep)
     this.locs = this.convert(t, ep)
-    this.prettify()
+    assert(this.locs.length >= 1)
   }
+
+  eq(other) {}
 
   convert() {}
-
-  prettify() {
-    console.log(`>> Possible values`)
-    this.locs.forEach(loc => {
-      if (isArray(loc)) 
-        prettify(loc)
-      else
-        prettify([loc])
-      console.log('----')
-    })
-  }
 }
 
 module.exports = Variable
