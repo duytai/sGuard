@@ -24,7 +24,7 @@ class Register {
         break
       }
       case 'SLOAD': {
-        const epSize = symbol[3][1].toNumber()
+        const epSize = symbol[4][1].toNumber()
         const ep = this.ep.sub(epSize)
         const stateVariable = new StateVariable(symbol[2], ep)
         dnode.addChild(new DNode(symbol))
