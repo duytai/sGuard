@@ -46,6 +46,10 @@ class Register {
             dnode.addChild(subRegister.dnode)
           }
         })
+        stateVariable.members.forEach(member => {
+          const subRegister = new Register(member, subEp, this.endPoints)
+          dnode.addChild(subRegister.dnode)
+        })
         break
       }
       default: {

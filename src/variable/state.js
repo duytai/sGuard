@@ -21,8 +21,9 @@ class StateVariable extends Variable {
     if (isConst(t)) return [[t]]
     const [sha3, ...props] = this.reachSha3(t)
     const [loc, loadSize, traceSize, epSize] = sha3[2].slice(2)
-    assert(loc[1].isZero())
+    assert(loc[1].isZero() && props.length >= 1)
     const subEp = ep.sub(epSize[1].toNumber())
+    if (!isConst(props[0])) this.members.push(props[0])
     if (loadSize[1].eq(new BN(0x20))) {
       const memValue = subEp.trace.memValueAt(loc)
       if (!isConst(memValue))
@@ -32,6 +33,7 @@ class StateVariable extends Variable {
     assert(loadSize[1].eq(new BN(0x40)))
     const memValue = subEp.trace.memValueAt(['const', new BN(0x20)])
     const prop = subEp.trace.memValueAt(['const', new BN(0)])
+    if (!isConst(prop)) this.members.push(prop)
     if (!isConst(memValue))
       return [...this.convert(memValue, subEp), [prop]]
     return [[memValue], [prop]]
