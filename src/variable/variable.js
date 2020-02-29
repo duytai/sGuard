@@ -8,9 +8,7 @@ class Variable {
     this.locs = this.convert(t, ep)
     assert(this.locs.length >= 1)
   }
-
   eq(other) {}
-
   convert() {}
 }
 

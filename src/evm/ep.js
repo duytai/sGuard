@@ -81,11 +81,11 @@ class Ep {
   eachStateVariable(cb) {
     assert(cb)
     reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
-      const [_, name, loc] = t
+      const [_, name, loc, storedValue ] = t
       if (name == 'SSTORE') {
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
-        cb({ variable })
+        cb({ variable, subEp, storedValue })
       }
     })
   }

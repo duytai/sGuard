@@ -28,9 +28,11 @@ class Register {
         const subEpSize = symbol[4][1].toNumber()
         const subEp = this.ep.sub(subEpSize)
         const stateVariable = new StateVariable(symbol[2], subEp)
-        subEp.eachStateVariable(({ variable: otherVariable }) => {
-          const v = stateVariable.eq(otherVariable)
-          console.log(`v: ${v}`)
+        subEp.eachStateVariable(({ variable: otherVariable, subEp, storedValue }) => {
+          if (stateVariable.eq(otherVariable)) {
+            prettify([storedValue])
+            console.log('--')
+          }
         })
         break
       }

@@ -4,9 +4,7 @@ const { range } = require('lodash')
 const {
   prettify,
   logger,
-  findSymbol,
   formatSymbol,
-  isConst,
 } = require('../shared')
 
 class DNode {
@@ -17,28 +15,6 @@ class DNode {
   addChild(child) {
     assert(child)
     this.node.childs.push(child)
-  }
-
-  getSymbol() {
-    return this.node.me
-  }
-
-  getAlias() {
-    return this.node.alias
-  } 
-
-  getVariable() {
-    return this.node.variable
-  }
-
-  setVariable(v) {
-    assert(v)
-    this.node.variable = v
-  }
-
-  setAlias(a) {
-    assert(a)
-    this.node.alias = a
   }
 
   findSloads() {
