@@ -26,6 +26,10 @@ class Register {
           if (localVariable.eq(otherVariable)) {
             const subRegister = new Register(storedValue, subEp, this.endPoints)
             dnode.addChild(subRegister.dnode)
+            otherVariable.members.forEach(member => {
+              const subRegister = new Register(member, subEp, this.endPoints)
+              dnode.addChild(subRegister.dnode)
+            })
           }
         })
         localVariable.members.forEach(member => {
@@ -44,6 +48,10 @@ class Register {
           if (stateVariable.eq(otherVariable)) {
             const subRegister = new Register(storedValue, subEp, this.endPoints)
             dnode.addChild(subRegister.dnode)
+            otherVariable.members.forEach(member => {
+              const subRegister = new Register(member, subEp, this.endPoints)
+              dnode.addChild(subRegister.dnode)
+            })
           }
         })
         stateVariable.members.forEach(member => {
