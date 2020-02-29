@@ -1,4 +1,5 @@
 const assert = require('assert')
+const chalk = require('chalk')
 const { reverse } = require('lodash')
 const { logger, prettify } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
@@ -78,6 +79,18 @@ class Ep {
     return this.ep.length
   }
 
+  eachLocalVariable(cb) {
+    assert(cb)
+    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+      const [_, name, loc, storedValue ] = t
+      if (name == 'MSTORE') {
+        const subEp = this.sub(epIdx + 1)
+        const variable = new LocalVariable(loc, subEp)
+        cb({ variable, subEp, storedValue })
+      }
+    })
+  }
+
   eachStateVariable(cb) {
     assert(cb)
     reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
@@ -86,6 +99,22 @@ class Ep {
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
         cb({ variable, subEp, storedValue })
+      }
+    })
+  }
+
+  showTrace() {
+    this.trace.ts.forEach(({ t, epIdx }) => {
+      prettify([t])
+      const [_, name, loc] = t
+      const subEp = this.sub(epIdx + 1)
+      if (name == 'SSTORE') {
+        const variable = new StateVariable(loc, subEp)
+        logger.debug(chalk.green.bold(variable.toAlias()))
+      }
+      if (name == 'MSTORE') {
+        const variable = new LocalVariable(loc, subEp)
+        logger.debug(chalk.green.bold(variable.toAlias()))
       }
     })
   }

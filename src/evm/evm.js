@@ -21,7 +21,6 @@ class Evm {
   start() {
     const ep = new Ep()
     do {
-      console.log(this.lenInSloads)
       ep.clear()
       this.halt = false
       this.execute(0, ep)

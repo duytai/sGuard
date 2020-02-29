@@ -22,6 +22,12 @@ class Register {
         const localVariable = new LocalVariable(symbol[2], subEp)
         dnode.node.variable = localVariable
         dnode.node.alias = localVariable.toAlias()
+        subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedValue }) => {
+          if (localVariable.eq(otherVariable)) {
+            const subRegister = new Register(storedValue, subEp, this.endPoints)
+            dnode.addChild(subRegister.dnode)
+          }
+        })
         break
       }
       case 'SLOAD': {

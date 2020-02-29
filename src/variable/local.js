@@ -1,7 +1,7 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const { range } = require('lodash')
-const { prettify, isConst } = require('../shared')
+const { prettify, isConst, formatSymbol } = require('../shared')
 const Variable = require('./variable')
 
 class LocalVariable extends Variable {
@@ -39,6 +39,21 @@ class LocalVariable extends Variable {
         assert(`Unknown ${t[1]}`)
       }
     }
+  }
+
+  eq(otherVariable) {
+    for (let i = 0; i < this.locs.length; i++) {
+      for (let j = 0; j < otherVariable.locs.length; j++) {
+        if (!isConst(this.locs[i]) || !isConst(otherVariable.locs[j])) return false
+        if (this.locs[i][1].eq(otherVariable.locs[j][1])) return true
+      }
+    }
+    return false
+  }
+
+  toAlias() {
+    const str = this.locs.map(l => formatSymbol(l)).join(',')
+    return `[${str}]`
   }
 }
 

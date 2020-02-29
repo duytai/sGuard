@@ -4,12 +4,12 @@ const { prettify } = require('../shared')
 
 class Analyzer {
   constructor(ep, endPoints) {
-    const { stack, trace, opcode: { name } } = ep.last()
+    const { opcode: { name } } = ep.last()
     switch (name) {
       case 'CALL': {
-        const trackingPos = stack.size() - 3
-        const symbol = stack.get(trackingPos)
-        trace.prettify()
+        const trackingPos = ep.stack.size() - 3
+        const symbol = ep.stack.get(trackingPos)
+        ep.showTrace()
         prettify([symbol])
         this.register = new Register(symbol, ep, endPoints)
         break
