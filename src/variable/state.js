@@ -1,6 +1,6 @@
 const assert = require('assert')
 const BN = require('bn.js')
-const { prettify, isConst } = require('../shared')
+const { prettify, isConst, formatSymbol } = require('../shared')
 const Variable = require('./variable')
 
 /// t = sha3(t0) + ax + b
@@ -56,6 +56,11 @@ class StateVariable extends Variable {
       }
     }
     return true
+  }
+  
+  toAlias() {
+    const [[mySloc]] = this.locs
+    return `s_${formatSymbol(mySloc)}.*`
   }
 }
 

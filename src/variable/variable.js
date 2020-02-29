@@ -10,6 +10,7 @@ class Variable {
   }
   eq(other) {}
   convert() {}
+  toAlias() {}
 }
 
 module.exports = Variable

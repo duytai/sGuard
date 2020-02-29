@@ -20,25 +20,31 @@ class Register {
         const subEpSize = symbol[5][1].toNumber()
         const subEp = this.ep.sub(subEpSize)
         const localVariable = new LocalVariable(symbol[2], subEp)
-        // const subRegister = new Register(symbol, subEp, this.endPoints)
-        // dnode.addChild(subRegister.dnode)
+        dnode.node.variable = localVariable
+        dnode.node.alias = localVariable.toAlias()
         break
       }
       case 'SLOAD': {
         const subEpSize = symbol[4][1].toNumber()
         const subEp = this.ep.sub(subEpSize)
         const stateVariable = new StateVariable(symbol[2], subEp)
+        dnode.node.variable = stateVariable
+        dnode.node.alias = stateVariable.toAlias()
         subEp.eachStateVariable(({ variable: otherVariable, subEp, storedValue }) => {
           if (stateVariable.eq(otherVariable)) {
-            prettify([storedValue])
-            console.log('--')
+            const subRegister = new Register(storedValue, subEp, this.endPoints)
+            dnode.addChild(subRegister.dnode)
           }
         })
         break
       }
       default: {
         const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
-        symbols.forEach(symbol => this.internalAnalysis(symbol, dnode))
+        symbols.forEach(symbol => {
+          const subNode = new DNode(symbol)
+          this.internalAnalysis(symbol, subNode)
+          dnode.addChild(subNode)
+        })
       }
     }
   }
