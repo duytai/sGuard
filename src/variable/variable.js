@@ -5,6 +5,7 @@ const { prettify } = require('../shared')
 class Variable {
   constructor(t, ep) {
     assert(t && ep)
+    this.members = []
     this.locs = this.convert(t, ep)
     assert(this.locs.length >= 1)
   }

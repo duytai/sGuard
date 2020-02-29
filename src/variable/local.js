@@ -24,6 +24,7 @@ class LocalVariable extends Variable {
         const arraySize = this.findArraySize(ep)
         const values = this.convert(base, ep)
         if (isConst(prop)) return values.map(v => ['const', v[1].add(prop[1])])
+        this.members.push(prop)
         return values.reduce((agg, next) => {
           next = range(0, arraySize).map(n => ['const', next[1].add(new BN(n * 0x20))])
           return [...agg, ...next]

@@ -28,6 +28,10 @@ class Register {
             dnode.addChild(subRegister.dnode)
           }
         })
+        localVariable.members.forEach(member => {
+          const subRegister = new Register(member, subEp, this.endPoints)
+          dnode.addChild(subRegister.dnode)
+        })
         break
       }
       case 'SLOAD': {
