@@ -6,12 +6,22 @@ const Variable = require('./variable')
 
 class LocalVariable extends Variable {
 
+  fetchMload(loc, ep) {
+    if (isConst(loc)) return loc
+    if (loc[1] == 'ADD') {
+      assert(isConst(loc[2]) && loc[2][1].isZero())
+      loc = loc[3]
+    }
+    assert(loc[1] == 'MLOAD')
+    const subEp = ep.sub(loc[5][1].toNumber())
+    return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
+  }
+
   findArraySize(ep) {
     const { stack } = ep.find(({ opcode: { name }}) => name == 'LT')
     const ret = stack.get(stack.size() - 2)
     if (isConst(ret)) return ret[1].toNumber()
-    assert(ret[1] == 'MLOAD')
-    const value = ep.trace.memValueAt(ret[2])
+    const value = this.fetchMload(ret, ep)
     assert(isConst(value))
     return value[1].toNumber()
   }
