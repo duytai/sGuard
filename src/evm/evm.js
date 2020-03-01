@@ -7,7 +7,7 @@ const { logger, prettify, findOpcodeParams, formatSymbol } = require('../shared'
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const DEFAULT_LEN = ['const', new BN(10)]
+const DEFAULT_LEN = ['const', new BN(2)]
 
 class Evm {
   constructor(bin) {

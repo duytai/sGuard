@@ -28,8 +28,6 @@ class LocalVariable extends Variable {
 
   convert(t, ep) {
     if (isConst(t)) return [t]
-    /// TODO: This is a fix for abi encode dynamic variables
-    if (t[1] == 'SUB') t = t[2]
     switch (t[1]) {
       case 'ADD': {
         const [prop, base] = t.slice(2)
