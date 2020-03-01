@@ -17,7 +17,9 @@ class LocalVariable extends Variable {
   }
 
   convert(t, ep) {
-    if (t[0] == 'const') return [t]
+    if (isConst(t)) return [t]
+    /// TODO: This is a fix for abi encode dynamic variables
+    if (t[1] == 'SUB') t = t[2]
     switch (t[1]) {
       case 'ADD': {
         const [prop, base] = t.slice(2)
@@ -37,7 +39,7 @@ class LocalVariable extends Variable {
         return values.map(v => subEp.trace.memValueAt(v))
       }
       default: {
-        assert(`Unknown ${t[1]}`)
+        assert(false, `Unknown ${t[1]}`)
       }
     }
   }
