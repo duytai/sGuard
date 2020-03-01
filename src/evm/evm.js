@@ -492,6 +492,16 @@ class Evm {
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
+        case 'RETURNDATACOPY': {
+          const [memOffset, returnDataOffset, len] = stack.popN(ins)
+          const data = ['symbol', 'RETURNDATA', returnDataOffset, len]
+          const t = ['symbol', 'MSTORE', memOffset, data, len]
+          const vTrackingPos = stack.size() - 1 + 2
+          const kTrackingPos = stack.size() - 1 + 3
+          const epIdx = ep.size() - 1
+          trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
+          break
+        }
         default: {
           logger.error(`Missing ${name}`)
           const inputs = ins > 0 ? stack.popN(ins) : []
