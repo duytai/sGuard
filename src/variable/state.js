@@ -23,7 +23,8 @@ class StateVariable extends Variable {
     const [loc, loadSize, traceSize, epSize] = sha3[2].slice(2)
     assert(loc[1].isZero())
     const subEp = ep.sub(epSize[1].toNumber())
-    if (props.length > 0 && !isConst(props[0])) this.members.push(props[0])
+    if (!props.length) props.push(['const', new BN(0)])
+    if (!isConst(props[0])) this.members.push(props[0])
     if (loadSize[1].eq(new BN(0x20))) {
       const memValue = subEp.trace.memValueAt(loc)
       if (!isConst(memValue))

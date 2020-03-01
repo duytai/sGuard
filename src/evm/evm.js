@@ -399,12 +399,14 @@ class Evm {
           }
           break
         }
+        /// keccak256 or sha3 of storage
         case 'SHA3': {
           const [x, y] = stack.popN(ins)
           const traceSize = ['const', new BN(trace.size())]
           const epSize = ['const', new BN(ep.size())]
           const mload = ['symbol', 'MLOAD', x, y, traceSize, epSize]
-          assert(x[0] == 'const' && x[1].isZero())
+          assert(x[0] == 'const')
+          logger.info(`use keccak256() since mload(${x[1].toNumber()})`)
           stack.push(['symbol', name, mload])
           break
         }

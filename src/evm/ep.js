@@ -6,7 +6,7 @@ const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
 
-const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 20
+const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 30
 
 class Ep {
   constructor() {
