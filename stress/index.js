@@ -22,6 +22,10 @@ const main = async() => {
     const { checkPoints, endPoints } = evm.start()
     logger.info(`>> endPoints   : ${endPoints.length}`)
     logger.info(`>> checkPoints : ${checkPoints.length}`)
+    checkPoints.forEach(ep => {
+      const analyzer = new Analyzer(ep, endPoints)
+      analyzer.prettify()
+    })
   } else {
     startFrom = parseInt(allowedContract)
     for (let i = startFrom; i < binFiles.length; i++) {
@@ -36,6 +40,10 @@ const main = async() => {
       const { checkPoints, endPoints } = evm.start()
       logger.info(`>> endPoints   : ${endPoints.length}`)
       logger.info(`>> checkPoints : ${checkPoints.length}`)
+      checkPoints.forEach(ep => {
+        const analyzer = new Analyzer(ep, endPoints)
+        analyzer.prettify()
+      })
     }
   }
 }
