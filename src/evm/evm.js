@@ -479,6 +479,7 @@ class Evm {
         }
         case 'CALLCODE':
         case 'CALL': {
+          this.checkPoints.push(ep.clone())
           const [
             gasLimit,
             toAddress,
@@ -488,7 +489,6 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          this.checkPoints.push(ep.clone())
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
