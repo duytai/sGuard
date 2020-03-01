@@ -1,7 +1,7 @@
 const assert = require('assert')
 const chalk = require('chalk')
 const { reverse } = require('lodash')
-const { logger, prettify } = require('../shared')
+const { logger, prettify, isConst } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
@@ -84,6 +84,8 @@ class Ep {
     reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'MSTORE') {
+        /// Solidity use mem to storage encoded abi
+        if (!isConst(loc) && loc[1] == 'SUB') return
         const subEp = this.sub(epIdx + 1)
         const variable = new LocalVariable(loc, subEp)
         cb({ variable, subEp, storedValue })
@@ -113,6 +115,8 @@ class Ep {
         logger.debug(chalk.green.bold(variable.toAlias()))
       }
       if (name == 'MSTORE') {
+        /// Solidity use mem to storage encoded abi
+        if (!isConst(loc) && loc[1] == 'SUB') return
         const variable = new LocalVariable(loc, subEp)
         logger.debug(chalk.green.bold(variable.toAlias()))
       }
