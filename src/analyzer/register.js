@@ -1,19 +1,25 @@
 const assert = require('assert')
 const DNode = require('./dnode')
-const ConditionAnalyzer = require('./condition') 
-const StackAnalyzer = require('./stack')
-const { prettify, findSymbol } = require('../shared')
+const Condition = require('./condition') 
+const { prettify, findSymbol, formatSymbol } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 
 class Register {
-  constructor(symbol, ep, endPoints) {
+  constructor(symbol, ep, endPoints, visited = []) {
+    visited.push(this.toVisitedKey(ep.last().pc, symbol))
     this.dnode = new DNode(symbol)
     this.ep = ep
     this.endPoints = endPoints
-    this.internalAnalysis(symbol, this.dnode)
+    this.internalAnalysis(symbol, this.dnode, visited)
+    this.conditionAnalysis(symbol, this.dnode, visited)
   }
 
-  internalAnalysis(symbol, dnode) {
+  toVisitedKey(pc, cond) {
+    assert(pc && cond)
+    return `${pc}:${formatSymbol(cond)}`
+  }
+
+  internalAnalysis(symbol, dnode, visited) {
     assert(symbol && dnode)
     switch (symbol[1]) {
       case 'MLOAD': {
@@ -24,17 +30,23 @@ class Register {
         dnode.node.alias = localVariable.toAlias()
         subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedValue }) => {
           if (localVariable.eq(otherVariable)) {
-            const subRegister = new Register(storedValue, subEp, this.endPoints)
-            dnode.addChild(subRegister.dnode)
-            otherVariable.members.forEach(member => {
-              const subRegister = new Register(member, subEp, this.endPoints)
+            if (!visited.includes(this.toVisitedKey(subEp.last().pc, storedValue))) {
+              const subRegister = new Register(storedValue, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+            }
+            otherVariable.members.forEach(member => {
+              if (!visited.includes(this.toVisitedKey(subEp.last().pc, member))) {
+                const subRegister = new Register(member, subEp, this.endPoints, visited)
+                dnode.addChild(subRegister.dnode)
+              }
             })
           }
         })
         localVariable.members.forEach(member => {
-          const subRegister = new Register(member, subEp, this.endPoints)
-          dnode.addChild(subRegister.dnode)
+          if (!visited.includes(this.toVisitedKey(subEp.last().pc, member))) {
+            const subRegister = new Register(member, subEp, this.endPoints, visited)
+            dnode.addChild(subRegister.dnode)
+          }
         })
         break
       }
@@ -46,17 +58,23 @@ class Register {
         dnode.node.alias = stateVariable.toAlias()
         subEp.eachStateVariable(({ variable: otherVariable, subEp, storedValue }) => {
           if (stateVariable.eq(otherVariable)) {
-            const subRegister = new Register(storedValue, subEp, this.endPoints)
-            dnode.addChild(subRegister.dnode)
-            otherVariable.members.forEach(member => {
-              const subRegister = new Register(member, subEp, this.endPoints)
+            if (!visited.includes(this.toVisitedKey(subEp.last().pc, storedValue))) {
+              const subRegister = new Register(storedValue, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+            }
+            otherVariable.members.forEach(member => {
+              if (!visited.includes(this.toVisitedKey(subEp.last().pc, member))) {
+                const subRegister = new Register(member, subEp, this.endPoints, visited)
+                dnode.addChild(subRegister.dnode)
+              }
             })
           }
         })
         stateVariable.members.forEach(member => {
-          const subRegister = new Register(member, subEp, this.endPoints)
-          dnode.addChild(subRegister.dnode)
+          if (!visited.includes(this.toVisitedKey(subEp.last().pc, member))) {
+            const subRegister = new Register(member, subEp, this.endPoints, visited)
+            dnode.addChild(subRegister.dnode)
+          }
         })
         break
       }
@@ -69,6 +87,20 @@ class Register {
         })
       }
     }
+  }
+
+  conditionAnalysis(_, dnode, visited) {
+    const { pc } = this.ep.last()
+    const condition = new Condition(this.ep, this.endPoints)
+    const conds = condition.findConds(pc) 
+    conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
+      const subEp = this.ep.sub(epIdx + 1)
+      assert(subEp.last().pc == pc)
+      if (!visited.includes(this.toVisitedKey(subEp.last().pc, cond))) {
+        const subRegister = new Register(cond, subEp, this.endPoints, visited)
+        dnode.addChild(subRegister.dnode)
+      }
+    })
   }
 
   prettify() {
