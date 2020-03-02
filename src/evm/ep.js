@@ -81,7 +81,7 @@ class Ep {
 
   eachLocalVariable(cb) {
     assert(cb)
-    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+    reverse([...this.trace.ts]).forEach(({ t, epIdx, stack }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'MSTORE') {
         /// Solidity use mem to storage encoded abi
