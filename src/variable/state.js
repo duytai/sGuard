@@ -1,96 +1,70 @@
 const assert = require('assert')
-const { reverse } = require('lodash')
+const BN = require('bn.js')
+const { prettify, isConst, formatSymbol } = require('../shared')
 const Variable = require('./variable')
-const hash = require('object-hash')
-const {
-  prettify,
-  isConst,
-  isConstWithValue,
-  isMstore20,
-  isMstore0,
-  isSha3Mload0,
-  isSha3Mload,
-  formatSymbolWithoutTraceInfo,
-} = require('../shared')
 
-const findStateAccessPath = (symbol) => {
-  const accessPaths = []
-  const stackOfSymbols = [{ symbol, accessPath: []}]
-  while (stackOfSymbols.length > 0) {
-    const { symbol, accessPath } = stackOfSymbols.pop()
-    if (isSha3Mload(symbol)) {
-      accessPaths.push(accessPath)
-    } else {
-      const [type, name, ...params] = symbol
-      params.forEach((param, idx) => {
-        if (['SUB', 'ADD'].includes(name)) {
-          stackOfSymbols.push({ symbol: param, accessPath: [...accessPath, idx]})
-        }
-      })
+/// t = sha3(t0) + ax + b
+/// a: size of type - b: prop
+
+class StateVariable extends Variable {
+  reachSha3(t) {
+    if (isConst(t)) return []
+    if (t[1] == 'SHA3') return [t]
+    const [_, name, left, right] = t
+    assert(name == 'ADD')
+    if (isConst(left) || left[1] == 'MUL')
+      return [...this.reachSha3(right), left]
+    return [...this.reachSha3(left), right]
+  }
+
+  convert(t, ep) {
+    if (isConst(t)) return [[t]]
+    const [sha3, ...props] = this.reachSha3(t)
+    const [loc, loadSize, traceSize, epSize] = sha3[2].slice(2)
+    assert(loc[1].isZero())
+    const subEp = ep.sub(epSize[1].toNumber())
+    if (!props.length) props.push(['const', new BN(0)])
+    if (!isConst(props[0])) this.members.push(props[0])
+    if (loadSize[1].eq(new BN(0x20))) {
+      const memValue = subEp.trace.memValueAt(loc)
+      if (!isConst(memValue))
+        return [...this.convert(memValue, subEp), props]
+      return [[memValue], props]
+    } 
+    assert(loadSize[1].eq(new BN(0x40)))
+    const memValue = subEp.trace.memValueAt(['const', new BN(0x20)])
+    const prop = subEp.trace.memValueAt(['const', new BN(0)])
+    if (!isConst(prop)) this.members.push(prop)
+    if (!isConst(memValue))
+      return [...this.convert(memValue, subEp), [prop]]
+    return [[memValue], [prop]]
+  }
+
+  eq(otherVariable) {
+    if (this.locs.length != otherVariable.locs.length) return false
+    const [[mySloc], ...locs] = this.locs
+    const [[otherSloc], ...otherLocs] = otherVariable.locs 
+    assert(isConst(mySloc) && isConst(otherSloc))
+    if (!mySloc[1].eq(otherSloc[1])) return false
+    for (let i = 0; i < locs.length; i++) {
+      const [dataOffset, ...props] = locs[i]
+      const [otherDataOffset, ...otherProps] = otherLocs[i]
+      if (isConst(dataOffset) && isConst(otherDataOffset)) {
+        if (!dataOffset[1].eq(otherDataOffset[1])) return false
+      }
+      if (props.length != otherProps.length) return false
+      for (let j = 0; j < props.length; j++) {
+        if (!isConst(props[j]) || !isConst(otherProps[j])) return false
+        if (!props[j][1].eq(otherProps[j][1])) return false
+      }
     }
+    return true
   }
-  /// Find longest accessPath 
-  if (!accessPaths.length) {
-    prettify([symbol])
-    assert(false)
+  
+  toAlias() {
+    const [[mySloc]] = this.locs
+    return `s_${formatSymbol(mySloc)}.*`
   }
-  accessPaths.sort((x, y) => y.length - x.length)
-  return accessPaths[0]
 }
 
-const toStateVariable = (t, trace, trackingPos, epIdx) => {
-  assert(t && trace && trackingPos >= 0 && epIdx >= 0)
-  if (isConst(t)) return new Variable(`s_${t[1].toString(16)}`)
-  if (isSha3Mload0(t)) {
-    const [mload] = t.slice(2)
-    const [base, loadSize, loadTraceSize] = mload.slice(2)
-    assert(isConst(loadTraceSize))
-    assert(isConst(loadSize))
-    if (isConstWithValue(loadSize, 0x40)) {
-      /// Mapping type
-      /// 0x20 is base
-      let subTrace = trace
-        .sub(loadTraceSize[1].toNumber())
-        .filter(isMstore20)
-      const storedValue = subTrace.last().t[3]
-      const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
-      const variable = new Variable(`s_${name}`)
-      /// 0x00 is member
-      subTrace = trace
-        .sub(loadTraceSize[1].toNumber())
-        .filter(isMstore0)
-      const { t, vTrackingPos, epIdx } = subTrace.last()
-      const property = { trackingPos: vTrackingPos, symbol: t[3], epIdx }
-      variable.addN([property])
-      return variable
-    } else {
-      /// Other types including array
-      const subTrace = trace
-        .sub(loadTraceSize[1].toNumber())
-        .filter(isMstore0)
-      const storedValue = subTrace.last().t[3]
-      const name = hash(formatSymbolWithoutTraceInfo(storedValue)).slice(0, 2)
-      return new Variable(`s_${name}`)
-    }
-  }
-  if (isSha3Mload(t)) {
-    const [mload] = t.slice(2)
-    const name = hash(formatSymbolWithoutTraceInfo(mload)).slice(0, 2)
-    return new Variable(`s_${name}`)
-  }
-  const properties = []
-  const accessPath = findStateAccessPath(t)
-  let base = t
-  accessPath.forEach(baseIdx => {
-    const [type, name, ...operands] = base
-    base = operands[baseIdx]
-    if (name != 'SUB') {
-      properties.push({ trackingPos, symbol: operands[1 - baseIdx], epIdx })
-    }
-  })
-  const variable = toStateVariable(base, trace, trackingPos, epIdx)
-  variable.addN(reverse(properties))
-  return variable
-}
-
-module.exports = toStateVariable
+module.exports = StateVariable 

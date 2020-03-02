@@ -1,98 +1,71 @@
 const assert = require('assert')
 const BN = require('bn.js')
-const { reverse, findIndex } = require('lodash')
+const { range } = require('lodash')
+const { prettify, isConst, formatSymbol } = require('../shared')
 const Variable = require('./variable')
-const {
-  prettify,
-  isConst,
-  isConstWithValue,
-  isMload,
-} = require('../shared')
 
-const sumAll = (constSymbols) => constSymbols.reduce((r, n) => r + n[1].toNumber(), 0) 
+class LocalVariable extends Variable {
 
-const toLocalVariables = (t, trace, trackingPos, epIdx) => {
-  if (isConst(t)) return [new Variable(`m_${t[1].toString(16)}`)]
-
-  const variables = []
-  const baseStack = []
-  const mainStack = [t]
-  const markerStack = []
-  const propStack = []
-
-  while (mainStack.length > 0) {
-    const t = mainStack.pop()
-    if (isConst(t)) {
-      baseStack.push(t)
-      continue
+  fetchMload(loc, ep) {
+    if (isConst(loc)) return loc
+    if (loc[1] == 'ADD') {
+      assert(isConst(loc[2]) && loc[2][1].isZero())
+      loc = loc[3]
     }
+    assert(loc[1] == 'MLOAD')
+    const subEp = ep.sub(loc[5][1].toNumber())
+    return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
+  }
+
+  findArraySize(ep) {
+    const { stack } = ep.find(({ opcode: { name }}) => name == 'LT')
+    const ret = stack.get(stack.size() - 2)
+    if (isConst(ret)) return ret[1].toNumber()
+    const value = this.fetchMload(ret, ep)
+    assert(isConst(value))
+    return value[1].toNumber()
+  }
+
+  convert(t, ep) {
+    if (isConst(t)) return [t]
     switch (t[1]) {
-      case 'MLOAD': {
-        const [loc, loadSize, loadTraceSize] = t.slice(2)
-        markerStack.push({
-          baseIdx: baseStack.length,
-          propIdx: propStack.length,
-          loadTraceSize,
-        })
-        if (isConst(t[2])) {
-          baseStack.push(t[2])
-        } else {
-          mainStack.push(t[2])
-        }
-        break
-      }
-      case 'MUL': {
-        propStack.push({ symbol: t, trackingPos, epIdx })
-        break
-      }
-      /// ADD(A, B)
-      /// A = ADD/MUL => mainStack
-      /// B = const/MLOAD => mainStack 
-      /// However B must be calculated before A
       case 'ADD': {
-        const params = t.slice(2)
-        mainStack.push(params[1])
-        mainStack.push(params[0])
-        break
+        const [prop, base] = t.slice(2)
+        const arraySize = this.findArraySize(ep)
+        const values = this.convert(base, ep)
+        if (isConst(prop)) return values.map(v => ['const', v[1].add(prop[1])])
+        this.members.push(prop)
+        return values.reduce((agg, next) => {
+          next = range(0, arraySize).map(n => ['const', next[1].add(new BN(n * 0x20))])
+          return [...agg, ...next]
+        }, [])
+      }
+      case 'MLOAD': {
+        const [loc, loadSize, traceSize, epSize] = t.slice(2)
+        const subEp = ep.sub(epSize[1].toNumber())
+        const values = this.convert(loc, ep)
+        return values.map(v => subEp.trace.memValueAt(v))
       }
       default: {
-        assert(false, `dont know ${t[1]}`)
+        assert(false, `Unknown ${t[1]}`)
       }
     }
   }
-  while (markerStack.length > 0) {
-    const { baseIdx, propIdx, loadTraceSize } = markerStack.pop()
-    const bases = baseStack.splice(baseIdx) 
-    const props = propStack.splice(propIdx) 
-    /// Find values of MLOAD(bases)
-    const loadVariable = new Variable(`m_${sumAll(bases).toString(16)}`)
-    const subTrace = trace.sub(loadTraceSize[1].toNumber())
-    const temp = []
-    subTrace.eachLocalVariable((opts) => {
-      const { variable: storeVariable, value: storedValue } = opts
-      if (storeVariable.exactEqual(loadVariable) || storeVariable.partialEqual(loadVariable)) {
-        temp.push({ storedValue, storeVariable })
-      }
-    })
-    switch (temp.length) {
-      case 0: {
-        /// access to unknown memory address 
-        baseStack.push(['const', new BN(0)])
-        break
-      }
-      default: {
-        /// TODO: handle more storedValues
-        baseStack.push(temp[0].storedValue)
-        variables.push(temp[0].storeVariable)
-        break
-      }
-    }
-  }
-  const v = new Variable(`m_${sumAll(baseStack).toString(16)}`) 
-  !!propStack.length && v.addN(propStack)
-  variables.push(v)
 
-  assert(variables.length > 0)
-  return variables
+  eq(otherVariable) {
+    for (let i = 0; i < this.locs.length; i++) {
+      for (let j = 0; j < otherVariable.locs.length; j++) {
+        if (!isConst(this.locs[i]) || !isConst(otherVariable.locs[j])) return false
+        if (this.locs[i][1].eq(otherVariable.locs[j][1])) return true
+      }
+    }
+    return false
+  }
+
+  toAlias() {
+    const str = this.locs.map(l => formatSymbol(l)).join(',')
+    return `[${str}]`
+  }
 }
-module.exports = toLocalVariables
+
+module.exports = LocalVariable 

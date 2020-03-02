@@ -1,9 +1,7 @@
-const Variable = require('./variable')
-const toStateVariable = require('./state')
-const toLocalVariables = require('./local')
+const StateVariable = require('./state')
+const LocalVariable = require('./local')
 
 module.exports = {
-  Variable,
-  toStateVariable,
-  toLocalVariables,
+  StateVariable,
+  LocalVariable,
 }

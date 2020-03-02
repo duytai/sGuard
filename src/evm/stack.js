@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { reverse } = require('lodash') 
 const { prettify, logger } = require('../shared')
 
 class Stack {
@@ -8,10 +9,6 @@ class Stack {
 
   clear() {
     this.st.length = 0
-  }
-
-  withSt(st) {
-    this.st = st
   }
 
   push(t) {
@@ -45,8 +42,18 @@ class Stack {
 
   clone() {
     const stack = new Stack()
-    stack.withSt([...this.st])
+    stack.st = [...this.st]
     return stack
+  }
+
+  filter(cond) {
+    assert(cond)
+    return reverse([...this.st]).filter(t => cond(t))
+  }
+
+  find(cond) {
+    assert(cond)
+    return reverse([...this.st]).find(t => cond(t))
   }
 
   size() {
@@ -56,6 +63,11 @@ class Stack {
   get(idx) {
     assert(idx >= 0 && idx <= this.st.length)
     return this.st[idx]
+  }
+
+  last() {
+    assert(this.st.length > 0)
+    return this.st[this.st.length - 1]
   }
 
   prettify(space = 0) {

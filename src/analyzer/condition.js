@@ -1,29 +1,29 @@
 const { uniqBy, uniq } = require('lodash')
 const { prettify, formatSymbol } = require('../shared')
 
-class ConditionAnalyzer {
-  constructor(endPoints, ep) {
-    this.endPoints = endPoints
+class Condition {
+  constructor(ep, endPoints) {
     this.ep = ep
+    this.endPoints = endPoints
+  }
+
+  toKey(pc, cond) {
+    return `${pc}:${formatSymbol(cond)}`
   }
 
   batchFindConds(trackingPcs = []) {
-    let conds = []
-    trackingPcs.forEach(trackingPc => {
-      const extConds = this.findConds(trackingPc, this.ep)
-      conds = [...conds, ...extConds]
-    })
-    conds = uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
-    return conds
+    return uniqBy(
+      trackingPcs.reduce((agg, trackingPc) => [...agg, ...this.findConds(trackingPc)], []),
+      ({ cond, pc }) => this.toKey(pc, formatSymbol(cond))
+    )
   }
   /// Find jumpi nodes where our `pc` depends on
   /// and collect conditions at that jumpi
   findConds(trackingPc) {
-    const executionPaths = this.endPoints.map(({ ep, trace }) => ep)
     /// Find previous jumpis 
     let allPrevJumpis = []
     const allUnrelatedJumpis = []
-    executionPaths.forEach(ep => {
+    this.endPoints.forEach(ep => {
       let encounterTrackingPc = false
       const prevJumpis = []
       for (let i = 0; i < ep.size(); i++) {
@@ -53,9 +53,7 @@ class ConditionAnalyzer {
         })
       })
       /// Update allPrevJumpis
-      allPrevJumpis = allPrevJumpis.filter(p => !controlJumpis.includes(p[p.length - 1]))
-      allPrevJumpis = allPrevJumpis.map(p => p.slice(0, -1))
-      allPrevJumpis = allPrevJumpis.filter(p => p.length)
+      allPrevJumpis = allPrevJumpis.map(p => p.slice(0, -1)).filter(p => p.length)
     }
     /// Get condition at jumpi
     const conds = []
@@ -66,8 +64,8 @@ class ConditionAnalyzer {
         conds.push({ pc, cond, epIdx: i, trackingPos: stack.size() - 2 })
       }
     }
-    return uniqBy(conds, ({ cond, pc }) => `${pc}:${formatSymbol(cond)}`)
+    return uniqBy(conds, ({ cond, pc }) => this.toKey(pc, formatSymbol(cond)))
   }
 }
 
-module.exports = ConditionAnalyzer
+module.exports = Condition 
