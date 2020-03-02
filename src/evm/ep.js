@@ -100,7 +100,7 @@ class Ep {
       if (name == 'SSTORE') {
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
-        cb({ variable, subEp, storedValue, vTrackingPos, kTrackingPos })
+        cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }

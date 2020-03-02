@@ -23,7 +23,7 @@ class Register {
   }
 
   internalAnalysis(symbol, dnode, visited) {
-    assert(symbol && dnode)
+    assert(symbol && dnode && visited)
     switch (symbol[1]) {
       case 'MLOAD': {
         const subEpSize = symbol[5][1].toNumber()
@@ -51,24 +51,16 @@ class Register {
         const stateVariable = new StateVariable(symbol[2], subEp)
         dnode.node.variable = stateVariable
         dnode.node.alias = stateVariable.toAlias()
-        subEp.eachStateVariable(({ variable: otherVariable, subEp, storedValue }) => {
+        subEp.eachStateVariable(({ variable: otherVariable, subEp, storedLoc, storedValue, kTrackingPos, vTrackingPos }) => {
           if (stateVariable.eq(otherVariable)) {
-            if (!visited.includes(this.toVisitedKey(0, subEp.last().pc, storedValue))) {
-              const subRegister = new Register(storedValue, 0, subEp, this.endPoints, visited)
+            if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
+              const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
             }
-            otherVariable.members.forEach(member => {
-              if (!visited.includes(this.toVisitedKey(0, subEp.last().pc, member))) {
-                const subRegister = new Register(member, 0, subEp, this.endPoints, visited)
-                dnode.addChild(subRegister.dnode)
-              }
-            })
-          }
-        })
-        stateVariable.members.forEach(member => {
-          if (!visited.includes(this.toVisitedKey(0, subEp.last().pc, member))) {
-            const subRegister = new Register(member, 0, subEp, this.endPoints, visited)
-            dnode.addChild(subRegister.dnode)
+            if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
+              const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
+              dnode.addChild(subRegister.dnode)
+            }
           }
         })
         break
@@ -77,7 +69,7 @@ class Register {
         const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
         symbols.forEach(symbol => {
           const subNode = new DNode(symbol)
-          this.internalAnalysis(symbol, subNode)
+          this.internalAnalysis(symbol, subNode, visited)
           dnode.addChild(subNode)
         })
       }
