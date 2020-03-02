@@ -11,7 +11,7 @@ class Analyzer {
         const symbol = ep.stack.get(trackingPos)
         ep.showTrace()
         prettify([symbol])
-        this.register = new Register(symbol, ep, endPoints)
+        this.register = new Register(symbol, trackingPos, ep, endPoints)
         break
       }
       default: {

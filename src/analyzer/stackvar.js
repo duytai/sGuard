@@ -11,7 +11,6 @@ class StackVar {
     return this.whereAreAssignments(trackingPos, this.ep)
   }
 
-  /// Find assigments of stack variables 
   whereAreAssignments(trackingPos, ep) {
     let result = []
     for (let i = ep.size() - 1; i >= 0; i--) {

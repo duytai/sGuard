@@ -12,7 +12,7 @@ class Condition {
   }
 
   batchFindConds(trackingPcs = []) {
-    uniqBy(
+    return uniqBy(
       trackingPcs.reduce((agg, trackingPc) => [...agg, ...this.findConds(trackingPc)], []),
       ({ cond, pc }) => this.toKey(pc, formatSymbol(cond))
     )
