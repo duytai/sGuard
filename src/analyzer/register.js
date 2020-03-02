@@ -31,10 +31,10 @@ class Register {
         const localVariable = new LocalVariable(symbol[2], subEp)
         dnode.node.variable = localVariable
         dnode.node.alias = localVariable.toAlias()
-        subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedValue }) => {
+        subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedValue, vTrackingPos }) => {
           if (localVariable.eq(otherVariable)) {
-            if (!visited.includes(this.toVisitedKey(0, subEp.last().pc, storedValue))) {
-              const subRegister = new Register(storedValue, 0, subEp, this.endPoints, visited)
+            if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
+              const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
             }
             otherVariable.members.forEach(member => {

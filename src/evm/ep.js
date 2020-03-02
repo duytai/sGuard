@@ -81,26 +81,26 @@ class Ep {
 
   eachLocalVariable(cb) {
     assert(cb)
-    reverse([...this.trace.ts]).forEach(({ t, epIdx, stack }) => {
+    reverse([...this.trace.ts]).forEach(({ t, epIdx, vTrackingPos, kTrackingPos }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'MSTORE') {
         /// Solidity use mem to storage encoded abi
         if (!isConst(loc) && loc[1] == 'SUB') return
         const subEp = this.sub(epIdx + 1)
         const variable = new LocalVariable(loc, subEp)
-        cb({ variable, subEp, storedValue })
+        cb({ variable, subEp, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }
 
   eachStateVariable(cb) {
     assert(cb)
-    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+    reverse([...this.trace.ts]).forEach(({ t, epIdx, vTrackingPos, kTrackingPos }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'SSTORE') {
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
-        cb({ variable, subEp, storedValue })
+        cb({ variable, subEp, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }
