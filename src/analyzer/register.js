@@ -1,6 +1,7 @@
 const assert = require('assert')
 const DNode = require('./dnode')
 const Condition = require('./condition') 
+const StackVar = require('./stackvar')
 const { prettify, findSymbol, formatSymbol } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 

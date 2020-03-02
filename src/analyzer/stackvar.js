@@ -1,6 +1,18 @@
-class StackAnalyzer {
+const assert = require('assert')
+
+class StackVar {
+  constructor(ep) {
+    assert(ep)
+    this.ep = ep
+  }
+
+  myAncestors(trackingPos) {
+    assert(trackingPos)
+    return this.whereAreAssignments(trackingPos, this.ep)
+  }
+
   /// Find assigments of stack variables 
-  findTrackingPcs(trackingPos, ep) {
+  whereAreAssignments(trackingPos, ep) {
     let result = []
     for (let i = ep.size() - 1; i >= 0; i--) {
       const { stack, opcode: { name, opVal, ins, outs }, pc } = ep.get(i)
@@ -26,7 +38,7 @@ class StackAnalyzer {
             const subEp = ep.sub(i)
             result = [
               ...result,
-              ...this.findTrackingPcs(lastStackPos + opIdx, subEp)
+              ...this.whereAreAssignments(lastStackPos + opIdx, subEp)
             ]
           }
           break
@@ -38,4 +50,4 @@ class StackAnalyzer {
   }
 }
 
-module.exports = StackAnalyzer
+module.exports = StackVar 
