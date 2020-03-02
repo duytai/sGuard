@@ -12,6 +12,7 @@ class Register {
     this.endPoints = endPoints
     this.internalAnalysis(symbol, this.dnode, visited)
     this.conditionAnalysis(symbol, this.dnode, visited)
+    this.crossfunctionAnalysis(symbol, this.dnode, visited)
   }
 
   toVisitedKey(pc, cond) {
@@ -100,6 +101,29 @@ class Register {
         const subRegister = new Register(cond, subEp, this.endPoints, visited)
         dnode.addChild(subRegister.dnode)
       }
+    })
+  }
+
+  crossfunctionAnalysis(_, dnode, visited) {
+    const sloads = dnode.findSloads()
+    sloads.forEach(sload => {
+      const { variable: stateVariable } = sload.node
+      this.endPoints.forEach(ep => {
+        ep.eachStateVariable(({ variable: otherVariable, subEp, storedValue }) => {
+          if (stateVariable.eq(otherVariable)) {
+            if (!visited.includes(this.toVisitedKey(subEp.last().pc, storedValue))) {
+              const subRegister = new Register(storedValue, subEp, this.endPoints, visited)
+              dnode.addChild(subRegister.dnode)
+            }
+            otherVariable.members.forEach(member => {
+              if (!visited.includes(this.toVisitedKey(subEp.last().pc, member))) {
+                const subRegister = new Register(member, subEp, this.endPoints, visited)
+                dnode.addChild(subRegister.dnode)
+              }
+            })
+          }
+        })
+      })
     })
   }
 
