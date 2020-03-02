@@ -31,24 +31,16 @@ class Register {
         const localVariable = new LocalVariable(symbol[2], subEp)
         dnode.node.variable = localVariable
         dnode.node.alias = localVariable.toAlias()
-        subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedValue, vTrackingPos }) => {
+        subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedLoc, storedValue, kTrackingPos, vTrackingPos }) => {
           if (localVariable.eq(otherVariable)) {
             if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
             }
-            otherVariable.members.forEach(member => {
-              if (!visited.includes(this.toVisitedKey(0, subEp.last().pc, member))) {
-                const subRegister = new Register(member, 0, subEp, this.endPoints, visited)
-                dnode.addChild(subRegister.dnode)
-              }
-            })
-          }
-        })
-        localVariable.members.forEach(member => {
-          if (!visited.includes(this.toVisitedKey(this.trackingPos, subEp.last().pc, member))) {
-            const subRegister = new Register(member, this.trackingPos, subEp, this.endPoints, visited)
-            dnode.addChild(subRegister.dnode)
+            if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
+              const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
+              dnode.addChild(subRegister.dnode)
+            }
           }
         })
         break

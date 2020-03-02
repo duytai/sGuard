@@ -88,7 +88,7 @@ class Ep {
         if (!isConst(loc) && loc[1] == 'SUB') return
         const subEp = this.sub(epIdx + 1)
         const variable = new LocalVariable(loc, subEp)
-        cb({ variable, subEp, storedValue, vTrackingPos, kTrackingPos })
+        cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }
