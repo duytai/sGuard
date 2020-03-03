@@ -1,12 +1,14 @@
 const BN = require('bn.js')
 const utils = require('ethereumjs-util')
 const assert = require('assert')
+const dotenv = require('dotenv')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
 const { logger, prettify, findOpcodeParams, formatSymbol } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
+const { parsed: { dataload } } = dotenv.config()
 
 class Evm {
   constructor(bin) {
@@ -127,7 +129,7 @@ class Evm {
               break
             }
           }
-          stack.push(['const', new BN(2)])
+          stack.push(['const', new BN(dataload, 16)])
           break
         }
         case 'CALLDATACOPY': {

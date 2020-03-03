@@ -1,12 +1,13 @@
 const assert = require('assert')
 const chalk = require('chalk')
+const dotenv = require('dotenv')
 const { reverse } = require('lodash')
 const { logger, prettify, isConst } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
 
-const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 30
+const { parsed: { maxVisitedBlock }} = dotenv.config()
 
 class Ep {
   constructor() {
@@ -52,7 +53,7 @@ class Ep {
       ...this.ep.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
       jumpdest,
     ]
-    return pcs.length >= MAX_VISITED_BLOCK 
+    return pcs.length >= parseInt(maxVisitedBlock)
   }
 
   filter(cond) {
