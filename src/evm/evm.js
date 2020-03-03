@@ -4,7 +4,7 @@ const assert = require('assert')
 const dotenv = require('dotenv')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
-const { logger, prettify, findOpcodeParams, formatSymbol } = require('../shared')
+const { logger, prettify, formatSymbol } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
