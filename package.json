@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "node src/index.js",
+    "download": "node stress/loader.js",
     "stress": "node stress/index.js"
   },
   "dependencies": {

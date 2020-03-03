@@ -8,7 +8,8 @@ const { logger, prettify, formatSymbol } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const { parsed: { dataload } } = dotenv.config()
+const { parsed: { dataload, allocatedRange } } = dotenv.config()
+assert(dataload && allocatedRange, 'update .evn file')
 
 class Evm {
   constructor(bin) {
@@ -152,7 +153,7 @@ class Evm {
             if (memValue[0] != 'const') {
               const lastValue = trace.memValueAt(memLoc) 
               assert(lastValue[0] == 'const')
-              const t = ['const', new BN(lastValue[1].add(new BN(10 * 0x20)))]
+              const t = ['const', new BN(lastValue[1].add(new BN(allocatedRange, 16)))]
               trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
               break
             }

@@ -10,6 +10,7 @@ const Analyzer = require('../src/analyzer')
 const binFolder = path.join(__dirname, 'bin/')
 const binFiles = fs.readdirSync(binFolder).sort()
 const { parsed: { stressFrom }} = dotenv.config()
+assert(stressFrom, 'update .evn file')
 
 const main = async() => {
   if (stressFrom.startsWith('0x')) {
