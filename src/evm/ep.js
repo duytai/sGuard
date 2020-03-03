@@ -1,12 +1,13 @@
 const assert = require('assert')
 const chalk = require('chalk')
+const dotenv = require('dotenv')
 const { reverse } = require('lodash')
 const { logger, prettify, isConst } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
 
-const MAX_VISITED_BLOCK = parseInt(process.env.MAX_VISITED_BLOCK) || 30
+const { parsed: { maxVisitedBlock }} = dotenv.config()
 
 class Ep {
   constructor() {
@@ -52,7 +53,7 @@ class Ep {
       ...this.ep.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
       jumpdest,
     ]
-    return pcs.length >= MAX_VISITED_BLOCK 
+    return pcs.length >= parseInt(maxVisitedBlock)
   }
 
   filter(cond) {
@@ -81,26 +82,26 @@ class Ep {
 
   eachLocalVariable(cb) {
     assert(cb)
-    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+    reverse([...this.trace.ts]).forEach(({ t, epIdx, vTrackingPos, kTrackingPos }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'MSTORE') {
         /// Solidity use mem to storage encoded abi
         if (!isConst(loc) && loc[1] == 'SUB') return
         const subEp = this.sub(epIdx + 1)
         const variable = new LocalVariable(loc, subEp)
-        cb({ variable, subEp, storedValue })
+        cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }
 
   eachStateVariable(cb) {
     assert(cb)
-    reverse([...this.trace.ts]).forEach(({ t, epIdx }) => {
+    reverse([...this.trace.ts]).forEach(({ t, epIdx, vTrackingPos, kTrackingPos }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'SSTORE') {
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
-        cb({ variable, subEp, storedValue })
+        cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
       }
     })
   }

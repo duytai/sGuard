@@ -8,11 +8,6 @@ const formatSymbol = ([type, name, ...params]) => {
   return `${name}(${params.map(p => formatSymbol(p)).join(',')})`
 }
 
-const toVisitedKey = (pc, trackingPos, symbol) => {
-  assert(pc >= 0 && trackingPos >= 0 && symbol)
-  return `${pc}:${trackingPos}:${formatSymbol(symbol)}`
-}
-
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
   values.forEach((v, idx) => logger.debug(`${space}${formatSymbol(v)}`))
@@ -21,6 +16,5 @@ const prettify = (values, spaceLen = 0) => {
 module.exports = {
   prettify,
   formatSymbol,
-  toVisitedKey,
 }
 
