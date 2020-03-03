@@ -24,7 +24,8 @@ assert(fs.existsSync(jsonFile), 'json must exist')
 
 const output = fs.readFileSync(jsonFile, 'utf8')
 forEach(JSON.parse(output).contracts, (contractJson, name) => {
-  const bin = Buffer.from(contractJson['bin-runtime'], 'hex')
+  const rawBin = contractJson['bin-runtime'].replace('__$', '000').replace('$__', '000')
+  const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   logger.info(`Start Analyzing Contract: ${chalk.green.bold(name.split(':')[1])}`)
   const { checkPoints, endPoints } = evm.start()
