@@ -5,8 +5,7 @@
   "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "IN=sample.sol ./scripts/compile.sh && COMPILED=contracts/sample.sol.json node src/index.js",
-    "test": "IN=etherscan.sol ./scripts/compile.sh && COMPILED=contracts/etherscan.sol.json node src/index.js",
+    "dev": "node src/index.js",
     "stress": "node stress/index.js"
   },
   "dependencies": {
@@ -16,6 +15,7 @@
     "ethereumjs-util": "^6.2.0",
     "lodash": "^4.17.15",
     "object-hash": "^2.0.1",
+    "shelljs": "^0.8.3",
     "web3": "^1.2.4",
     "winston": "^3.2.1"
   },
