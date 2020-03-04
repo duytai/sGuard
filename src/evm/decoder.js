@@ -13,9 +13,10 @@ class Decoder {
     }
     const auxdataLen = 52 // bytes
     while (pc < this.bin.length - auxdataLen - 1) {
-      const { name } = opcodes[this.bin[pc]]
-      if (name === 'PUSH') pc += this.bin[pc] - 0x5f
-      sum.hasCall = sum.hasCall || name == 'CALL'
+      const opcode = opcodes[this.bin[pc]]
+      if (!opcode) break
+      if (opcode.name === 'PUSH') pc += this.bin[pc] - 0x5f
+      sum.hasCall = sum.hasCall || opcode.name == 'CALL'
       pc ++
     }
     return sum
