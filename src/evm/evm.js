@@ -412,7 +412,6 @@ class Evm {
           const epSize = ['const', new BN(ep.size())]
           const mload = ['symbol', 'MLOAD', x, y, traceSize, epSize]
           assert(x[0] == 'const')
-          if (!x[1].isZero()) logger.info(`use keccak256() since mload(${x[1].toNumber()})`)
           stack.push(['symbol', name, mload])
           break
         }
