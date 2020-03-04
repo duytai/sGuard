@@ -14,11 +14,16 @@ const {
     dataload,
     allocatedRange,
     maxVisitedBlock,
+    maxVisitedBlockBound,
     maxVisitedBlockStep
   }
 } = dotenv.config()
 
-assert(dataload && allocatedRange && maxVisitedBlock, 'update .evn file')
+assert(
+  dataload
+  && allocatedRange
+  && maxVisitedBlock
+  && maxVisitedBlockBound, 'update .evn file')
 
 class Evm {
   constructor(bin) {
@@ -38,7 +43,9 @@ class Evm {
       this.execute(0, ep)
       if (hasCall && !this.checkPoints.length) {
         mvb += parseInt(maxVisitedBlockStep);
-        continue
+        logger.info(`update maxVisitedBlock to ${mvb}`)
+        if (mvb <= parseInt(maxVisitedBlockBound)) continue
+        logger.error(`reach maxVisitedBlock ${maxVisitedBlockBound} but can not find any checkpoints`)
       }
       return {
         checkPoints: this.checkPoints,
