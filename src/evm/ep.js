@@ -1,17 +1,15 @@
 const assert = require('assert')
 const chalk = require('chalk')
-const dotenv = require('dotenv')
 const { reverse } = require('lodash')
 const { logger, prettify, isConst } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
 
-const { parsed: { maxVisitedBlock }} = dotenv.config()
-
 class Ep {
-  constructor() {
+  constructor(maxVisitedBlock) {
     this.ep = []
+    this.maxVisitedBlock = maxVisitedBlock
     this.stack = new Stack() 
     this.trace = new Trace()
   }
@@ -29,7 +27,7 @@ class Ep {
   }
 
   clone() {
-    const ep = new Ep()
+    const ep = new Ep(this.maxVisitedBlock)
     ep.ep = [...this.ep]
     ep.trace = this.trace.clone()
     ep.stack = this.stack.clone()
@@ -39,7 +37,7 @@ class Ep {
   sub(epSize) {
     assert(epSize >= 0)
     assert(epSize <= this.ep.length)
-    const ep = new Ep()
+    const ep = new Ep(this.maxVisitedBlock)
     ep.ep = this.ep.slice(0, epSize)
     const { stack, trace } = ep.ep[ep.ep.length - 1]
     ep.stack = stack.clone()
@@ -53,7 +51,7 @@ class Ep {
       ...this.ep.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
       jumpdest,
     ]
-    return pcs.length >= parseInt(maxVisitedBlock)
+    return pcs.length >= this.maxVisitedBlock
   }
 
   filter(cond) {

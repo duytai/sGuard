@@ -4,25 +4,46 @@ const assert = require('assert')
 const dotenv = require('dotenv')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
+const Decoder = require('./decoder')
 const { logger, prettify, formatSymbol } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
-const { parsed: { dataload, allocatedRange } } = dotenv.config()
-assert(dataload && allocatedRange, 'update .evn file')
+const {
+  parsed: {
+    dataload,
+    allocatedRange,
+    maxVisitedBlock,
+    maxVisitedBlockStep
+  }
+} = dotenv.config()
+
+assert(dataload && allocatedRange && maxVisitedBlock, 'update .evn file')
 
 class Evm {
   constructor(bin) {
     this.bin = bin
     this.checkPoints = []
     this.endPoints = []
+    this.decoder = new Decoder(bin)
   }
 
   start() {
-    this.execute(0, new Ep())
-    return {
-      checkPoints: this.checkPoints,
-      endPoints: this.endPoints,
+    const { hasCall } = this.decoder.summarize()
+    let mvb = parseInt(maxVisitedBlock)
+    while (true) {
+      this.checkPoints.length = 0
+      this.endPoints.length = 0
+      const ep = new Ep(mvb)
+      this.execute(0, ep)
+      if (hasCall && !this.checkPoints.length) {
+        mvb += parseInt(maxVisitedBlockStep);
+        continue
+      }
+      return {
+        checkPoints: this.checkPoints,
+        endPoints: this.endPoints,
+      }
     }
   }
 
