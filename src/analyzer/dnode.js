@@ -44,7 +44,7 @@ class DNode {
     }
     const { me, childs, alias, pc } = this.node
     const space = range(0, level).map(i => ' ').join('') || ''
-    logger.debug(`${space}${formatSymbol(me)} ${chalk.green.bold(alias)} ${pc}`)
+    logger.debug(`${space}${formatSymbol(me)} ${chalk.green.bold(alias)}`)
     if (srcmap) {
       const { txt, line } = srcmap.toSrc(pc)
       const firstLine = txt.split("\n")[0]
