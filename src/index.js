@@ -8,6 +8,7 @@ const { Evm } = require('./evm')
 const { logger } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
+const SRCMap = require('./srcmap')
 
 const { parsed: { contract } } = dotenv.config()
 assert(contract, 'require contract in .env')
@@ -19,9 +20,10 @@ const jsonFile = `${contractFile}.json`
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
 logger.info(`compile ${chalk.green.bold(contract)} by using env compiler`)
-shell.exec(`solc --combined-json asm,bin-runtime ${contractFile} > ${jsonFile}`)
+shell.exec(`solc --combined-json bin-runtime,srcmap-runtime ${contractFile} > ${jsonFile}`)
 assert(fs.existsSync(jsonFile), 'json must exist')
 
+const source = fs.readFileSync(contractFile, 'utf8')
 const output = fs.readFileSync(jsonFile, 'utf8')
 forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const rawBin = contractJson['bin-runtime']
@@ -29,10 +31,13 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     .split('$').join('0')
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
+  const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${chalk.green.bold(name.split(':')[1])}`)
   const { checkPoints, endPoints } = evm.start()
+  logger.info(`Checkpoints: ${checkPoints.length}`)
+  logger.info(`Endpoints  : ${endPoints.length}`)
   checkPoints.forEach(ep => {
     const analyzer = new Analyzer(ep, endPoints)
-    analyzer.prettify()
+    analyzer.prettify(srcmap)
   })
 })

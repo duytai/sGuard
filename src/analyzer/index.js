@@ -20,12 +20,8 @@ class Analyzer {
     }
   }
 
-  prettify() {
-    this.register.prettify()
-  }
-
-  getdnode() {
-    return this.register.dnode
+  prettify(srcmap) {
+    this.register.prettify(srcmap)
   }
 }
 
