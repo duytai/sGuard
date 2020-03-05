@@ -1,3 +1,4 @@
+const { uniq } = require('lodash')
 const assert = require('assert')
 
 class StackVar {
@@ -45,7 +46,7 @@ class StackVar {
       }
       if (trackingPos > lastStackPos) break
     }
-    return result
+    return uniq(result) 
   }
 }
 
