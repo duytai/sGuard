@@ -9,7 +9,7 @@ class Register {
   constructor(symbol, trackingPos, ep, endPoints, visited = []) {
     visited.push(this.toVisitedKey(trackingPos, ep.last().pc, symbol))
     this.trackingPos = trackingPos
-    this.dnode = new DNode(symbol)
+    this.dnode = new DNode(symbol, ep.last().pc)
     this.ep = ep
     this.endPoints = endPoints
     this.internalAnalysis(symbol, this.dnode, visited)
@@ -68,7 +68,7 @@ class Register {
       default: {
         const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
         symbols.forEach(symbol => {
-          const subNode = new DNode(symbol)
+          const subNode = new DNode(symbol, this.ep.last().pc)
           this.internalAnalysis(symbol, subNode, visited)
           dnode.addChild(subNode)
         })
@@ -116,8 +116,8 @@ class Register {
     })
   }
 
-  prettify() {
-    this.dnode.prettify()
+  prettify(srcmap) {
+    this.dnode.prettify(0, srcmap)
   }
 }
 

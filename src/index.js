@@ -38,6 +38,6 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   logger.info(`Endpoints  : ${endPoints.length}`)
   checkPoints.forEach(ep => {
     const analyzer = new Analyzer(ep, endPoints)
-    analyzer.prettify()
+    analyzer.prettify(srcmap)
   })
 })
