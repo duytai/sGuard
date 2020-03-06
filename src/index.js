@@ -41,12 +41,16 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     checkPoints.forEach(ep => {
-      ep.showTrace(srcmap)
       const analyzer = new Analyzer(ep, endPoints)
-      const vul = new Vul(analyzer.getdnode())
+      const dnode = analyzer.getdnode()
+      const vul = new Vul(dnode)
       const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
-      analyzer.prettify(srcmap)
-      vul.report(vulnames, srcmap)
+      /// Found pattern
+      if (dnode.node.childs.length) {
+        ep.showTrace(srcmap)
+        analyzer.prettify(srcmap)
+        vul.report(vulnames, srcmap)
+      }
     })
   }
 })
