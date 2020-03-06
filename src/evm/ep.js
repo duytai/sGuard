@@ -124,7 +124,7 @@ class Ep {
       const subEp = this.sub(epIdx + 1)
       let firstLine = srcmap ? srcmap.toSrc(pc).txt.split("\n")[0] : ""
       let line = srcmap ? srcmap.toSrc(pc).line : 0
-      firstLine && logger.debug(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
+      firstLine && logger.debug(`${chalk.dim.italic(`${line}:${pc}:${firstLine}`)}`)
       prettify([t])
       if (name == 'SSTORE') {
         if (!this.isAntiPatternSloc(loc))  {
