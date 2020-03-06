@@ -29,7 +29,12 @@ class LocalVariable extends Variable {
         r[1] = r[1].mul(ext)
         return r
       }
+      case 'MLOAD': {
+        const subEp = ep.sub(loc[5][1].toNumber())
+        return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
+      }
       default: {
+        prettify([loc])
         assert(false, `unknow: ${loc[1]}`)
       }
     }

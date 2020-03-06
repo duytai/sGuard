@@ -9,7 +9,7 @@ const Analyzer = require('../src/analyzer')
 
 const binFolder = path.join(__dirname, 'bin/')
 const binFiles = fs.readdirSync(binFolder).sort()
-const { parsed: { stressIgnore, stressAddress }} = dotenv.config()
+const { parsed: { stressIgnore, stressAddress, conversion }} = dotenv.config()
 assert(stressIgnore, 'update .evn file')
 
 const main = async() => {
@@ -24,13 +24,16 @@ const main = async() => {
     const { checkPoints, endPoints } = evm.start()
     logger.info(`>> endPoints   : ${endPoints.length}`)
     logger.info(`>> checkPoints : ${checkPoints.length}`)
-    endPoints.forEach(ep => {
-      ep.showTrace()
-    })
-    checkPoints.forEach(ep => {
-      const analyzer = new Analyzer(ep, endPoints)
-      analyzer.prettify()
-    })
+    if (conversion) {
+      endPoints.forEach(ep => {
+        ep.showTrace()
+      })
+    } else {
+      checkPoints.forEach(ep => {
+        const analyzer = new Analyzer(ep, endPoints)
+        analyzer.prettify()
+      })
+    }
   } else {
     ignores = JSON.parse(stressIgnore)
     for (let i = 0; i < binFiles.length; i++) {
@@ -46,13 +49,16 @@ const main = async() => {
       const { checkPoints, endPoints } = evm.start()
       logger.info(`>> endPoints   : ${endPoints.length}`)
       logger.info(`>> checkPoints : ${checkPoints.length}`)
-      endPoints.forEach(ep => {
-        ep.showTrace()
-      })
-      checkPoints.forEach(ep => {
-        const analyzer = new Analyzer(ep, endPoints)
-        analyzer.prettify()
-      })
+      if (conversion) {
+        endPoints.forEach(ep => {
+          ep.showTrace()
+        })
+      } else {
+        checkPoints.forEach(ep => {
+          const analyzer = new Analyzer(ep, endPoints)
+          analyzer.prettify()
+        })
+      }
     }
   }
 }
