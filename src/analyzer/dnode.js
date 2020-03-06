@@ -49,7 +49,7 @@ class DNode {
       const { txt, line } = srcmap.toSrc(pc)
       const firstLine = txt.split("\n")[0]
       if (firstLine) {
-        logger.debug(`${space}${chalk.dim.italic(`${line}:${firstLine.slice(0, 70)}`)}`)
+        logger.debug(`${space}${chalk.dim.italic(`${line}:${firstLine}`)}`)
       }
     }
     childs.forEach(child => {

@@ -5,22 +5,33 @@ class StackVar {
   constructor(ep) {
     assert(ep)
     this.ep = ep
+    this.assignmentPcs = new Set()
+    this.visited = new Set()
+  }
+
+  toVisitedKey(trackingPos, epSize) {
+    assert(trackingPos >= 0 && epSize >= 0)
+    return `${trackingPos}:${epSize}`
   }
 
   myAncestors(trackingPos) {
-    assert(trackingPos)
-    return this.whereAreAssignments(trackingPos, this.ep)
+    this.assignmentPcs.clear()
+    this.visited.clear()
+    this.whereAreAssignments(trackingPos, this.ep)
+    return [...this.assignmentPcs]
   }
 
   whereAreAssignments(trackingPos, ep) {
-    let result = []
+    const key = this.toVisitedKey(trackingPos, ep.size())
+    if (this.visited.has(key)) return
+    this.visited.add(key)
     for (let i = ep.size() - 1; i >= 0; i--) {
       const { stack, opcode: { name, opVal, ins, outs }, pc } = ep.get(i)
       const lastStackPos = stack.size() - 1
       if (lastStackPos >= trackingPos && name == 'SWAP') {
         const swapN = opVal - 0x8f
         if (trackingPos + swapN == lastStackPos) {
-          result.push(pc)
+          this.assignmentPcs.add(pc)
           trackingPos = trackingPos + swapN
         } else if (lastStackPos == trackingPos) {
           trackingPos = trackingPos - swapN
@@ -36,17 +47,13 @@ class StackVar {
         if (prevIns > 0) {
           for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
             const subEp = ep.sub(i)
-            result = [
-              ...result,
-              ...this.whereAreAssignments(lastStackPos + opIdx, subEp)
-            ]
+            this.whereAreAssignments(lastStackPos + opIdx, subEp)
           }
           break
         }
       }
       if (trackingPos > lastStackPos) break
     }
-    return uniq(result) 
   }
 }
 

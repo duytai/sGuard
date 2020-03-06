@@ -12,9 +12,9 @@ class Register {
     this.dnode = new DNode(symbol, ep.last().pc)
     this.ep = ep
     this.endPoints = endPoints
-    this.internalAnalysis(symbol, this.dnode, visited)
+    // this.internalAnalysis(symbol, this.dnode, visited)
     this.conditionAnalysis(symbol, this.dnode, visited)
-    this.crossfunctionAnalysis(symbol, this.dnode, visited)
+    // this.crossfunctionAnalysis(symbol, this.dnode, visited)
   }
 
   toVisitedKey(trackingPos, pc, cond) {
@@ -79,11 +79,9 @@ class Register {
   conditionAnalysis(_, dnode, visited) {
     const pcs = [this.ep.last().pc]
     const condition = new Condition(this.ep, this.endPoints)
-    if (this.trackingPos != 0) {
-      const stackVar = new StackVar(this.ep)
-      const ancestors = stackVar.myAncestors(this.trackingPos)
-      ancestors.forEach(ancestor => pcs.push(ancestor))
-    }
+    const stackVar = new StackVar(this.ep)
+    const ancestors = stackVar.myAncestors(this.trackingPos)
+    ancestors.forEach(ancestor => pcs.push(ancestor))
     const conds = condition.batchFindConds(pcs) 
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       const subEp = this.ep.sub(epIdx + 1)
