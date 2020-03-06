@@ -23,7 +23,6 @@ class Vul {
     const d = chalk.dim.italic
     if (founds.length) {
       logger.info('----------------------------------------------')
-      logger.info(`|\tFound ${c(founds.length)} types of bug`)
       founds.forEach(({ name, dnodes }) => {
         logger.info(`|\tBug: ${c(name)}, Found ${c(dnodes.length)}`)
         dnodes.forEach(dnode => {

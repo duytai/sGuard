@@ -10,7 +10,7 @@ class Block extends Oracle {
       const dnode = stack.pop()
       const { node: { me, childs } } = dnode
       const txt = formatSymbol(me)
-      if (txt.includes('NUMBER')) ret.push(dnode)
+      if (txt.includes('NUMBER') || txt.includes('TIMESTAMP')) ret.push(dnode)
       childs.forEach(child => stack.push(child))
     }
     return ret
