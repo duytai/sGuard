@@ -1,7 +1,7 @@
 const assert = require('assert')
 const chalk = require('chalk')
 const { reverse } = require('lodash')
-const { logger, prettify, isConst } = require('../shared')
+const { logger, prettify, isConst, formatSymbol } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
 const Trace = require('./trace')
@@ -84,7 +84,7 @@ class Ep {
       const [_, name, loc, storedValue ] = t
       if (name == 'MSTORE') {
         /// Solidity use mem to storage encoded abi
-        if (!isConst(loc) && loc[1] == 'SUB') return
+        if (this.isAntiPatternMloc(loc)) return
         const subEp = this.sub(epIdx + 1)
         const variable = new LocalVariable(loc, subEp)
         cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
@@ -97,6 +97,7 @@ class Ep {
     reverse([...this.trace.ts]).forEach(({ t, epIdx, vTrackingPos, kTrackingPos }) => {
       const [_, name, loc, storedValue ] = t
       if (name == 'SSTORE') {
+        if (this.isAntiPatternSloc(loc)) return
         const subEp = this.sub(epIdx + 1)
         const variable = new StateVariable(loc, subEp)
         cb({ variable, subEp, storedLoc: loc, storedValue, vTrackingPos, kTrackingPos })
@@ -104,22 +105,58 @@ class Ep {
     })
   }
 
-  showTrace() {
-    this.trace.ts.forEach(({ t, epIdx }) => {
+  isAntiPatternSloc(loc) {
+    const formatted = formatSymbol(loc)
+    const useStoreInAssembly = /SHA3\(MLOAD\([1-9]+/ // MLOAD(x) when x is not 0
+    return useStoreInAssembly.test(formatted) 
+  }
+
+  isAntiPatternMloc(loc) {
+    const formatted = formatSymbol(loc)
+    const useAbiEncoder = /SUB/ // use SUB
+    return useAbiEncoder.test(formatted) 
+  }
+
+  showTrace(srcmap) {
+    logger.info('>> Full trace')
+    const failures = []
+    this.trace.ts.forEach(({ t, epIdx, pc }) => {
       prettify([t])
       const [_, name, loc] = t
       const subEp = this.sub(epIdx + 1)
+      let isFailed = false
       if (name == 'SSTORE') {
-        const variable = new StateVariable(loc, subEp)
-        logger.debug(chalk.green.bold(variable.toAlias()))
+        if (!this.isAntiPatternSloc(loc))  {
+          const variable = new StateVariable(loc, subEp)
+          logger.debug(chalk.green.bold(variable.toAlias()))
+        } else {
+          isFailed = true
+        }
       }
       if (name == 'MSTORE') {
         /// Solidity use mem to storage encoded abi
-        if (!isConst(loc) && loc[1] == 'SUB') return
-        const variable = new LocalVariable(loc, subEp)
-        logger.debug(chalk.green.bold(variable.toAlias()))
+        if (!this.isAntiPatternMloc(loc)) {
+          const variable = new LocalVariable(loc, subEp)
+          logger.debug(chalk.green.bold(variable.toAlias()))
+        } else {
+          isFailed = true
+        }
+      }
+      if (isFailed) {
+        failures.push(formatSymbol(loc))
+      }
+      if (srcmap) {
+        const { txt, line } = srcmap.toSrc(pc)
+        const firstLine = txt.split("\n")[0]
+        if (firstLine) {
+          logger.debug(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
+          if (isFailed) {
+            failures.push(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
+          }
+        }
       }
     })
+    return failures
   }
 
   prettify() {

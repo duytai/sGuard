@@ -10,7 +10,7 @@ const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
 
-const { parsed: { contract } } = dotenv.config()
+const { parsed: { contract, conversion } } = dotenv.config()
 assert(contract, 'require contract in .env')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
@@ -36,8 +36,15 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const { checkPoints, endPoints } = evm.start()
   logger.info(`Checkpoints: ${checkPoints.length}`)
   logger.info(`Endpoints  : ${endPoints.length}`)
-  checkPoints.forEach(ep => {
-    const analyzer = new Analyzer(ep, endPoints)
-    analyzer.prettify(srcmap)
-  })
+  if (conversion) {
+    const failures = endPoints.reduce((r, ep) => [...r, ...ep.showTrace(srcmap)], [])
+    logger.error(`Failed to convert, plz manually confirm these expression`)
+    failures.forEach(f => logger.error(f))
+  } else {
+    checkPoints.forEach(ep => {
+      ep.showTrace(srcmap)
+      const analyzer = new Analyzer(ep, endPoints)
+      analyzer.prettify(srcmap)
+    })
+  }
 })

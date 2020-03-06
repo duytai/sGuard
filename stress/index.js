@@ -24,12 +24,14 @@ const main = async() => {
     const { checkPoints, endPoints } = evm.start()
     logger.info(`>> endPoints   : ${endPoints.length}`)
     logger.info(`>> checkPoints : ${checkPoints.length}`)
+    endPoints.forEach(ep => {
+      ep.showTrace()
+    })
     checkPoints.forEach(ep => {
       const analyzer = new Analyzer(ep, endPoints)
       analyzer.prettify()
     })
   } else {
-    console.log(stressIgnore)
     ignores = JSON.parse(stressIgnore)
     for (let i = 0; i < binFiles.length; i++) {
       const binFile = binFiles[i]
@@ -44,6 +46,9 @@ const main = async() => {
       const { checkPoints, endPoints } = evm.start()
       logger.info(`>> endPoints   : ${endPoints.length}`)
       logger.info(`>> checkPoints : ${checkPoints.length}`)
+      endPoints.forEach(ep => {
+        ep.showTrace()
+      })
       checkPoints.forEach(ep => {
         const analyzer = new Analyzer(ep, endPoints)
         analyzer.prettify()
