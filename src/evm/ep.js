@@ -119,18 +119,19 @@ class Ep {
 
   showTrace(srcmap) {
     logger.info('>> Full trace')
-    const failures = []
     this.trace.ts.forEach(({ t, epIdx, pc }) => {
-      prettify([t])
       const [_, name, loc] = t
       const subEp = this.sub(epIdx + 1)
-      let isFailed = false
+      let firstLine = srcmap ? srcmap.toSrc(pc).txt.split("\n")[0] : ""
+      let line = srcmap ? srcmap.toSrc(pc).line : 0
+      logger.debug(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
+      prettify([t])
       if (name == 'SSTORE') {
         if (!this.isAntiPatternSloc(loc))  {
           const variable = new StateVariable(loc, subEp)
           logger.debug(chalk.green.bold(variable.toAlias()))
         } else {
-          isFailed = true
+          logger.error(formatSymbol(loc))
         }
       }
       if (name == 'MSTORE') {
@@ -139,24 +140,11 @@ class Ep {
           const variable = new LocalVariable(loc, subEp)
           logger.debug(chalk.green.bold(variable.toAlias()))
         } else {
-          isFailed = true
+          logger.error(formatSymbol(loc))
         }
       }
-      if (isFailed) {
-        failures.push(formatSymbol(loc))
-      }
-      if (srcmap) {
-        const { txt, line } = srcmap.toSrc(pc)
-        const firstLine = txt.split("\n")[0]
-        if (firstLine) {
-          logger.debug(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
-          if (isFailed) {
-            failures.push(`${chalk.dim.italic(`${line}:${firstLine}`)}`)
-          }
-        }
-      }
+      logger.debug('--')
     })
-    return failures
   }
 
   prettify() {

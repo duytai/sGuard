@@ -8,13 +8,31 @@ class LocalVariable extends Variable {
 
   fetchMload(loc, ep) {
     if (isConst(loc)) return loc
-    if (loc[1] == 'ADD') {
-      assert(isConst(loc[2]) && loc[2][1].isZero())
-      loc = loc[3]
+    switch (loc[1]) {
+      case 'ADD': {
+        assert(isConst(loc[2]))
+        const ext = loc[2][1]
+        loc = loc[3]
+        assert(loc[1] == 'MLOAD')
+        const subEp = ep.sub(loc[5][1].toNumber())
+        const r = subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
+        r[1] = r[1].add(ext)
+        return r
+      }
+      case 'MUL': {
+        assert(isConst(loc[2]))
+        const ext = loc[2][1]
+        loc = loc[3]
+        assert(loc[1] == 'MLOAD')
+        const subEp = ep.sub(loc[5][1].toNumber())
+        const r = subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
+        r[1] = r[1].mul(ext)
+        return r
+      }
+      default: {
+        assert(false, `unknow: ${loc[1]}`)
+      }
     }
-    assert(loc[1] == 'MLOAD')
-    const subEp = ep.sub(loc[5][1].toNumber())
-    return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
   }
 
   findArraySize(ep) {

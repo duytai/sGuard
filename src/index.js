@@ -37,9 +37,7 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   logger.info(`Checkpoints: ${checkPoints.length}`)
   logger.info(`Endpoints  : ${endPoints.length}`)
   if (conversion) {
-    const failures = endPoints.reduce((r, ep) => [...r, ...ep.showTrace(srcmap)], [])
-    logger.error(`Failed to convert, plz manually confirm these expression`)
-    failures.forEach(f => logger.error(f))
+    endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     checkPoints.forEach(ep => {
       ep.showTrace(srcmap)
