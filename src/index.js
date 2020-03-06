@@ -9,8 +9,9 @@ const { logger } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
+const Vul = require('./vul')
 
-const { parsed: { contract } } = dotenv.config()
+const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
 assert(contract, 'require contract in .env')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
@@ -36,8 +37,20 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const { checkPoints, endPoints } = evm.start()
   logger.info(`Checkpoints: ${checkPoints.length}`)
   logger.info(`Endpoints  : ${endPoints.length}`)
-  checkPoints.forEach(ep => {
-    const analyzer = new Analyzer(ep, endPoints)
-    analyzer.prettify(srcmap)
-  })
+  if (conversion) {
+    endPoints.forEach(ep => ep.showTrace(srcmap))
+  } else {
+    checkPoints.forEach(ep => {
+      const analyzer = new Analyzer(ep, endPoints)
+      const dnode = analyzer.getdnode()
+      const vul = new Vul(dnode)
+      const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
+      /// Found pattern
+      if (dnode.node.childs.length) {
+        ep.showTrace(srcmap)
+        analyzer.prettify(srcmap)
+        vul.report(vulnames, srcmap)
+      }
+    })
+  }
 })

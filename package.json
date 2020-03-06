@@ -5,9 +5,9 @@
   "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "node src/index.js",
+    "dev": "node --max-old-space-size=8192 src/index.js",
     "download": "node stress/loader.js",
-    "stress": "node stress/index.js"
+    "stress": "node --max-old-space-size=8192 stress/index.js"
   },
   "dependencies": {
     "bn.js": "^5.0.0",

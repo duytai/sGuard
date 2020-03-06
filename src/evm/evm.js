@@ -181,7 +181,8 @@ class Evm {
             if (memValue[0] != 'const') {
               const lastValue = trace.memValueAt(memLoc) 
               assert(lastValue[0] == 'const')
-              const t = ['const', new BN(lastValue[1].add(new BN(allocatedRange, 16)))]
+              const v = ['const', new BN(lastValue[1].add(new BN(allocatedRange, 16)))]
+              const t = ['symbol', name, memLoc, v, size]
               trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
               break
             }

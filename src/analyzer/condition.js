@@ -1,5 +1,5 @@
 const { uniqBy, uniq } = require('lodash')
-const { prettify, formatSymbol } = require('../shared')
+const { prettify, formatSymbol, logger } = require('../shared')
 
 class Condition {
   constructor(ep, endPoints) {

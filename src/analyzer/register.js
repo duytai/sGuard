@@ -2,7 +2,7 @@ const assert = require('assert')
 const DNode = require('./dnode')
 const Condition = require('./condition') 
 const StackVar = require('./stackvar')
-const { prettify, findSymbol, formatSymbol } = require('../shared')
+const { logger, prettify, findSymbol, formatSymbol } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 
 class Register {
@@ -79,11 +79,9 @@ class Register {
   conditionAnalysis(_, dnode, visited) {
     const pcs = [this.ep.last().pc]
     const condition = new Condition(this.ep, this.endPoints)
-    if (this.trackingPos != 0) {
-      const stackVar = new StackVar(this.ep)
-      const ancestors = stackVar.myAncestors(this.trackingPos)
-      ancestors.forEach(ancestor => pcs.push(ancestor))
-    }
+    const stackVar = new StackVar(this.ep)
+    const ancestors = stackVar.myAncestors(this.trackingPos)
+    ancestors.forEach(ancestor => pcs.push(ancestor))
     const conds = condition.batchFindConds(pcs) 
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       const subEp = this.ep.sub(epIdx + 1)

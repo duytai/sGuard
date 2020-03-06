@@ -6,10 +6,11 @@ const dotenv = require('dotenv')
 const { Evm } = require('../src/evm')
 const { logger } = require('../src/shared')
 const Analyzer = require('../src/analyzer')
+const Vul = require('../src/vul')
 
 const binFolder = path.join(__dirname, 'bin/')
 const binFiles = fs.readdirSync(binFolder).sort()
-const { parsed: { stressIgnore, stressAddress }} = dotenv.config()
+const { parsed: { stressIgnore, stressAddress, conversion, vulnerabilities }} = dotenv.config()
 assert(stressIgnore, 'update .evn file')
 
 const main = async() => {
@@ -24,12 +25,25 @@ const main = async() => {
     const { checkPoints, endPoints } = evm.start()
     logger.info(`>> endPoints   : ${endPoints.length}`)
     logger.info(`>> checkPoints : ${checkPoints.length}`)
-    checkPoints.forEach(ep => {
-      const analyzer = new Analyzer(ep, endPoints)
-      analyzer.prettify()
-    })
+    if (conversion) {
+      endPoints.forEach(ep => {
+        ep.showTrace()
+      })
+    } else {
+      checkPoints.forEach(ep => {
+        const analyzer = new Analyzer(ep, endPoints)
+        const dnode = analyzer.getdnode()
+        const vul = new Vul(dnode)
+        const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
+        /// Found pattern
+        if (dnode.node.childs.length) {
+          ep.showTrace()
+          analyzer.prettify()
+          vul.report(vulnames)
+        }
+      })
+    }
   } else {
-    console.log(stressIgnore)
     ignores = JSON.parse(stressIgnore)
     for (let i = 0; i < binFiles.length; i++) {
       const binFile = binFiles[i]
@@ -44,10 +58,16 @@ const main = async() => {
       const { checkPoints, endPoints } = evm.start()
       logger.info(`>> endPoints   : ${endPoints.length}`)
       logger.info(`>> checkPoints : ${checkPoints.length}`)
-      checkPoints.forEach(ep => {
-        const analyzer = new Analyzer(ep, endPoints)
-        analyzer.prettify()
-      })
+      if (conversion) {
+        endPoints.forEach(ep => {
+          ep.showTrace()
+        })
+      } else {
+        checkPoints.forEach(ep => {
+          const analyzer = new Analyzer(ep, endPoints)
+          analyzer.prettify()
+        })
+      }
     }
   }
 }
