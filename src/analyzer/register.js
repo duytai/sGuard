@@ -12,9 +12,9 @@ class Register {
     this.dnode = new DNode(symbol, ep.last().pc)
     this.ep = ep
     this.endPoints = endPoints
-    // this.internalAnalysis(symbol, this.dnode, visited)
+    this.internalAnalysis(symbol, this.dnode, visited)
     this.conditionAnalysis(symbol, this.dnode, visited)
-    // this.crossfunctionAnalysis(symbol, this.dnode, visited)
+    this.crossfunctionAnalysis(symbol, this.dnode, visited)
   }
 
   toVisitedKey(trackingPos, pc, cond) {
