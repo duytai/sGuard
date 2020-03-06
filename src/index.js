@@ -11,7 +11,7 @@ const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
 const Vul = require('./vul')
 
-const { parsed: { contract, conversion } } = dotenv.config()
+const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
 assert(contract, 'require contract in .env')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
@@ -44,7 +44,9 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
       ep.showTrace(srcmap)
       const analyzer = new Analyzer(ep, endPoints)
       const vul = new Vul(analyzer.getdnode())
+      const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
       analyzer.prettify(srcmap)
+      vul.report(vulnames, srcmap)
     })
   }
 })
