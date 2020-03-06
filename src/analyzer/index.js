@@ -10,16 +10,20 @@ class Analyzer {
     switch (name) {
       case 'CALL': {
         // value in .call
-        let trackingPos = ep.stack.size() - 3
-        let symbol = ep.stack.get(trackingPos)
-        if (isConst(symbol) && symbol[1].isZero())  return
-        let register = new Register(symbol, trackingPos, ep, endPoints)
-        this.registers.push(register)
+        {
+          const trackingPos = ep.stack.size() - 3
+          const symbol = ep.stack.get(trackingPos)
+          if (isConst(symbol) && symbol[1].isZero())  return
+          const register = new Register(symbol, trackingPos, ep, endPoints)
+          this.registers.push(register)
+        }
         // address in .call
-        trackingPos = ep.stack.size() - 2
-        symbol = ep.stack.get(trackingPos)
-        register = new Register(symbol, trackingPos, ep, endPoints)
-        this.registers.push(register)
+        {
+          const trackingPos = ep.stack.size() - 2
+          const symbol = ep.stack.get(trackingPos)
+          const register = new Register(symbol, trackingPos, ep, endPoints)
+          this.registers.push(register)
+        }
         break
       }
       default: {
