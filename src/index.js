@@ -9,6 +9,7 @@ const { logger } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
+const Vul = require('./vul')
 
 const { parsed: { contract, conversion } } = dotenv.config()
 assert(contract, 'require contract in .env')
@@ -42,6 +43,7 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     checkPoints.forEach(ep => {
       ep.showTrace(srcmap)
       const analyzer = new Analyzer(ep, endPoints)
+      const vul = new Vul(analyzer.getdnode())
       analyzer.prettify(srcmap)
     })
   }

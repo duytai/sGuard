@@ -22,6 +22,10 @@ class Analyzer {
   prettify(srcmap) {
     this.register.prettify(srcmap)
   }
+
+  getdnode() {
+    return this.register.dnode
+  }
 }
 
 module.exports = Analyzer
