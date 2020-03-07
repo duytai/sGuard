@@ -11,8 +11,7 @@ class Decoder {
     const sum = {
       njumpis: 0,
     }
-    const auxdataLen = 52 // bytes
-    while (pc < this.bin.length - auxdataLen - 1) {
+    while (pc < this.bin.length) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) break
       if (opcode.name === 'PUSH') pc += this.bin[pc] - 0x5f
