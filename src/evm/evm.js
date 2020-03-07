@@ -54,7 +54,7 @@ class Evm {
       return {
         checkPoints: this.checkPoints,
         endPoints: this.endPoints,
-        coverage: Math.floor(this.jumpis.size / njumpis * 100),
+        coverage: !njumpis ? 100 : Math.floor(this.jumpis.size / njumpis * 100),
       }
     }
   }
