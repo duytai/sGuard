@@ -2,6 +2,7 @@ const { union } = require('lodash')
 const assert = require('assert')
 const chalk = require('chalk')
 const Block = require('./block')
+const Int = require('./int')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
@@ -10,6 +11,7 @@ class Vul {
     this.dnode = dnode
     this.oracles = {
       number: Block,
+      integer: Int, 
     }
   }
 
