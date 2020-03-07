@@ -15,7 +15,8 @@ const {
     allocatedRange,
     maxVisitedBlock,
     maxVisitedBlockBound,
-    maxVisitedBlockStep
+    maxVisitedBlockStep,
+    expectCoverage,
   }
 } = dotenv.config()
 
@@ -23,6 +24,7 @@ assert(
   dataload
   && allocatedRange
   && maxVisitedBlock
+  && expectCoverage
   && maxVisitedBlockBound, 'update .evn file')
 
 class Evm {
@@ -31,17 +33,19 @@ class Evm {
     this.checkPoints = []
     this.endPoints = []
     this.decoder = new Decoder(bin)
+    this.jumpis = new Set()
   }
 
   start() {
-    const { hasCall } = this.decoder.summarize()
+    const { njumpis } = this.decoder.summarize()
     let mvb = parseInt(maxVisitedBlock)
     while (true) {
       this.checkPoints.length = 0
       this.endPoints.length = 0
+      this.jumpis.clear()
       const ep = new Ep(mvb)
       this.execute(0, ep)
-      if (hasCall && !this.checkPoints.length) {
+      if (this.jumpis.size < parseFloat(expectCoverage) * njumpis) {
         mvb += parseInt(maxVisitedBlockStep);
         logger.info(`update maxVisitedBlock to ${mvb}`)
         if (mvb <= parseInt(maxVisitedBlockBound)) continue
@@ -50,6 +54,7 @@ class Evm {
       return {
         checkPoints: this.checkPoints,
         endPoints: this.endPoints,
+        coverage: Math.floor(this.jumpis.size / njumpis * 100),
       }
     }
   }
@@ -81,6 +86,7 @@ class Evm {
           const [label, cond] = stack.popN(ins) 
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
+          this.jumpis.add(pc)
           if (cond[0] == 'const') {
             if (!cond[1].isZero()) {
               assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')

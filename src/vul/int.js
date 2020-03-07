@@ -10,10 +10,8 @@ class Int extends Oracle {
       const dnode = stack.pop()
       const { node: { me, childs } } = dnode
       const symbols = findSymbol(me, ([type, name]) => sos.includes(name))
-      prettify(symbols)
       childs.forEach(child => stack.push(child))
     }
-    assert(false)
     return []
   }
 }
