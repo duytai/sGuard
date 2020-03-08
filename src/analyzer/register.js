@@ -36,10 +36,12 @@ class Register {
             if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
             if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
           }
         })
@@ -56,10 +58,12 @@ class Register {
             if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
             if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
           }
         })
@@ -71,6 +75,7 @@ class Register {
           const subNode = new DNode(symbol, this.ep.last().pc)
           this.internalAnalysis(symbol, subNode, visited)
           dnode.addChild(subNode)
+          subNode.addParent(dnode)
         })
       }
     }
@@ -89,6 +94,7 @@ class Register {
       if (!visited.includes(this.toVisitedKey(trackingPos, subEp.last().pc, cond))) {
         const subRegister = new Register(cond, trackingPos, subEp, this.endPoints, visited)
         dnode.addChild(subRegister.dnode)
+        subRegister.dnode.addParent(dnode)
       }
     })
   }
@@ -103,10 +109,12 @@ class Register {
             if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
             if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
+              subRegister.dnode.addParent(dnode)
             }
           }
         })
