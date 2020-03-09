@@ -19,10 +19,10 @@ class Analyzer {
         }
         // address in .call
         {
-          // const trackingPos = ep.stack.size() - 2
-          // const symbol = ep.stack.get(trackingPos)
-          // const register = new Register(symbol, trackingPos, ep, endPoints)
-          // this.registers.push(register)
+          const trackingPos = ep.stack.size() - 2
+          const symbol = ep.stack.get(trackingPos)
+          const register = new Register(symbol, trackingPos, ep, endPoints)
+          this.registers.push(register)
         }
         break
       }
