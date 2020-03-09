@@ -6,9 +6,10 @@ const Int = require('./int')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
-  constructor(dnode) {
-    assert(dnode)
+  constructor(dnode, endPoints) {
+    assert(dnode && endPoints)
     this.dnode = dnode
+    this.endPoints = endPoints
     this.oracles = {
       number: Block,
       integer: Int, 
@@ -19,7 +20,7 @@ class Vul {
     const supports = Object.keys(this.oracles)
     assert(union(supports, names).length == supports.length)
     const founds = names
-      .map(name => new this.oracles[name](this.dnode))
+      .map(name => new this.oracles[name](this.dnode, this.endPoints))
       .map((o, idx) => ({ name: names[idx], dnodes: o.startFinding() }))
     const c = chalk.green.bold
     const d = chalk.dim.italic

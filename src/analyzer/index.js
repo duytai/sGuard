@@ -32,6 +32,10 @@ class Analyzer {
     }
   }
 
+  static emptyRoot() {
+    return new DNode(['symbol', 'ROOT'], 0)
+  }
+
   prettify(srcmap) {
     const root = new DNode(['symbol', 'ROOT'], 0)
     root.node.childs = this.registers.map(r => r.dnode)
