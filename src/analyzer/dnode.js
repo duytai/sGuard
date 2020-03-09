@@ -10,12 +10,17 @@ const {
 class DNode {
   constructor(symbol, pc) {
     assert(symbol && pc >= 0)
-    this.node = { me: symbol, pc, childs: [], alias: 'N/A', variable: null }
+    this.node = { me: symbol, pc, childs: [], alias: 'N/A', variable: null, parent: null }
   }
 
   addChild(child) {
     assert(child)
     this.node.childs.push(child)
+  }
+
+  addParent(parent) {
+    assert(parent)
+    this.node.parent = parent
   }
 
   findSloads() {

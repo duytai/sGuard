@@ -33,9 +33,9 @@ class Analyzer {
   }
 
   prettify(srcmap) {
-    this.registers.forEach(register => {
-      register.prettify(srcmap)
-    })
+    const root = new DNode(['symbol', 'ROOT'], 0)
+    root.node.childs = this.registers.map(r => r.dnode)
+    root.prettify(0, srcmap)
   }
 
   getdnode() {

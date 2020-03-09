@@ -9,14 +9,13 @@ class Decoder {
   summarize(opcodeName) {
     let pc = 0;
     const sum = {
-      hasCall: false,
+      njumpis: 0,
     }
-    const auxdataLen = 52 // bytes
-    while (pc < this.bin.length - auxdataLen - 1) {
+    while (pc < this.bin.length) {
       const opcode = opcodes[this.bin[pc]]
       if (!opcode) break
       if (opcode.name === 'PUSH') pc += this.bin[pc] - 0x5f
-      sum.hasCall = sum.hasCall || opcode.name == 'CALL'
+      sum.njumpis += opcode.name == 'JUMPI' ? 1 : 0
       pc ++
     }
     return sum

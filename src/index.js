@@ -3,9 +3,8 @@ const fs = require('fs')
 const path = require('path')
 const shell = require('shelljs')
 const dotenv = require('dotenv')
-const chalk = require('chalk')
 const { Evm } = require('./evm')
-const { logger } = require('./shared')
+const { logger, gb } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
@@ -20,7 +19,7 @@ const jsonFile = `${contractFile}.json`
 
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
-logger.info(`compile ${chalk.green.bold(contract)} by using env compiler`)
+logger.info(`compile ${gb(contract)} by using env compiler`)
 shell.exec(`solc --combined-json bin-runtime,srcmap-runtime ${contractFile} > ${jsonFile}`)
 assert(fs.existsSync(jsonFile), 'json must exist')
 
@@ -33,10 +32,8 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  logger.info(`Start Analyzing Contract: ${chalk.green.bold(name.split(':')[1])}`)
-  const { checkPoints, endPoints } = evm.start()
-  logger.info(`Checkpoints: ${checkPoints.length}`)
-  logger.info(`Endpoints  : ${endPoints.length}`)
+  logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
+  const { checkPoints, endPoints, coverage } = evm.start()
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
@@ -53,4 +50,9 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
       }
     })
   }
+  logger.info(`----------------------------------------------`)
+  logger.info(`|\tCheckpoints: ${gb(checkPoints.length)}`)
+  logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+  logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
+  logger.info(`----------------------------------------------`)
 })

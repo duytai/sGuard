@@ -4,7 +4,7 @@ const assert = require('assert')
 const Web3 = require('web3')
 const dotenv = require('dotenv')
 const { Evm } = require('../src/evm')
-const { logger } = require('../src/shared')
+const { logger, gb } = require('../src/shared')
 const Analyzer = require('../src/analyzer')
 const Vul = require('../src/vul')
 
@@ -22,9 +22,7 @@ const main = async() => {
     logger.info(`binLengh: ${bin.length}`)
     const evm = new Evm(Buffer.from(bin, 'hex'))
     logger.info('>> Start evm')
-    const { checkPoints, endPoints } = evm.start()
-    logger.info(`>> endPoints   : ${endPoints.length}`)
-    logger.info(`>> checkPoints : ${checkPoints.length}`)
+    const { checkPoints, endPoints, coverage } = evm.start()
     if (conversion) {
       endPoints.forEach(ep => {
         ep.showTrace()
@@ -43,6 +41,11 @@ const main = async() => {
         }
       })
     }
+    logger.info(`----------------------------------------------`)
+    logger.info(`|\tCheckpoints: ${gb(checkPoints.length)}`)
+    logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+    logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
+    logger.info(`----------------------------------------------`)
   } else {
     ignores = JSON.parse(stressIgnore)
     for (let i = 0; i < binFiles.length; i++) {
@@ -55,9 +58,7 @@ const main = async() => {
       logger.info(`idx: ${i}`)
       const evm = new Evm(Buffer.from(bin, 'hex'))
       logger.info('>> Start evm')
-      const { checkPoints, endPoints } = evm.start()
-      logger.info(`>> endPoints   : ${endPoints.length}`)
-      logger.info(`>> checkPoints : ${checkPoints.length}`)
+      const { checkPoints, endPoints, coverage } = evm.start()
       if (conversion) {
         endPoints.forEach(ep => {
           ep.showTrace()
@@ -68,6 +69,11 @@ const main = async() => {
           analyzer.prettify()
         })
       }
+      logger.info(`----------------------------------------------`)
+      logger.info(`|\tCheckpoints: ${gb(checkPoints.length)}`)
+      logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+      logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
+      logger.info(`----------------------------------------------`)
     }
   }
 }

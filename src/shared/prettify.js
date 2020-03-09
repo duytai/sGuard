@@ -1,6 +1,7 @@
 const assert = require('assert')
 const { range } = require('lodash')
 const logger = require('./logger')
+const chalk = require('chalk')
 
 const formatSymbol = ([type, name, ...params]) => {
   if (type == 'const') return name.toString(16) 
@@ -16,5 +17,6 @@ const prettify = (values, spaceLen = 0) => {
 module.exports = {
   prettify,
   formatSymbol,
+  gb: chalk.green.bold,
 }
 
