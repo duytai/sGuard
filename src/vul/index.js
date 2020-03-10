@@ -3,6 +3,7 @@ const assert = require('assert')
 const chalk = require('chalk')
 const Block = require('./block')
 const Int = require('./int')
+const Freezing = require('./freezing')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
@@ -13,6 +14,7 @@ class Vul {
     this.oracles = {
       number: Block,
       integer: Int, 
+      freezing: Freezing,
     }
   }
 
