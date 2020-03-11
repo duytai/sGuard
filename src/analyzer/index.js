@@ -32,8 +32,8 @@ class Analyzer {
     }
   }
 
-  static fakeNode(name = 'Fake') {
-    return new DNode(['symbol', name], 0)
+  static fakeNode(name = 'Fake', pc = 0) {
+    return new DNode(['symbol', name], pc)
   }
 
   prettify(srcmap) {
