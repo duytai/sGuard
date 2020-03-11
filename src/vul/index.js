@@ -6,6 +6,7 @@ const Int = require('./int')
 const Freezing = require('./freezing')
 const Gasless = require('./gasless')
 const Delegate = require('./delegate')
+const Reentrancy = require('./reentrancy')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
@@ -19,6 +20,7 @@ class Vul {
       freezing: Freezing,
       gasless: Gasless,
       delegate: Delegate,
+      reentrancy: Reentrancy,
     }
   }
 
