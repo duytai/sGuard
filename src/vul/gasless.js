@@ -9,12 +9,12 @@ class Gasless extends Oracle {
     const ret = []
     const pcs = new Set()
     this.endPoints.forEach(({ ep }) => {
-      const f = ep.find(({ opcode: { name }, stack }) => {
+      const founds = ep.filter(({ opcode: { name }, stack }) => {
         if (name != 'CALL') return false
         const gas = stack.last()
         switch (gas[0]) {
           case 'const': {
-            return gas[1].eq(new BN(0x8fc))
+            return gas[1].eq(new BN(0x8fc)) || gas[1].isZero()
           }
           case 'symbol': {
             const [_, name, left, right] = gas
@@ -24,10 +24,12 @@ class Gasless extends Oracle {
           }
         }
       })
-      if (f && !pcs.has(f.pc)) {
-        ret.push(Analyzer.fakeNode('CALL', f.pc))
-        pcs.add(f.pc)
-      }
+      founds.forEach(f => {
+        if (!pcs.has(f.pc)) {
+          ret.push(Analyzer.fakeNode('CALL', f.pc))
+          pcs.add(f.pc)
+        }
+      })
     })
     return ret
   }

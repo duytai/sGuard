@@ -5,6 +5,7 @@ const Block = require('./block')
 const Int = require('./int')
 const Freezing = require('./freezing')
 const Gasless = require('./gasless')
+const Delegate = require('./delegate')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
@@ -17,6 +18,7 @@ class Vul {
       integer: Int, 
       freezing: Freezing,
       gasless: Gasless,
+      delegate: Delegate,
     }
   }
 
