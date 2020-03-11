@@ -4,6 +4,7 @@ const chalk = require('chalk')
 const Block = require('./block')
 const Int = require('./int')
 const Freezing = require('./freezing')
+const Gasless = require('./gasless')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
@@ -15,6 +16,7 @@ class Vul {
       number: Block,
       integer: Int, 
       freezing: Freezing,
+      gasless: Gasless,
     }
   }
 
