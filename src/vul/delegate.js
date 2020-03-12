@@ -6,19 +6,10 @@ const Oracle = require('./oracle')
 
 class Delegate extends Oracle {
   startFinding() {
-    return []
-    const ret = []
-    const pcs = new Set()
-    this.endPoints.forEach(({ ep }) => {
-      const founds = ep.filter(({ opcode: { name } }) => name == 'DELEGATECALL')
-      founds.forEach(f => {
-        if (!pcs.has(f.pc)) {
-          ret.push(Analyzer.fakeNode('DELEGATECALL', f.pc))
-          pcs.add(f.pc)
-        }
-      })
+    const dnodes = this.dictionary.findBuilds(['DELEGATECALL/ADDRESS'])
+    return this.dictionary.treeSearch(dnodes, (me) => {
+      return /CALLDATALOAD\([^0]+/.test(formatSymbol(me))
     })
-    return ret
   }
 }
 

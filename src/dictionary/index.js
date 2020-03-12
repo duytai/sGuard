@@ -13,24 +13,37 @@ class Dictionary {
     endPoints.forEach(end => {
       const { ep } = end
       ep.forEach(({ opcode: { name }, stack }, idx) => {
-        if (name == 'CALL') {
-          const subEp = end.sub(idx + 1)
-          /// Send Value
-          {
-            const trackingPos = stack.size() - 3
-            const symbol = stack.get(trackingPos)
-            if (isConst(symbol) && symbol[1].isZero()) return
-            if (!builds['CALL/VALUE']) builds['CALL/VALUE'] = []
-            const register = new Register(symbol, trackingPos, subEp, endPoints)
-            builds['CALL/VALUE'].push(register.dnode)
+        switch (name) {
+          case 'CALL': {
+            const subEp = end.sub(idx + 1)
+            /// Send Value
+            {
+              const trackingPos = stack.size() - 3
+              const symbol = stack.get(trackingPos)
+              if (isConst(symbol) && symbol[1].isZero()) return
+              if (!builds['CALL/VALUE']) builds['CALL/VALUE'] = []
+              const register = new Register(symbol, trackingPos, subEp, endPoints)
+              builds['CALL/VALUE'].push(register.dnode)
+            }
+            /// Send address
+            {
+              const trackingPos = stack.size() - 2
+              const symbol = stack.get(trackingPos)
+              const register = new Register(symbol, trackingPos, subEp, endPoints)
+              if (!builds['CALL/ADDRESS']) builds['CALL/ADDRESS'] = []
+              builds['CALL/ADDRESS'].push(register.dnode)
+            }
+            break
           }
-          /// Send address
-          {
+          case 'DELEGATECALL': {
+            const subEp = end.sub(idx + 1)
+            // Send address
             const trackingPos = stack.size() - 2
             const symbol = stack.get(trackingPos)
             const register = new Register(symbol, trackingPos, subEp, endPoints)
-            if (!builds['CALL/ADDRESS']) builds['CALL/ADDRESS'] = []
-            builds['CALL/ADDRESS'].push(register.dnode)
+            if (!builds['DELEGATECALL/ADDRESS']) builds['DELEGATECALL/ADDRESS'] = []
+            builds['DELEGATECALL/ADDRESS'].push(register.dnode)
+            break
           }
         }
       })
@@ -46,7 +59,7 @@ class Dictionary {
   }
 
   treeSearch(stack, cond) {
-    assert(stack.length > 0 && cond)
+    assert(stack && cond)
     const ret = []
     while (stack.length) {
       const dnode = stack.pop()

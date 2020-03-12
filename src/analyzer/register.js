@@ -7,9 +7,10 @@ const { StateVariable, LocalVariable } = require('../variable')
 
 class Register {
   constructor(symbol, trackingPos, ep, endPoints, visited = []) {
-    visited.push(this.toVisitedKey(trackingPos, ep.last().pc, symbol))
+    const id = this.toVisitedKey(trackingPos, ep.last().pc, symbol)
+    visited.push(id)
     this.trackingPos = trackingPos
-    this.dnode = new DNode(symbol, ep.last().pc)
+    this.dnode = new DNode(symbol, ep.last().pc, id)
     this.ep = ep
     this.endPoints = endPoints
     this.internalAnalysis(symbol, this.dnode, visited)
@@ -72,7 +73,8 @@ class Register {
       default: {
         const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
         symbols.forEach(symbol => {
-          const subNode = new DNode(symbol, this.ep.last().pc)
+          const id = this.toVisitedKey(this.trackingPos, this.ep.last().pc, symbol)
+          const subNode = new DNode(symbol, this.ep.last().pc, id)
           this.internalAnalysis(symbol, subNode, visited)
           dnode.addChild(subNode)
           subNode.addParent(dnode)

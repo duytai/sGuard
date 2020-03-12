@@ -8,9 +8,9 @@ const {
 } = require('../shared')
 
 class DNode {
-  constructor(symbol, pc) {
-    assert(symbol && pc >= 0)
-    this.node = { me: symbol, pc, childs: [], alias: 'N/A', variable: null, parent: null }
+  constructor(symbol, pc, id) {
+    assert(symbol && pc >= 0 && id)
+    this.node = { id, me: symbol, pc, childs: [], alias: 'N/A', variable: null, parent: null }
   }
 
   addChild(child) {
