@@ -28,8 +28,7 @@ class Disorder extends Oracle {
         const dnode = loopStack.pop()
         const { node: { me, childs } } = dnode
         const txt = formatSymbol(me)
-        const idxs = founds.map(({ found: f }, idx) => txt.includes(f) ? idx : -1)
-        founds = founds.filter((f, idx) => !idxs.includes(idx))
+        founds = founds.filter((f, idx) => txt.includes(f))
         childs.forEach(child => loopStack.push(child))
       }
     })
