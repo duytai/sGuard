@@ -35,6 +35,10 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
   const { endPoints, coverage } = evm.start()
+  logger.info(`----------------------------------------------`)
+  logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+  logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
+  logger.info(`----------------------------------------------`)
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
@@ -43,8 +47,4 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     const vul = new Vul(dictionary)
     vul.report(vulnames, srcmap)
   }
-  logger.info(`----------------------------------------------`)
-  logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
-  logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
-  logger.info(`----------------------------------------------`)
 })

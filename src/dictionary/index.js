@@ -114,10 +114,11 @@ class Dictionary {
         if (idx == 3) this.props.payable = this.props.payable && name == 'PUSH'
       })
       /// Build register for last pc of EP 
-      const { stack, pc } = ep[ep.length - 1]
-      const symbol = stack.last()
-      const trackingPos = stack.size() - 1
-      this.addToBuild('EP/LAST', { symbol, trackingPos, subEp: end, pc })
+      // TODO: open later
+      // const { stack, pc } = ep[ep.length - 1]
+      // const symbol = stack.last()
+      // const trackingPos = stack.size() - 1
+      // this.addToBuild('EP/LAST', { symbol, trackingPos, subEp: end, pc })
     })
   }
 
