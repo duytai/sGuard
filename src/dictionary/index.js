@@ -1,8 +1,8 @@
 const assert = require('assert')
 const BN = require('bn.js')
-const { uniqBy } = require('lodash')
+const { uniqBy, forEach } = require('lodash')
 const { Register } = require('../analyzer')
-const { isConst } = require('../shared')
+const { isConst, formatSymbol } = require('../shared')
 
 class Dictionary {
   constructor(endPoints) {
@@ -14,18 +14,25 @@ class Dictionary {
     }
     this.visited = []
     this.builds = {}
+    this.findBuildById = {}
     this.prebuild()
   }
 
-  toVisitedKey(trackingPos, pc, cond) {
+  toId(trackingPos, pc, cond) {
     assert(pc && cond && trackingPos >= 0)
     return `${trackingPos}:${pc}:${formatSymbol(cond)}`
   }
 
-  addToBuild(key, { symbol, trackingPos, subEp }) {
+  addToBuild(key, { symbol, trackingPos, subEp, pc }) {
     if (!this.builds[key]) this.builds[key] = []
-    const register = new Register(symbol, trackingPos, subEp, this.endPoints)
-    this.builds[key].push(register.dnode)
+    const id = this.toId(trackingPos, pc, symbol)
+    if (this.findBuildById[id]) {
+      this.builds[key].push(this.findBuildById[id])
+    } else {
+      const register = new Register(symbol, trackingPos, subEp, this.endPoints)
+      this.builds[key].push(register.dnode)
+      this.findBuildById[id] = register.dnode
+    }
   }
 
 
@@ -33,7 +40,7 @@ class Dictionary {
     this.endPoints.forEach(end => {
       const { ep } = end
       const flags = []
-      ep.forEach(({ opcode: { name }, stack }, idx) => {
+      ep.forEach(({ opcode: { name }, stack, pc }, idx) => {
         switch (name) {
           case 'CALL': {
             const subEp = end.sub(idx + 1)
@@ -42,13 +49,19 @@ class Dictionary {
               const trackingPos = stack.size() - 3
               const symbol = stack.get(trackingPos)
               if (isConst(symbol) && symbol[1].isZero()) return
-              this.addToBuild('CALL/VALUE', { symbol, trackingPos, subEp })
+              this.addToBuild('CALL/VALUE', { symbol, trackingPos, subEp, pc })
+              if (isSend) {
+                this.addToBuild('SEND/VALUE', { symbol, trackingPos, subEp, pc })
+              }
             }
             /// Send address
             {
               const trackingPos = stack.size() - 2
               const symbol = stack.get(trackingPos)
-              this.addToBuild('CALL/ADDRESS', { symbol, trackingPos, subEp })
+              this.addToBuild('CALL/ADDRESS', { symbol, trackingPos, subEp, pc })
+              if (isSend) {
+                this.addToBuild('SEND/ADDRESS', { symbol, trackingPos, subEp, pc })
+              }
             }
             break
           }
@@ -58,7 +71,7 @@ class Dictionary {
             {
               const trackingPos = stack.size() - 2
               const symbol = stack.get(trackingPos)
-              this.addToBuild('DELEGATECALL/ADDRESS', { symbol, trackingPos, subEp })
+              this.addToBuild('DELEGATECALL/ADDRESS', { symbol, trackingPos, subEp, pc })
             }
             break
           }
