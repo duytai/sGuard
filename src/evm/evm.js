@@ -486,7 +486,8 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
+          const id = ['const', new BN(pc)]
+          stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength, id])
           break
         }
         case 'CALLCODE':
@@ -501,7 +502,8 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
+          const id = ['const', new BN(pc)]
+          stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength, id])
           break
         }
         case 'RETURNDATACOPY': {
