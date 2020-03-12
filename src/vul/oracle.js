@@ -1,9 +1,8 @@
 const assert = require('assert')
 
 class Oracle {
-  constructor(dnode, endPoints) {
-    assert(dnode && endPoints)
-    this.dnode = dnode 
+  constructor(endPoints) {
+    assert(endPoints)
     this.endPoints = endPoints
   }
 

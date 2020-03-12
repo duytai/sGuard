@@ -5,6 +5,7 @@ const { findSymbol, prettify } = require('../shared')
 
 class Freezing extends Oracle {
   startFinding() {
+    return []
     const ret = []
     const foundTransfer = !!this.endPoints.find(({ ep }) => {
       return !!ep.find(({ opcode: { name } }) => ['CALL', 'DELEGATECALL', 'CALLCODE'].includes(name))

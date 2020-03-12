@@ -1,52 +1,12 @@
 const assert = require('assert')
 const Register = require('./register')
 const DNode = require('./dnode')
-const { prettify, isConst } = require('../shared')
+const Condition = require('./condition')
+const StackVar = require('./stackvar')
 
-class Analyzer {
-  constructor(ep, endPoints) {
-    const { opcode: { name } } = ep.last()
-    this.registers = []
-    switch (name) {
-      case 'CALL': {
-        // value in .call
-        {
-          const trackingPos = ep.stack.size() - 3
-          const symbol = ep.stack.get(trackingPos)
-          if (isConst(symbol) && symbol[1].isZero())  return
-          const register = new Register(symbol, trackingPos, ep, endPoints)
-          this.registers.push(register)
-        }
-        // address in .call
-        {
-          // const trackingPos = ep.stack.size() - 2
-          // const symbol = ep.stack.get(trackingPos)
-          // const register = new Register(symbol, trackingPos, ep, endPoints)
-          // this.registers.push(register)
-        }
-        break
-      }
-      default: {
-        assert(false, `dont know ${name}`)
-      }
-    }
-  }
-
-  static fakeNode(name = 'Fake', pc = 0) {
-    return new DNode(['symbol', name], pc)
-  }
-
-  prettify(srcmap) {
-    const root = new DNode(['symbol', 'ROOT'], 0)
-    root.node.childs = this.registers.map(r => r.dnode)
-    root.prettify(0, srcmap)
-  }
-
-  getdnode() {
-    const root = new DNode(['symbol', 'ROOT'], 0)
-    root.node.childs = this.registers.map(r => r.dnode)
-    return root
-  }
+module.exports = {
+  DNode,
+  Condition,
+  Register,
+  StackVar,
 }
-
-module.exports = Analyzer

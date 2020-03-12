@@ -7,6 +7,7 @@ const Register = require('../analyzer/register')
 
 class Disorder extends Oracle {
   startFinding() {
+    return []
     let founds = []
     this.endPoints.forEach(({ ep }) => {
       for (let i = 0; i < ep.length; i++) {

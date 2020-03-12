@@ -4,6 +4,7 @@ const Oracle = require('./oracle')
 
 class Block extends Oracle {
   startFinding() {
+    return []
     const ret = []
     const stack = [this.dnode]
     while (stack.length) {

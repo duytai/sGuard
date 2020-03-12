@@ -33,26 +33,15 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
-  const { checkPoints, endPoints, coverage } = evm.start()
+  const { endPoints, coverage } = evm.start()
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
-    if (!checkPoints.length) {
-      const vul = new Vul(Analyzer.fakeNode(), endPoints)
-      vul.report(vulnames, srcmap)
-    }
-    checkPoints.forEach(ep => {
-      const analyzer = new Analyzer(ep, endPoints)
-      const dnode = analyzer.getdnode()
-      const vul = new Vul(dnode, endPoints)
-      ep.showTrace(srcmap)
-      analyzer.prettify(srcmap)
-      vul.report(vulnames, srcmap)
-    })
+    const vul = new Vul(endPoints)
+    vul.report(vulnames, srcmap)
   }
   logger.info(`----------------------------------------------`)
-  logger.info(`|\tCheckpoints: ${gb(checkPoints.length)}`)
   logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
   logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
   logger.info(`----------------------------------------------`)

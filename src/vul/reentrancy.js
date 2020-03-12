@@ -6,6 +6,7 @@ const Oracle = require('./oracle')
 
 class Reentrancy extends Oracle {
   startFinding() {
+    return []
     const ret = []
     this.endPoints.forEach(({ ep }) => {
       let calls = []

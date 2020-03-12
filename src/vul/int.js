@@ -4,6 +4,7 @@ const { findSymbol, prettify } = require('../shared')
 
 class Int extends Oracle {
   startFinding() {
+    return []
     const ret = []
     const stack = [this.dnode]
     const sos = ['ADD', 'SUB', 'MUL', 'POW']

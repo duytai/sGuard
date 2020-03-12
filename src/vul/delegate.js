@@ -6,6 +6,7 @@ const Oracle = require('./oracle')
 
 class Delegate extends Oracle {
   startFinding() {
+    return []
     const ret = []
     const pcs = new Set()
     this.endPoints.forEach(({ ep }) => {

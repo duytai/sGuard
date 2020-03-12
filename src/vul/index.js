@@ -11,9 +11,8 @@ const Disorder = require('./disorder')
 const { logger, formatSymbol } = require('../shared')
 
 class Vul {
-  constructor(dnode, endPoints) {
-    assert(dnode && endPoints)
-    this.dnode = dnode
+  constructor(endPoints) {
+    assert(endPoints)
     this.endPoints = endPoints
     this.oracles = {
       number: Block,
@@ -30,7 +29,7 @@ class Vul {
     const supports = Object.keys(this.oracles)
     assert(union(supports, names).length == supports.length)
     const founds = names
-      .map(name => new this.oracles[name](this.dnode, this.endPoints))
+      .map(name => new this.oracles[name](this.endPoints))
       .map((o, idx) => ({ name: names[idx], dnodes: o.startFinding() }))
     const c = chalk.green.bold
     const d = chalk.dim.italic

@@ -6,6 +6,7 @@ const Oracle = require('./oracle')
 
 class Gasless extends Oracle {
   startFinding() {
+    return []
     const ret = []
     this.endPoints.forEach(({ ep }) => {
       const founds = ep.filter(({ opcode: { name }, stack }) => {

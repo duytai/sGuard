@@ -30,7 +30,6 @@ assert(
 class Evm {
   constructor(bin) {
     this.bin = bin
-    this.checkPoints = []
     this.endPoints = []
     this.decoder = new Decoder(bin)
     this.jumpis = new Set()
@@ -40,7 +39,6 @@ class Evm {
     const { njumpis } = this.decoder.summarize()
     let mvb = parseInt(maxVisitedBlock)
     while (true) {
-      this.checkPoints.length = 0
       this.endPoints.length = 0
       this.jumpis.clear()
       const ep = new Ep(mvb)
@@ -52,7 +50,6 @@ class Evm {
         logger.error(`reach maxVisitedBlock ${maxVisitedBlockBound} but can not find any checkpoints`)
       }
       return {
-        checkPoints: this.checkPoints,
         endPoints: this.endPoints,
         coverage: !njumpis ? 100 : Math.floor(this.jumpis.size / njumpis * 100),
       }
@@ -486,13 +483,11 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          const id = ['const', new BN(pc)]
-          stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength, id])
+          stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
           break
         }
         case 'CALLCODE':
         case 'CALL': {
-          this.checkPoints.push(ep.clone())
           const [
             gasLimit,
             toAddress,
@@ -502,8 +497,7 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          const id = ['const', new BN(pc)]
-          stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength, id])
+          stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
         case 'RETURNDATACOPY': {
