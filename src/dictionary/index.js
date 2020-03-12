@@ -1,8 +1,8 @@
 const assert = require('assert')
 const BN = require('bn.js')
 const { uniqBy, forEach } = require('lodash')
-const { Register } = require('../analyzer')
-const { isConst, formatSymbol } = require('../shared')
+const { Register, DNode } = require('../analyzer')
+const { isConst, formatSymbol, prettify } = require('../shared')
 
 class Dictionary {
   constructor(endPoints) {
@@ -11,6 +11,7 @@ class Dictionary {
     this.props = {
       transfer: false,
       payable: true,
+      reentrancy: false,
     }
     this.visited = []
     this.builds = {}
@@ -21,6 +22,17 @@ class Dictionary {
   toId(trackingPos, pc, cond) {
     assert(pc && cond && trackingPos >= 0)
     return `${trackingPos}:${pc}:${formatSymbol(cond)}`
+  }
+
+  addToBuildDirectly(key, dnode) {
+    if (!this.builds[key]) this.builds[key] = []
+    const { id } = dnode.node
+    if (this.findBuildById[id]) {
+      this.builds[key].push(this.findBuildById[id])
+    } else {
+      this.builds[key].push(dnode)
+      this.findBuildById[id] = dnode
+    }
   }
 
   addToBuild(key, { symbol, trackingPos, subEp, pc }) {
@@ -40,6 +52,7 @@ class Dictionary {
     this.endPoints.forEach(end => {
       const { ep } = end
       const flags = []
+      const subProp = { call: false }
       ep.forEach(({ opcode: { name }, stack, pc }, idx) => {
         switch (name) {
           case 'CALL': {
@@ -63,6 +76,7 @@ class Dictionary {
                 this.addToBuild('SEND/ADDRESS', { symbol, trackingPos, subEp, pc })
               }
             }
+            subProp.call = true
             break
           }
           case 'DELEGATECALL': {
@@ -72,6 +86,18 @@ class Dictionary {
               const trackingPos = stack.size() - 2
               const symbol = stack.get(trackingPos)
               this.addToBuild('DELEGATECALL/ADDRESS', { symbol, trackingPos, subEp, pc })
+            }
+            break
+          }
+          case 'SSTORE': {
+            if (subProp.call) {
+              const x = stack.get(stack.size() - 1)
+              const y = stack.get(stack.size() - 2)
+              const symbol = ['symbol', 'SSTORE', x, y]
+              const trackingPos = stack.size() - 1
+              const id = this.toId(trackingPos, pc, symbol)
+              const dnode = new DNode(symbol, pc, id)
+              this.addToBuildDirectly('CALL/SSTORE', dnode)
             }
             break
           }
