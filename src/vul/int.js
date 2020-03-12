@@ -1,21 +1,14 @@
 const assert = require('assert')
 const Oracle = require('./oracle')
-const { findSymbol, prettify } = require('../shared')
+const { formatSymbol } = require('../shared')
 
 class Int extends Oracle {
   startFinding() {
-    return []
-    const ret = []
-    const stack = [this.dnode]
-    const sos = ['ADD', 'SUB', 'MUL', 'POW']
-    while (stack.length) {
-      const dnode = stack.pop()
-      const { node: { me, childs } } = dnode
-      const symbols = findSymbol(me, ([type, name]) => sos.includes(name))
-      if (symbols.length > 0) ret.push(dnode)
-      childs.forEach(child => stack.push(child))
-    }
-    return ret
+    const dnodes = this.dictionary.findBuilds(['CALL/VALUE', 'CALL/ADDRESS'])
+    return this.dictionary.treeSearch(dnodes, (me) => {
+      const txt = formatSymbol(me)
+      return !!['ADD', 'SUB', 'MUL', 'POW'].find(x => txt.includes(x))
+    })
   }
 }
 
