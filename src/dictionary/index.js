@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { uniqBy } = require('lodash')
 const { Register } = require('../analyzer')
 const { isConst } = require('../shared')
 
@@ -67,7 +68,7 @@ class Dictionary {
       if (cond(me)) ret.push(dnode)
       childs.forEach(child => stack.push(child))
     }
-    return ret
+    return uniqBy(ret, ({ node: { id }}) => id)
   }
 
 }
