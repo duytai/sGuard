@@ -6,13 +6,21 @@ const { isConst } = require('../shared')
 class Dictionary {
   constructor(endPoints) {
     assert(endPoints)
-    this.builds = this.prebuild(endPoints)
+    this.endPoints = endPoints
+    this.props = {
+      transfer: false,
+      payable: true,
+    }
+    this.hasTransfer = false
+    this.hasPayable = false
+    this.builds = this.prebuild()
   }
 
-  prebuild(endPoints) {
+  prebuild() {
     const builds = {}
-    endPoints.forEach(end => {
+    this.endPoints.forEach(end => {
       const { ep } = end
+      const flags = []
       ep.forEach(({ opcode: { name }, stack }, idx) => {
         switch (name) {
           case 'CALL': {
@@ -23,14 +31,14 @@ class Dictionary {
               const symbol = stack.get(trackingPos)
               if (isConst(symbol) && symbol[1].isZero()) return
               if (!builds['CALL/VALUE']) builds['CALL/VALUE'] = []
-              const register = new Register(symbol, trackingPos, subEp, endPoints)
+              const register = new Register(symbol, trackingPos, subEp, this.endPoints)
               builds['CALL/VALUE'].push(register.dnode)
             }
             /// Send address
             {
               const trackingPos = stack.size() - 2
               const symbol = stack.get(trackingPos)
-              const register = new Register(symbol, trackingPos, subEp, endPoints)
+              const register = new Register(symbol, trackingPos, subEp, this.endPoints)
               if (!builds['CALL/ADDRESS']) builds['CALL/ADDRESS'] = []
               builds['CALL/ADDRESS'].push(register.dnode)
             }
@@ -41,12 +49,14 @@ class Dictionary {
             // Send address
             const trackingPos = stack.size() - 2
             const symbol = stack.get(trackingPos)
-            const register = new Register(symbol, trackingPos, subEp, endPoints)
+            const register = new Register(symbol, trackingPos, subEp, this.endPoints)
             if (!builds['DELEGATECALL/ADDRESS']) builds['DELEGATECALL/ADDRESS'] = []
             builds['DELEGATECALL/ADDRESS'].push(register.dnode)
             break
           }
         }
+        this.props.transfer = this.props.transfer || ['CALL', 'DELEGATECALL', 'CALLCODE'].includes(name)
+        if (idx == 3) this.props.payable = this.props.payable && name == 'PUSH'
       })
     })
     return builds
