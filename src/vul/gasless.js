@@ -11,8 +11,8 @@ class Gasless extends Oracle {
     this.endPoints.forEach(({ ep }) => {
       const founds = ep.filter(({ opcode: { name }, stack }) => {
         if (name != 'CALL') return false
-        const gas = stack.last()
-        switch (gas[0]) {
+          const gas = stack.last()
+          switch (gas[0]) {
           case 'const': {
             return gas[1].eq(new BN(0x8fc)) || gas[1].isZero()
           }
