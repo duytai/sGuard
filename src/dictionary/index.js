@@ -76,6 +76,14 @@ class Dictionary {
                 this.addToBuild('SEND/ADDRESS', { symbol, trackingPos, subEp, pc })
               }
             }
+            {
+              const { stack, pc } = ep[idx + 1]
+              const trackingPos = stack.size() - 1
+              const symbol = stack.get(trackingPos)
+              const id = this.toId(trackingPos, pc, symbol)
+              const dnode = new DNode(symbol, pc, id)
+              this.addToBuildDirectly('EP/CALL', dnode)
+            }
             subProp.call = true
             break
           }
@@ -105,6 +113,11 @@ class Dictionary {
         this.props.transfer = this.props.transfer || ['CALL', 'DELEGATECALL', 'CALLCODE'].includes(name)
         if (idx == 3) this.props.payable = this.props.payable && name == 'PUSH'
       })
+      /// Build register for last pc of EP 
+      const { stack, pc } = ep[ep.length - 1]
+      const symbol = stack.last()
+      const trackingPos = stack.size() - 1
+      this.addToBuild('EP/LAST', { symbol, trackingPos, subEp: end, pc })
     })
   }
 

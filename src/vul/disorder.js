@@ -1,4 +1,5 @@
 const assert = require('assert')
+const { uniqBy } = require('lodash')
 const { formatSymbol } = require('../shared')
 const Oracle = require('./oracle')
 const Analyzer = require('../analyzer')
@@ -7,33 +8,17 @@ const Register = require('../analyzer/register')
 
 class Disorder extends Oracle {
   startFinding() {
-    return []
-    let founds = []
-    this.endPoints.forEach(({ ep }) => {
-      for (let i = 0; i < ep.length; i++) {
-        const { opcode: { name }, pc } = ep[i]
-        if (name == 'CALL') {
-          const found = formatSymbol(ep[i + 1].stack.last())
-          if (!founds.find(({ found: f }) => f == found)) {
-            founds.push({ found, pc })
-          }
-        }
-      }
+    const foundCalls = uniqBy(this.dictionary.findBuilds(['EP/CALL']),({ node: { id }}) => id)
+    const calls = foundCalls.map(({ node: { me } }) => formatSymbol(me))
+    const dnodes = this.dictionary.findBuilds(['EP/LAST'])
+    const usedCalls = this.dictionary.treeSearch(dnodes,
+      (me) => calls.find(call => formatSymbol(me).includes(call))
+    ).map(({ node: { me }}) => formatSymbol(me))
+
+    return foundCalls.filter(dnode => {
+      const call = formatSymbol(dnode.node.me)
+      return !usedCalls.find(usedCall => usedCall.includes(call))
     })
-    this.endPoints.forEach(end => {
-      const { ep } = end
-      const { stack } = ep[ep.length - 1]
-      const register = new Register(stack.last(), stack.size() - 1, end, this.endPoints)
-      const loopStack = [register.dnode]
-      while (loopStack.length) {
-        const dnode = loopStack.pop()
-        const { node: { me, childs } } = dnode
-        const txt = formatSymbol(me)
-        founds = founds.filter(({ found: f }) => !txt.includes(f))
-        childs.forEach(child => loopStack.push(child))
-      }
-    })
-    return founds.map(({ pc }) => Analyzer.fakeNode('CALL', pc))
   }
 }
 
