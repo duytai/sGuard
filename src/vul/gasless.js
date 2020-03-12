@@ -7,7 +7,6 @@ const Oracle = require('./oracle')
 class Gasless extends Oracle {
   startFinding() {
     const ret = []
-    const pcs = new Set()
     this.endPoints.forEach(({ ep }) => {
       const founds = ep.filter(({ opcode: { name }, stack }) => {
         if (name != 'CALL') return false
@@ -25,13 +24,12 @@ class Gasless extends Oracle {
         }
       })
       founds.forEach(f => {
-        if (!pcs.has(f.pc)) {
-          ret.push(Analyzer.fakeNode('CALL', f.pc))
-          pcs.add(f.pc)
+        if (!ret.find(({ pc }) => pc == f.pc)) {
+          ret.push({ dnode: Analyzer.fakeNode('CALL', f.pc), pc: f.pc })
         }
       })
     })
-    return ret
+    return ret.map(({ dnode }) => dnode)
   }
 }
 
