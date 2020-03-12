@@ -1,19 +1,28 @@
 const assert = require('assert')
-const { formatSymbol } = require('../shared')
+const { formatSymbol, isConst } = require('../shared')
+const { Register } = require('../analyzer')
 const Oracle = require('./oracle')
 
 class Block extends Oracle {
   startFinding() {
-    return []
-    const ret = []
-    const stack = [this.dnode]
-    while (stack.length) {
-      const dnode = stack.pop()
-      const { node: { me, childs } } = dnode
-      const txt = formatSymbol(me)
-      if (txt.includes('NUMBER') || txt.includes('TIMESTAMP')) ret.push(dnode)
-      childs.forEach(child => stack.push(child))
-    }
+    let ret = []
+    this.endPoints.forEach(end => {
+      const { ep } = end
+      ep.forEach(({ opcode: { name }, stack }, idx) => {
+        if (name == 'CALL') {
+          const trackingPos = stack.size() - 3
+          const symbol = stack.get(trackingPos)
+          if (isConst(symbol) && symbol[1].isZero()) return
+          const subEp = end.sub(idx + 1)
+          const register = new Register(symbol, trackingPos, subEp, this.endPoints)
+          const founds = this.treeSearch([register.dnode], (me) => {
+            const txt = formatSymbol(me)
+            return txt.includes('NUMBER') || txt.includes('TIMESTAMP')
+          })
+          ret = [...ret, ...founds]
+        }
+      })
+    })
     return ret
   }
 }
