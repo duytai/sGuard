@@ -1,5 +1,6 @@
 const { uniq } = require('lodash')
 const assert = require('assert')
+const { toSId } = require('../shared')
 
 class StackVar {
   constructor(ep) {
@@ -7,11 +8,6 @@ class StackVar {
     this.ep = ep
     this.assignmentPcs = new Set()
     this.visited = new Set()
-  }
-
-  toVisitedKey(trackingPos, epSize) {
-    assert(trackingPos >= 0 && epSize >= 0)
-    return `${trackingPos}:${epSize}`
   }
 
   myAncestors(trackingPos) {
@@ -22,7 +18,7 @@ class StackVar {
   }
 
   whereAreAssignments(trackingPos, ep) {
-    const key = this.toVisitedKey(trackingPos, ep.size())
+    const key = toSId(trackingPos, ep.size())
     if (this.visited.has(key)) return
     this.visited.add(key)
     for (let i = ep.size() - 1; i >= 0; i--) {

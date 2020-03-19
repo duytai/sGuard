@@ -19,10 +19,16 @@ const toRId = (trackingPos, pc, cond) => {
   return `${trackingPos}:${pc}:${formatSymbol(cond)}`
 }
 
+const toSId = (trackingPos, epSize) => {
+  assert(trackingPos >= 0 && epSize >= 0)
+  return `${trackingPos}:${epSize}`
+}
+
 module.exports = {
   prettify,
   formatSymbol,
   toRId,
+  toSId,
   gb: chalk.green.bold,
 }
 
