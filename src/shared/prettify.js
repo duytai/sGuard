@@ -14,9 +14,15 @@ const prettify = (values, spaceLen = 0) => {
   values.forEach((v, idx) => logger.debug(`${space}${formatSymbol(v)}`))
 }
 
+const toRId = (trackingPos, pc, cond) => {
+  assert(pc && cond && trackingPos >= 0)
+  return `${trackingPos}:${pc}:${formatSymbol(cond)}`
+}
+
 module.exports = {
   prettify,
   formatSymbol,
+  toRId,
   gb: chalk.green.bold,
 }
 

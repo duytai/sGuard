@@ -4,9 +4,9 @@ const path = require('path')
 const shell = require('shelljs')
 const dotenv = require('dotenv')
 const { Evm } = require('./evm')
-const { logger, gb } = require('./shared')
+const { logger, gb, prettify } = require('./shared')
 const { forEach } = require('lodash')
-const Analyzer = require('./analyzer')
+const { Register } = require('./analyzer')
 const SRCMap = require('./srcmap')
 
 const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
@@ -40,9 +40,17 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
-    // const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
-    // const dictionary = new Dictionary(endPoints)
-    // const vul = new Vul(dictionary)
-    // vul.report(vulnames, srcmap)
+    endPoints.forEach(endPoint => {
+      endPoint.ep.forEach(({ opcode: { name }, stack }, idx) => {
+        if (name == 'CALL') {
+          const trackingPos = stack.size() - 3
+          const symbol = stack.get(trackingPos)
+          const subEp = endPoint.sub(idx + 1)
+          const register = new Register(symbol, trackingPos, subEp, endPoints)
+          register.dnode.prettify()
+          // assert(false)
+        }
+      })
+    })
   }
 })

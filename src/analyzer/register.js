@@ -2,12 +2,18 @@ const assert = require('assert')
 const DNode = require('./dnode')
 const Condition = require('./condition') 
 const StackVar = require('./stackvar')
-const { logger, prettify, findSymbol, formatSymbol } = require('../shared')
+const {
+  logger,
+  prettify,
+  findSymbol,
+  formatSymbol,
+  toRId,
+} = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 
 class Register {
   constructor(symbol, trackingPos, ep, endPoints, visited = []) {
-    const id = this.toVisitedKey(trackingPos, ep.last().pc, symbol)
+    const id = toRId(trackingPos, ep.last().pc, symbol)
     visited.push(id)
     this.trackingPos = trackingPos
     this.dnode = new DNode(symbol, ep.last().pc, id)
@@ -16,11 +22,6 @@ class Register {
     this.internalAnalysis(symbol, this.dnode, visited)
     this.conditionAnalysis(symbol, this.dnode, visited)
     this.crossfunctionAnalysis(symbol, this.dnode, visited)
-  }
-
-  toVisitedKey(trackingPos, pc, cond) {
-    assert(pc && cond && trackingPos >= 0)
-    return `${trackingPos}:${pc}:${formatSymbol(cond)}`
   }
 
   internalAnalysis(symbol, dnode, visited) {
@@ -34,12 +35,12 @@ class Register {
         dnode.node.alias = localVariable.toAlias()
         subEp.eachLocalVariable(({ variable: otherVariable, subEp, storedLoc, storedValue, kTrackingPos, vTrackingPos }) => {
           if (localVariable.eq(otherVariable)) {
-            if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
+            if (!visited.includes(toRId(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
             }
-            if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
+            if (!visited.includes(toRId(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
@@ -56,12 +57,12 @@ class Register {
         dnode.node.alias = stateVariable.toAlias()
         subEp.eachStateVariable(({ variable: otherVariable, subEp, storedLoc, storedValue, kTrackingPos, vTrackingPos }) => {
           if (stateVariable.eq(otherVariable)) {
-            if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
+            if (!visited.includes(toRId(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
             }
-            if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
+            if (!visited.includes(toRId(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
@@ -73,7 +74,7 @@ class Register {
       default: {
         const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
         symbols.forEach(symbol => {
-          const id = this.toVisitedKey(this.trackingPos, this.ep.last().pc, symbol)
+          const id = toRId(this.trackingPos, this.ep.last().pc, symbol)
           const subNode = new DNode(symbol, this.ep.last().pc, id)
           this.internalAnalysis(symbol, subNode, visited)
           dnode.addChild(subNode)
@@ -93,7 +94,7 @@ class Register {
     conds.forEach(({ pc, cond, epIdx, trackingPos }) => {
       const subEp = this.ep.sub(epIdx + 1)
       assert(subEp.last().pc == pc)
-      if (!visited.includes(this.toVisitedKey(trackingPos, subEp.last().pc, cond))) {
+      if (!visited.includes(toRId(trackingPos, subEp.last().pc, cond))) {
         const subRegister = new Register(cond, trackingPos, subEp, this.endPoints, visited)
         dnode.addChild(subRegister.dnode)
         subRegister.dnode.addParent(dnode)
@@ -108,12 +109,12 @@ class Register {
       this.endPoints.forEach(ep => {
         ep.eachStateVariable(({ variable: otherVariable, subEp, storedLoc, storedValue, kTrackingPos, vTrackingPos }) => {
           if (stateVariable.eq(otherVariable)) {
-            if (!visited.includes(this.toVisitedKey(vTrackingPos, subEp.last().pc, storedValue))) {
+            if (!visited.includes(toRId(vTrackingPos, subEp.last().pc, storedValue))) {
               const subRegister = new Register(storedValue, vTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
             }
-            if (!visited.includes(this.toVisitedKey(kTrackingPos, subEp.last().pc, storedLoc))) {
+            if (!visited.includes(toRId(kTrackingPos, subEp.last().pc, storedLoc))) {
               const subRegister = new Register(storedLoc, kTrackingPos, subEp, this.endPoints, visited)
               dnode.addChild(subRegister.dnode)
               subRegister.dnode.addParent(dnode)
