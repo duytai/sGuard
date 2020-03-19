@@ -8,8 +8,6 @@ const { logger, gb } = require('./shared')
 const { forEach } = require('lodash')
 const Analyzer = require('./analyzer')
 const SRCMap = require('./srcmap')
-const Dictionary = require('./dictionary')
-const Vul = require('./vul')
 
 const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
 assert(contract, 'require contract in .env')
@@ -42,9 +40,9 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
-    const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
-    const dictionary = new Dictionary(endPoints)
-    const vul = new Vul(dictionary)
-    vul.report(vulnames, srcmap)
+    // const vulnames = vulnerabilities ? JSON.parse(vulnerabilities) : []
+    // const dictionary = new Dictionary(endPoints)
+    // const vul = new Vul(dictionary)
+    // vul.report(vulnames, srcmap)
   }
 })
