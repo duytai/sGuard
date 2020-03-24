@@ -1,6 +1,5 @@
 const assert = require('assert')
 const DNode = require('./dnode')
-const Condition = require('./condition') 
 const StackVar = require('./stackvar')
 const {
   logger,
@@ -20,8 +19,8 @@ class Register {
     this.ep = ep
     this.endPoints = endPoints
     this.internalAnalysis(symbol, this.dnode, visited)
-    this.conditionAnalysis(symbol, this.dnode, visited)
-    this.crossfunctionAnalysis(symbol, this.dnode, visited)
+    // this.conditionAnalysis(symbol, this.dnode, visited)
+    // this.crossfunctionAnalysis(symbol, this.dnode, visited)
   }
 
   internalAnalysis(symbol, dnode, visited) {

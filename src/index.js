@@ -6,7 +6,7 @@ const dotenv = require('dotenv')
 const { Evm } = require('./evm')
 const { logger, gb, prettify } = require('./shared')
 const { forEach } = require('lodash')
-const { Register } = require('./analyzer')
+const { Register, Condition } = require('./analyzer')
 const SRCMap = require('./srcmap')
 
 const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
@@ -40,17 +40,18 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   if (conversion) {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
-    endPoints.forEach(endPoint => {
-      endPoint.ep.forEach(({ opcode: { name }, stack }, idx) => {
-        if (name == 'CALL') {
-          const trackingPos = stack.size() - 3
-          const symbol = stack.get(trackingPos)
-          const subEp = endPoint.sub(idx + 1)
-          const register = new Register(symbol, trackingPos, subEp, endPoints)
-          register.dnode.prettify()
-          // assert(false)
-        }
-      })
-    })
+    const condition = new Condition(endPoints)
+    const outs = condition.findConditions(1786)
+    // endPoints.forEach(endPoint => {
+      // endPoint.ep.forEach(({ opcode: { name }, stack }, idx) => {
+        // if (name == 'CALL') {
+          // const trackingPos = stack.size() - 3
+          // const symbol = stack.get(trackingPos)
+          // const subEp = endPoint.sub(idx + 1)
+          // const register = new Register(symbol, trackingPos, subEp, endPoints)
+          // register.dnode.prettify()
+        // }
+      // })
+    // })
   }
 })
