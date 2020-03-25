@@ -19,7 +19,9 @@ class Condition {
     endPoints.forEach(({ ep }) => {
       const jumpis = [
         { pc: this.start },
-        ...ep.filter(({ opcode: { name } }) => name == 'JUMPI'),
+        ...ep.filter(({ opcode: { name } }, idx) => {
+          return name == 'JUMPI' || idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI'
+        }),
         { pc: this.end }
       ]
       jumpis.slice(1).forEach(({ pc: to }, idx) => {
@@ -110,6 +112,7 @@ class Condition {
       }
       this.fullControls[visited.shift()] = visited
     }
+    console.log(this.fullControls)
   }
 }
 
