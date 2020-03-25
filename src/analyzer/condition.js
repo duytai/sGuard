@@ -1,33 +1,88 @@
 const assert = require('assert')
-const { uniqBy, uniq } = require('lodash')
+const { toPairs, fromPairs, intersection, union, xor } = require('lodash')
 const { prettify, formatSymbol, logger } = require('../shared')
 
 class Condition {
   constructor(endPoints) {
     assert(endPoints.length > 0)
-    this.edges = this.buildGraph(endPoints)
+    this.start = 0
+    this.end = 100000
+    this.buildGraph(endPoints)
+    this.computeDominators()
+    this.computeControls()
   }
 
   buildGraph(endPoints) {
-    const edges = {} 
+    const successors = {}
+    const predecessors = {} 
+    const nodes = new Set([this.start, this.end])
     endPoints.forEach(({ ep }) => {
-      const jumpis = ep.filter(({ opcode: { name } }) => name == 'JUMPI')
+      const jumpis = [
+        { pc: this.start },
+        ...ep.filter(({ opcode: { name } }) => name == 'JUMPI'),
+        { pc: this.end }
+      ]
       jumpis.slice(1).forEach(({ pc: to }, idx) => {
         const from = jumpis[idx].pc
-        if (!edges[to]) edges[to] = new Set()
-        edges[to].add(from)
+        if (!successors[from]) successors[from] = new Set()
+        successors[from].add(to)
+        if (!predecessors[to]) predecessors[to] = new Set()
+        predecessors[to].add(from)
+        nodes.add(from)
+        nodes.add(to)
       })
     })
-    return edges
+    this.successors = fromPairs(
+      toPairs(successors).map(([key, values]) => [key, [...values]])
+    )
+    this.predecessors = fromPairs(
+      toPairs(predecessors).map(([key, values]) => [key, [...values]])
+    )
+    this.nodes = [...nodes]
   }
 
-  findConditions(jPc) {
-    assert(this.edges[jPc])
-    const stack = [jPc]
-    while (stack.length) {
-      const from = this.edges[stack.pop()] 
-      console.log(from)
-    }
+  computeDominators() {
+    const trees = [
+      {
+        predecessors: this.predecessors,
+        successors: this.successors,
+        nodes: this.nodes,
+        start: this.start,
+      },
+      {
+        predecessors: this.successors,
+        successors: this.predecessors,
+        nodes: this.nodes,
+        start: this.end,
+      }
+    ]
+    const [dominators, postdominators] = trees.map(({ start, predecessors, successors, nodes }) => {
+      const dominators = {}
+      nodes.forEach(node => dominators[node] = nodes)
+      let workList = [start]
+      while (workList.length > 0) {
+        const node = workList.pop()
+        const preds = predecessors[node] || []
+        const pdominators = intersection.apply(intersection, preds.map(p => dominators[p]))
+        const ndominators = union([node], pdominators)
+        if (ndominators.join('') != dominators[node].join('')) {
+          dominators[node] = ndominators
+          const succs = successors[node]
+          workList = union(workList, succs)
+        }
+      }
+      return dominators
+    })
+    this.dominators = dominators
+    this.postdominators = postdominators
+  }
+
+  computeControls() {
+    console.log(this.successors)
+    // const node = 193
+    // const succs = this.successors[node] || []
+    // this.nodes.forEach(onode => {
+    // })
   }
 }
 

@@ -41,7 +41,6 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     const condition = new Condition(endPoints)
-    const outs = condition.findConditions(1786)
     // endPoints.forEach(endPoint => {
       // endPoint.ep.forEach(({ opcode: { name }, stack }, idx) => {
         // if (name == 'CALL') {
