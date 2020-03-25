@@ -78,11 +78,38 @@ class Condition {
   }
 
   computeControls() {
-    console.log(this.successors)
-    // const node = 193
-    // const succs = this.successors[node] || []
-    // this.nodes.forEach(onode => {
-    // })
+    const partialControls = {}
+    const workList = [this.stop]
+    const domDict = this.nodes.map(node => {
+      const succs = this.successors[node] || []
+      return {
+        node,
+        iters: intersection.apply(intersection, succs.map(s => this.postdominators[s])),
+        unios: union.apply(union, succs.map(s => this.postdominators[s]))
+      }
+    })
+    this.nodes.forEach(node => {
+      toPairs(domDict).forEach(([_, { node: onode, iters, unios }]) => {
+        if (!iters.includes(node) && unios.includes(node)) {
+          !partialControls[node] && (partialControls[node] = [])
+          partialControls[node].push(onode)
+        }
+      })
+    })
+
+    this.fullControls = {}
+    for (const node in partialControls) {
+      const visited = []
+      const unvisited = [parseInt(node)]
+      while (unvisited.length) {
+        const n = unvisited.pop()
+        visited.push(n);
+        (partialControls[n] || []).forEach(n => {
+          !visited.includes(n) && unvisited.push(n)
+        })
+      }
+      this.fullControls[visited.shift()] = visited
+    }
   }
 }
 
