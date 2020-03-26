@@ -6,7 +6,7 @@ const dotenv = require('dotenv')
 const { Evm } = require('./evm')
 const { logger, gb, prettify } = require('./shared')
 const { forEach } = require('lodash')
-const { Register, Condition } = require('./analyzer')
+const { Cache, Condition } = require('./analyzer')
 const SRCMap = require('./srcmap')
 
 const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
@@ -41,5 +41,6 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     const condition = new Condition(endPoints)
+    const cache = new Cache(condition, endPoints, srcmap)
   }
 })

@@ -16,12 +16,10 @@ class Condition {
     const successors = {}
     const predecessors = {} 
     const nodes = new Set([this.start, this.end])
-    const jumpis = new Set() 
     endPoints.forEach(({ ep }) => {
       const markers = [
         { pc: this.start },
         ...ep.filter(({ opcode: { name }, pc }, idx) => {
-          if (name == 'JUMPI') jumpis.add(pc)
           return name == 'JUMPI' || idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI'
         }),
         { pc: this.end }
@@ -43,7 +41,6 @@ class Condition {
       toPairs(predecessors).map(([key, values]) => [key, [...values]])
     )
     this.nodes = [...nodes]
-    this.jumpis = [...jumpis]
   }
 
   computeDominators() {
