@@ -41,16 +41,5 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     const condition = new Condition(endPoints)
-    // endPoints.forEach(endPoint => {
-      // endPoint.ep.forEach(({ opcode: { name }, stack }, idx) => {
-        // if (name == 'CALL') {
-          // const trackingPos = stack.size() - 3
-          // const symbol = stack.get(trackingPos)
-          // const subEp = endPoint.sub(idx + 1)
-          // const register = new Register(symbol, trackingPos, subEp, endPoints)
-          // register.dnode.prettify()
-        // }
-      // })
-    // })
   }
 })

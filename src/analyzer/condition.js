@@ -16,16 +16,18 @@ class Condition {
     const successors = {}
     const predecessors = {} 
     const nodes = new Set([this.start, this.end])
+    const jumpis = new Set() 
     endPoints.forEach(({ ep }) => {
-      const jumpis = [
+      const markers = [
         { pc: this.start },
-        ...ep.filter(({ opcode: { name } }, idx) => {
+        ...ep.filter(({ opcode: { name }, pc }, idx) => {
+          if (name == 'JUMPI') jumpis.add(pc)
           return name == 'JUMPI' || idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI'
         }),
         { pc: this.end }
       ]
-      jumpis.slice(1).forEach(({ pc: to }, idx) => {
-        const from = jumpis[idx].pc
+      markers.slice(1).forEach(({ pc: to }, idx) => {
+        const from = markers[idx].pc
         if (!successors[from]) successors[from] = new Set()
         successors[from].add(to)
         if (!predecessors[to]) predecessors[to] = new Set()
@@ -41,6 +43,7 @@ class Condition {
       toPairs(predecessors).map(([key, values]) => [key, [...values]])
     )
     this.nodes = [...nodes]
+    this.jumpis = [...jumpis]
   }
 
   computeDominators() {
@@ -112,7 +115,6 @@ class Condition {
       }
       this.fullControls[visited.shift()] = visited
     }
-    console.log(this.fullControls)
   }
 }
 
