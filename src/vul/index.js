@@ -19,15 +19,17 @@ class Scanner {
     const dnode = new DNode(expression, pc)
     const branch = branches[endPointIdx]
     directParent.node.childs.push(dnode)
-    links.forEach(epIdx => this.connect(dnode, endPointIdx, epIdx, branch[epIdx], visited))
-    const mstore = mstores[endPointIdx]
-    toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
-      if (mstoreEpIdx < epIdx) {
-        mloads.forEach(mload => {
-          if (mload.eq(value.key)) this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
-        })
-      }
+    links.forEach(epIdx => {
+      this.connect(dnode, endPointIdx, epIdx, branch[epIdx], visited)
     })
+    // const mstore = mstores[endPointIdx]
+    // toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
+      // if (mstoreEpIdx < epIdx) {
+        // mloads.forEach(mload => {
+          // if (mload.eq(value.key)) this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+        // })
+      // }
+    // })
   }
 
   start() {
