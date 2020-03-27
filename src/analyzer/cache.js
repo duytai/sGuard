@@ -8,10 +8,10 @@ class Cache {
   constructor(condition, endPoints) {
     this.condition = condition
     this.endPoints = endPoints
-    this.preprocess()
+    this.build()
   }
 
-  locateControlLinks(epIndexes, subEp) {
+  controlLinks(epIndexes, subEp) {
     assert(epIndexes.length >= 0 && subEp)
     const links = new Set()
     epIndexes.forEach(epIndex => {
@@ -19,14 +19,13 @@ class Cache {
       for (let i = epIndex; i >= 0; i--) {
         const { opcode: { name }, pc } = subEp.get(i)
         dependOn = dependOn ? dependOn : this.condition.fullControls[pc]
-        /// Convert from pc to epIdx
         if (dependOn && dependOn.includes(pc)) links.add(i)
       }
     })
     return [...links] 
   }
 
-  processExpression(symbol, trackingPos, endPoint, epIdx) {
+  analyzeExp(symbol, trackingPos, endPoint, epIdx) {
     const variables = []
     const workStack = [symbol]
     while (workStack.length) {
@@ -56,11 +55,11 @@ class Cache {
     const subEp = endPoint.sub(epIdx + 1)
     const assignment = new LocalAssignment(subEp, trackingPos)
     const epIndexes = [...assignment.epIndexes, epIdx]
-    const links = this.locateControlLinks(epIndexes, subEp)
+    const links = this.controlLinks(epIndexes, subEp)
     return { variables, links }
   }
 
-  preprocess() {
+  build() {
     this.mem = { branches: [], mstores: [], sstores: [] }
     this.endPoints.forEach((endPoint) => {
       const branch = {}
@@ -75,8 +74,8 @@ class Cache {
         const [_, name, loc, value] = t
         if (entries[name]) {
           const [ Variable, store ] = entries[name]
-          const { variables: kVariables, links: kLinks } = this.processExpression(loc, kTrackingPos, endPoint, epIdx)
-          const { variables: vVariables, links: vLinks } = this.processExpression(value, vTrackingPos, endPoint, epIdx)
+          const { variables: kVariables, links: kLinks } = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
+          const { variables: vVariables, links: vLinks } = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
           const variables = [...kVariables, vVariables]
           const links = [...new Set([...kLinks, ...vLinks])]
           const subEp = endPoint.sub(epIdx + 1)
@@ -93,7 +92,7 @@ class Cache {
           case 'JUMPI': {
             const trackingPos = stack.size() - 2
             const symbol = stack.get(trackingPos)
-            const { variables, links } = this.processExpression(symbol, trackingPos, endPoint, epIdx)
+            const { variables, links } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
             branch[epIdx] = [...variables, ...links]
             break
           }
