@@ -8,39 +8,9 @@ const {
 } = require('../shared')
 
 class DNode {
-  constructor(symbol, pc, id) {
-    assert(symbol && pc >= 0 && id)
-    this.node = { id, me: symbol, pc, childs: [], alias: 'N/A', variable: null, parent: null }
-  }
-
-  addChild(child) {
-    assert(child)
-    this.node.childs.push(child)
-  }
-
-  addParent(parent) {
-    assert(parent)
-    this.node.parent = parent
-  }
-
-  findSloads() {
-    const cond = (dnode) => {
-      const { node: { me, childs } } = dnode
-      return me[1] == 'SLOAD'
-    }
-    return this.traverse(cond)
-  }
-
-  traverse(cond) {
-    assert(cond)
-    const dnodes = []
-    const stack = [this]
-    while (stack.length > 0) {
-      const dnode = stack.pop()
-      if (cond(dnode)) dnodes.push(dnode)
-      dnode.node.childs.forEach(dnode => stack.push(dnode))
-    }
-    return dnodes
+  constructor(symbol, pc) {
+    assert(symbol && pc >= 0)
+    this.node = { me: symbol, pc, childs: [], alias: 'N/A', variable: null}
   }
 
   prettify(level = 0, srcmap) {

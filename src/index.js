@@ -43,7 +43,7 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   } else {
     const condition = new Condition(endPoints)
     const cache = new Cache(condition, endPoints)
-    const scanner = new Scanner(cache) 
+    const scanner = new Scanner(cache, srcmap) 
     scanner.start()
   }
 })
