@@ -83,7 +83,8 @@ class Cache {
           const links = [...new Set([...storedKey.links, ...storedValue.links])]
           const subEp = endPoint.sub(epIdx + 1)
           const variable = new Variable(loc, subEp)
-          store[epIdx] = { key: variable, sloads, mloads, links }
+          const expression = ['symbol', 'M', loc, value]
+          store[epIdx] = { key: variable, sloads, mloads, links, expression }
         }
       })
 
@@ -93,7 +94,7 @@ class Cache {
             const trackingPos = stack.size() - 2
             const symbol = stack.get(trackingPos)
             const { mloads, sloads, links } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
-            branch[epIdx] = { mloads, sloads, links }
+            branch[epIdx] = { mloads, sloads, links, expression: symbol }
             break
           }
           case 'CALL': {
@@ -102,13 +103,16 @@ class Cache {
             const links = []
             const entries = [stack.size() - 1, stack.size() - 2, stack.size() - 3]
               .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
+            const operands = []
             entries.forEach(({ trackingPos, symbol }) => {
               const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
               t.sloads.forEach(sload => sloads.push(sload))
               t.mloads.forEach(mload => mloads.push(mload))
               t.links.forEach(link => links.push(link))
+              operands.push(symbol)
             })
-            call[epIdx] = { sloads, mloads, links: [...new Set(links)] }
+            const expression = ['symbol', 'M', ...operands]
+            call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
             break
           }
         }

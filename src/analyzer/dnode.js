@@ -10,7 +10,7 @@ const {
 class DNode {
   constructor(symbol, pc) {
     assert(symbol && pc >= 0)
-    this.node = { me: symbol, pc, childs: [], alias: 'N/A', variable: null}
+    this.node = { me: symbol, pc, childs: [], alias: 'N/A' }
   }
 
   prettify(level = 0, srcmap) {
