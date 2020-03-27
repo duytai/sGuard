@@ -1,4 +1,6 @@
+const assert = require('assert')
 const { isEmpty, toPairs } = require('lodash')
+const hash = require('object-hash')
 const { prettify } = require('../shared')
 const { DNode } = require('../analyzer')
 
@@ -8,28 +10,29 @@ class Scanner {
     this.srcmap = srcmap
   }
 
-  connect(directParent, { symbol, sloads, mloads, links, pc }) {
-    const dnode = new DNode(symbol, pc)
+  toKey(endPointIdx, epIdx) {
+    assert(endPointIdx >= 0 && epIdx >= 0)
+    return has([endPointIdx, epIdx].join(':')).slice(4)
+  }
+
+  connect(directParent, endPointIdx, epIdx, { expression, sloads, mloads, links }, visited = new Set()) {
+    const { mem: { branches } } = this.cache
+    const { pc } = this.cache.endPoints[endPointIdx].ep[epIdx]
+    const dnode = new DNode(expression, pc)
+    const branch = branches[endPointIdx]
     directParent.node.childs.push(dnode)
+    links.forEach(epIdx => {
+      this.connect(dnode, endPointIdx, epIdx, branch[epIdx])
+    })
   }
 
   start() {
-    const { mem: { calls }, endPoints } = this.cache
+    const { calls } = this.cache.mem
     const root = new DNode(['symbol', 'root'], 0)
     calls.forEach((call, endPointIdx) => {
-      // toPairs(call).forEach(([epIdx, value]) => {
-        // const { sloads, mloads, links } = value
-        // const { pc, stack } = endPoints[endPointIdx].ep[epIdx]
-        // const stackSize = stack.size()
-        // const symbol = [
-          // 'symbol',
-          // 'MERGE',
-          // stack.get(stackSize - 1),
-          // stack.get(stackSize - 2),
-          // stack.get(stackSize - 3)
-        // ]
-        // this.connect(root, { symbol, sloads, mloads, links, pc })
-      // })
+      toPairs(call).forEach(([epIdx, value]) => {
+        this.connect(root, endPointIdx, epIdx, value)
+      })
     })
     root.prettify(0, this.srcmap)
   }
