@@ -39,19 +39,23 @@ class Cache {
       const mstore = {}
       const sstore = {}
       const { ep, trace } = endPoint
-      trace.ts.forEach(({ t, epIdx }) => {
+      trace.ts.forEach(({ t, epIdx, kTrackingPos, vTrackingPos }) => {
         const [_, name, loc] = t
         switch (name) {
           case 'MSTORE': {
             const subEp = endPoint.sub(epIdx + 1)
             const variable = new LocalVariable(loc, subEp)
             mstore[epIdx] = [{ type: 'MSTORE', variable }]
+            const links = this.processLinks(subEp, kTrackingPos)
+            if (links.length) mstore[epIdx].push({ type: 'LINK', links: [...links] })
             break
           }
           case 'SSTORE': {
             const subEp = endPoint.sub(epIdx + 1)
             const variable = new StateVariable(loc, subEp)
             sstore[epIdx] = [{ type: 'SSTORE', variable }]
+            const links = this.processLinks(subEp, kTrackingPos)
+            if (links.length) sstore[epIdx].push({ type: 'LINK', links: [...links] })
             break
           }
         }
@@ -70,20 +74,14 @@ class Cache {
                   const subEpSize = symbol[5][1].toNumber()
                   const subEp = endPoint.sub(subEpSize)
                   const variable = new LocalVariable(symbol[2], subEp)
-                  branch[epIdx].push({
-                    type: 'MLOAD',
-                    variable,
-                  })
+                  branch[epIdx].push({ type: 'MLOAD', variable })
                   break
                 }
                 case 'SLOAD': {
                   const subEpSize = symbol[4][1].toNumber()
                   const subEp = endPoint.sub(subEpSize)
                   const variable = new StateVariable(symbol[2], subEp)
-                  branch[epIdx].push({
-                    type: 'SLOAD',
-                    variable,
-                  })
+                  branch[epIdx].push({ type: 'SLOAD', variable })
                   break
                 }
                 default: {
@@ -95,7 +93,9 @@ class Cache {
             }
             const subEp = endPoint.sub(epIdx + 1)
             const links = this.processLinks(subEp, trackingPos)
-            branch[epIdx].push({ type: 'LINK', links })
+            if (links.length) {
+              branch[epIdx].push({ type: 'LINK', links })
+            }
             break
           }
         }
