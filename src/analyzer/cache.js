@@ -1,6 +1,6 @@
 const assert = require('assert')
 const hash = require('object-hash')
-const { prettify, findSymbol } = require('../shared')
+const { prettify, findSymbol, formatSymbol } = require('../shared')
 const { LocalVariable, StateVariable } = require('../variable')
 const LocalAssignment = require('./assignment')
 
@@ -8,76 +8,103 @@ class Cache {
   constructor(condition, endPoints) {
     this.condition = condition
     this.endPoints = endPoints
-    this.processBranches()
+    this.preprocess()
   }
 
-  toKey(endPointIdx, epIdx) {
-    assert(endPointIdx >= 0 && epIdx >= 0)
-    return hash([endPointIdx, epIdx].join(':')).slice(0, 4)
+  processLinks(subEp, trackingPos) {
+    const assignment = new LocalAssignment(subEp, trackingPos)
+    const links = new Set()
+    assignment.epIndexes.forEach(epIndex => {
+      let dependOn = null 
+      for (let i = epIndex; i >= 0; i--) {
+        const { opcode: { name }, pc } = subEp.get(i)
+        dependOn = dependOn ? dependOn : this.condition.fullControls[pc]
+        if (dependOn && dependOn.includes(pc)) {
+          links.add(i)
+        }
+      }
+    })
+    return [...links] 
   }
 
-  processBranches() {
-    this.memCache = {}
-    this.endPoints.forEach((endPoint, endPointIdx) => {
-      endPoint.ep.forEach(({ opcode: { name }, stack }, epIdx) => {
-        if (name == 'JUMPI') {
-          const key = this.toKey(endPointIdx, epIdx)
-          const trackingPos = stack.size() - 2
-          const condStack = [stack.get(trackingPos)]
-          this.memCache[key] = []
-          while (condStack.length) {
-            const symbol = condStack.pop()
-            switch (symbol[1]) {
-              case 'MLOAD': {
-                const subEpSize = symbol[5][1].toNumber()
-                const subEp = endPoint.sub(subEpSize)
-                const localVariable = new LocalVariable(symbol[2], subEp)
-                this.memCache[key].push({
-                  type: 'LOCAL',
-                  variable: localVariable,
-                  subEp,
-                })
-                break
-              }
-              case 'SLOAD': {
-                const subEpSize = symbol[4][1].toNumber()
-                const subEp = endPoint.sub(subEpSize)
-                const stateVariable = new StateVariable(symbol[2], subEp)
-                this.memCache[key].push({
-                  type: 'STATE',
-                  variable: stateVariable,
-                  subEp,
-                })
-                break
-              }
-              default: {
-                const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
-                symbols.forEach(symbol => condStack.push(symbol))
-                break
-              }
-            }
+  preprocess() {
+    this.mem = {
+      branches: [],
+      mstores: [],
+      sstores: [],
+    }
+
+    this.endPoints.forEach((endPoint) => {
+      const branch = {}
+      const mstore = {}
+      const sstore = {}
+      const { ep, trace } = endPoint
+      trace.ts.forEach(({ t, epIdx }) => {
+        const [_, name, loc] = t
+        switch (name) {
+          case 'MSTORE': {
+            const subEp = endPoint.sub(epIdx + 1)
+            const variable = new LocalVariable(loc, subEp)
+            mstore[epIdx] = [{ type: 'MSTORE', variable }]
+            break
           }
-          const subEp = endPoint.sub(epIdx + 1)
-          const assignment = new LocalAssignment(subEp, trackingPos)
-          const links = new Set()
-          assignment.epIndexes.forEach(epIndex => {
-            let dependOn = null 
-            for (let i = epIndex; i >= 0; i--) {
-              const { opcode: { name }, pc } = subEp.get(i)
-              dependOn = dependOn ? dependOn : this.condition.fullControls[pc]
-              if (dependOn && dependOn.includes(pc)) {
-                const link = this.toKey(endPointIdx, i)
-                links.add(link)
-              }
-            }
-          })
-          this.memCache[key].push({
-            type: 'LINK',
-            links: [...links],
-          })
+          case 'SSTORE': {
+            const subEp = endPoint.sub(epIdx + 1)
+            const variable = new StateVariable(loc, subEp)
+            sstore[epIdx] = [{ type: 'SSTORE', variable }]
+            break
+          }
         }
       })
+
+      ep.forEach(({ t, opcode: { name }, pc, stack }, epIdx) => {
+        switch (name) {
+          case 'JUMPI': {
+            const trackingPos = stack.size() - 2
+            const condStack = [stack.get(trackingPos)]
+            branch[epIdx] = []
+            while (condStack.length) {
+              const symbol = condStack.pop()
+              switch (symbol[1]) {
+                case 'MLOAD': {
+                  const subEpSize = symbol[5][1].toNumber()
+                  const subEp = endPoint.sub(subEpSize)
+                  const variable = new LocalVariable(symbol[2], subEp)
+                  branch[epIdx].push({
+                    type: 'MLOAD',
+                    variable,
+                  })
+                  break
+                }
+                case 'SLOAD': {
+                  const subEpSize = symbol[4][1].toNumber()
+                  const subEp = endPoint.sub(subEpSize)
+                  const variable = new StateVariable(symbol[2], subEp)
+                  branch[epIdx].push({
+                    type: 'SLOAD',
+                    variable,
+                  })
+                  break
+                }
+                default: {
+                  const symbols = findSymbol(symbol, ([type, name]) => ['SLOAD', 'MLOAD'].includes(name))
+                  symbols.forEach(symbol => condStack.push(symbol))
+                  break
+                }
+              }
+            }
+            const subEp = endPoint.sub(epIdx + 1)
+            const links = this.processLinks(subEp, trackingPos)
+            branch[epIdx].push({ type: 'LINK', links })
+            break
+          }
+        }
+      })
+      this.mem.branches.push(branch)
+      this.mem.mstores.push(mstore)
+      this.mem.sstores.push(sstore)
     })
+    console.log(this.mem)
   }
 }
 
