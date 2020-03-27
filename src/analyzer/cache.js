@@ -26,8 +26,9 @@ class Cache {
   }
 
   analyzeExp(symbol, trackingPos, endPoint, epIdx) {
-    const variables = []
     const workStack = [symbol]
+    const mloads = []
+    const sloads = []
     while (workStack.length) {
       const symbol = workStack.pop()
       switch (symbol[1]) {
@@ -35,14 +36,14 @@ class Cache {
           const subEpSize = symbol[5][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
           const variable = new LocalVariable(symbol[2], subEp)
-          variables.push({ type: 'MLOAD', variable })
+          mloads.push(variable)
           break
         }
         case 'SLOAD': {
           const subEpSize = symbol[4][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
           const variable = new StateVariable(symbol[2], subEp)
-          variables.push({ type: 'SLOAD', variable })
+          sloads.push(variable)
           break
         }
         default: {
@@ -56,7 +57,7 @@ class Cache {
     const assignment = new LocalAssignment(subEp, trackingPos)
     const epIndexes = [...assignment.epIndexes, epIdx]
     const links = this.controlLinks(epIndexes, subEp)
-    return { variables, links }
+    return { mloads, sloads , links }
   }
 
   build() {
@@ -75,16 +76,14 @@ class Cache {
         const [_, name, loc, value] = t
         if (entries[name]) {
           const [ Variable, store ] = entries[name]
-          const { variables: kVariables, links: kLinks } = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
-          const { variables: vVariables, links: vLinks } = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
-          const variables = [...kVariables, vVariables]
-          const links = [...new Set([...kLinks, ...vLinks])]
+          const storedKey = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
+          const storedValue = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
+          const sloads = [...storedKey.sloads, ...storedValue.sloads]
+          const mloads = [...storedKey.mloads, ...storedValue.mloads]
+          const links = [...new Set([...storedKey.links, ...storedValue.links])]
           const subEp = endPoint.sub(epIdx + 1)
           const variable = new Variable(loc, subEp)
-          store[epIdx] = {
-            variable,
-            values: [...variables, ...links],
-          }
+          store[epIdx] = { key: variable, sloads, mloads, links }
         }
       })
 
@@ -93,24 +92,23 @@ class Cache {
           case 'JUMPI': {
             const trackingPos = stack.size() - 2
             const symbol = stack.get(trackingPos)
-            const { variables, links } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
-            branch[epIdx] = [...variables, ...links]
+            const { mloads, sloads, links } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
+            branch[epIdx] = { mloads, sloads, links }
             break
           }
           case 'CALL': {
-            const entries = [
-              { trackingPos: stack.size() - 1, symbol: stack.get(stack.size() - 1) },
-              { trackingPos: stack.size() - 2, symbol: stack.get(stack.size() - 2) },
-              { trackingPos: stack.size() - 3, symbol: stack.get(stack.size() - 3) }
-            ]
-            let variables = [] 
-            let links = []
+            const sloads = []
+            const mloads = []
+            const links = []
+            const entries = [stack.size() - 1, stack.size() - 2, stack.size() - 3]
+              .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
             entries.forEach(({ trackingPos, symbol }) => {
-              const { variables: eVariables, links: eLinks } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
-              variables = [...variables, ...eVariables]
-              links = [...links, ...eLinks]
+              const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
+              t.sloads.forEach(sload => sloads.push(sload))
+              t.mloads.forEach(mload => mloads.push(mload))
+              t.links.forEach(link => links.push(link))
             })
-            call[epIdx] = [...variables, ...links]
+            call[epIdx] = { sloads, mloads, links: [...new Set(links)] }
             break
           }
         }
@@ -121,7 +119,6 @@ class Cache {
       this.mem.sstores.push(sstore)
       this.mem.calls.push(call)
     })
-    console.log(this.mem)
   }
 }
 
