@@ -60,11 +60,12 @@ class Cache {
   }
 
   build() {
-    this.mem = { branches: [], mstores: [], sstores: [] }
+    this.mem = { branches: [], mstores: [], sstores: [], calls: [] }
     this.endPoints.forEach((endPoint) => {
       const branch = {}
       const mstore = {}
       const sstore = {}
+      const call = {}
       const { ep, trace } = endPoint
       trace.ts.forEach(({ t, epIdx, kTrackingPos, vTrackingPos }) => {
         const entries = {
@@ -96,12 +97,29 @@ class Cache {
             branch[epIdx] = [...variables, ...links]
             break
           }
+          case 'CALL': {
+            const entries = [
+              { trackingPos: stack.size() - 1, symbol: stack.get(stack.size() - 1) },
+              { trackingPos: stack.size() - 2, symbol: stack.get(stack.size() - 2) },
+              { trackingPos: stack.size() - 3, symbol: stack.get(stack.size() - 3) }
+            ]
+            let variables = [] 
+            let links = []
+            entries.forEach(({ trackingPos, symbol }) => {
+              const { variables: eVariables, links: eLinks } = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
+              variables = [...variables, ...eVariables]
+              links = [...links, ...eLinks]
+            })
+            call[epIdx] = [...variables, ...links]
+            break
+          }
         }
       })
 
       this.mem.branches.push(branch)
       this.mem.mstores.push(mstore)
       this.mem.sstores.push(sstore)
+      this.mem.calls.push(call)
     })
     console.log(this.mem)
   }
