@@ -22,25 +22,25 @@ class Scanner {
     links.forEach(epIdx => {
       this.connect(dnode, endPointIdx, epIdx, branch[epIdx], visited)
     })
-    console.log(mloads)
     const mstore = mstores[endPointIdx]
     toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
       if (mstoreEpIdx < epIdx) {
         mloads.forEach(mload => {
-          if (mload.eq(value.key)) this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+          if (mload.eq(value.key)) {
+            this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+          }
         })
       }
     })
-    // toPairs(sstores).forEach(([endPointIdx, sstore]) => {
-      // toPairs(sstore).forEach(([sstoreEpIdx, value]) => {
-        // sloads.forEach(sload => {
-          // console.log(sload.toAlias())
-          // console.log(value.key.toAlias())
-          // console.log('----')
-          // if (sload.eq(value.key)) this.connect(dnode, endPointIdx, sstoreEpIdx, value, visited)
-        // })
-      // })
-    // })
+    sstores.forEach((sstore, endPointIdx) => {
+      toPairs(sstore).forEach(([sstoreEpIdx, value]) => {
+        sloads.forEach(sload => {
+          if (sload.eq(value.key)) {
+            this.connect(dnode, endPointIdx, sstoreEpIdx, value, visited)
+          }
+        })
+      })
+    })
   }
 
   start() {
