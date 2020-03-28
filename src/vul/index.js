@@ -23,15 +23,23 @@ class Scanner {
       this.connect(dnode, endPointIdx, epIdx, branch[epIdx], visited)
     })
     const mstore = mstores[endPointIdx]
-    toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
-      if (mstoreEpIdx < epIdx) {
-        mloads.forEach(mload => {
+    const mloadStack = [...mloads]
+    while (mloadStack.length) {
+      const mload = mloadStack.pop()
+      const pairs = toPairs(mstore).reverse()
+      for (let i = 0; i < pairs.length; i++) {
+        const [mstoreEpIdx, value] = pairs[i]
+        if (parseInt(mstoreEpIdx) < parseInt(epIdx)) {
           if (mload.eq(value.key)) {
             this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+            if (
+              mload.locs.length == 1
+              && value.key.locs.length == 1
+            ) break
           }
-        })
+        }
       }
-    })
+    }
     sstores.forEach((sstore, endPointIdx) => {
       toPairs(sstore).forEach(([sstoreEpIdx, value]) => {
         sloads.forEach(sload => {
