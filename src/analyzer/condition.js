@@ -17,11 +17,16 @@ class Condition {
     const predecessors = {} 
     const nodes = new Set([this.start, this.end])
     endPoints.forEach(({ ep }) => {
+      ep.forEach(({ opcode: { name }, pc }, idx) => {
+        if (name == 'JUMPI' || (idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI')) {
+          nodes.add(pc)
+        }
+      })
+    })
+    endPoints.forEach(({ ep }) => {
       const markers = [
         { pc: this.start },
-        ...ep.filter(({ opcode: { name }, pc }, idx) => {
-          return name == 'JUMPI' || idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI'
-        }),
+        ...ep.filter(({ pc }) => nodes.has(pc)),
         { pc: this.end }
       ]
       markers.slice(1).forEach(({ pc: to }, idx) => {
@@ -30,8 +35,6 @@ class Condition {
         successors[from].add(to)
         if (!predecessors[to]) predecessors[to] = new Set()
         predecessors[to].add(from)
-        nodes.add(from)
-        nodes.add(to)
       })
     })
     this.successors = fromPairs(
@@ -81,7 +84,6 @@ class Condition {
 
   computeControls() {
     this.fullControls = {}
-    const workList = [this.stop]
     const domDict = this.nodes.map(node => {
       const succs = this.successors[node] || []
       return {
@@ -91,6 +93,7 @@ class Condition {
       }
     })
     this.nodes.forEach(node => {
+      if (node == this.start) return
       toPairs(domDict).forEach(([_, { node: onode, iters, unios }]) => {
         if (!iters.includes(node) && unios.includes(node)) {
           !this.fullControls[node] && (this.fullControls[node] = [])
