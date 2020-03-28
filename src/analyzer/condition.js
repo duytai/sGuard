@@ -4,7 +4,7 @@ const { prettify, formatSymbol, logger } = require('../shared')
 
 class Condition {
   constructor(endPoints) {
-    assert(endPoints.length > 0)
+    assert(endPoints.length >= 0)
     this.start = 0
     this.end = 100000
     this.buildGraph(endPoints)
