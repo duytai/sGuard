@@ -27,8 +27,9 @@ class Cache {
 
   analyzeExp(symbol, trackingPos, endPoint, epIdx) {
     const workStack = [symbol]
-    const mloads = []
-    const sloads = []
+    let mloads = []
+    let sloads = []
+    let links = []
     while (workStack.length) {
       const symbol = workStack.pop()
       switch (symbol[1]) {
@@ -37,6 +38,13 @@ class Cache {
           const subEp = endPoint.sub(subEpSize)
           const variable = new LocalVariable(symbol[2], subEp)
           mloads.push(variable)
+          /// MLOAD Loc 
+          const trackingPos = subEp.stack.size() - 1
+          const epIdx = subEpSize - 1
+          const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+          mloads = [...mloads, ...t.mloads]
+          sloads = [...sloads, ...t.sloads]
+          links = [...links, ...t.links]
           break
         }
         case 'SLOAD': {
@@ -44,6 +52,13 @@ class Cache {
           const subEp = endPoint.sub(subEpSize)
           const variable = new StateVariable(symbol[2], subEp)
           sloads.push(variable)
+          /// SLOAD Loc
+          const trackingPos = subEp.stack.size() - 1
+          const epIdx = subEpSize - 1
+          const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+          mloads = [...mloads, ...t.mloads]
+          sloads = [...sloads, ...t.sloads]
+          links = [...links, ...t.links]
           break
         }
         default: {
@@ -56,8 +71,8 @@ class Cache {
     const subEp = endPoint.sub(epIdx + 1)
     const assignment = new LocalAssignment(subEp, trackingPos)
     const epIndexes = [...assignment.epIndexes, epIdx]
-    const links = this.controlLinks(epIndexes, subEp)
-    return { mloads, sloads , links }
+    links = new Set([...links, ...this.controlLinks(epIndexes, subEp)])
+    return { mloads, sloads , links: [...links] }
   }
 
   build() {

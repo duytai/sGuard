@@ -14,7 +14,7 @@ class Scanner {
     if (visited.has(epIdx)) return
     visited.add(epIdx)
     const { expression, sloads, mloads, links } = value
-    const { mem: { branches, mstores } } = this.cache
+    const { mem: { branches, mstores, sstores } } = this.cache
     const { pc } = this.cache.endPoints[endPointIdx].ep[epIdx]
     const dnode = new DNode(expression, pc)
     const branch = branches[endPointIdx]
@@ -22,13 +22,24 @@ class Scanner {
     links.forEach(epIdx => {
       this.connect(dnode, endPointIdx, epIdx, branch[epIdx], visited)
     })
-    // const mstore = mstores[endPointIdx]
-    // toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
-      // if (mstoreEpIdx < epIdx) {
-        // mloads.forEach(mload => {
-          // if (mload.eq(value.key)) this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+    console.log(mloads)
+    const mstore = mstores[endPointIdx]
+    toPairs(mstore).forEach(([mstoreEpIdx, value]) => {
+      if (mstoreEpIdx < epIdx) {
+        mloads.forEach(mload => {
+          if (mload.eq(value.key)) this.connect(dnode, endPointIdx, mstoreEpIdx, value, visited)
+        })
+      }
+    })
+    // toPairs(sstores).forEach(([endPointIdx, sstore]) => {
+      // toPairs(sstore).forEach(([sstoreEpIdx, value]) => {
+        // sloads.forEach(sload => {
+          // console.log(sload.toAlias())
+          // console.log(value.key.toAlias())
+          // console.log('----')
+          // if (sload.eq(value.key)) this.connect(dnode, endPointIdx, sstoreEpIdx, value, visited)
         // })
-      // }
+      // })
     // })
   }
 
