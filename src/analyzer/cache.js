@@ -98,7 +98,7 @@ class Cache {
           const links = [...new Set([...storedKey.links, ...storedValue.links])]
           const subEp = endPoint.sub(epIdx + 1)
           const variable = new Variable(loc, subEp)
-          const expression = ['symbol', '*', loc, value]
+          const expression = ['symbol', name, loc, value]
           store[epIdx] = { key: variable, sloads, mloads, links, expression }
         }
       })
@@ -126,7 +126,7 @@ class Cache {
               t.links.forEach(link => links.push(link))
               operands.push(symbol)
             })
-            const expression = ['symbol', '*', ...operands]
+            const expression = ['symbol', 'CALL', ...operands]
             call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
             break
           }
