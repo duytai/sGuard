@@ -1,24 +1,21 @@
 const assert = require('assert')
 const { toPairs } = require('lodash')
 const { prettify } = require('../shared')
-const Tree = require('./tree')
+const Integer = require('./integer')
 
 class Scanner {
   constructor(cache, srcmap) {
-    this.cache = cache
-    this.srcmap = srcmap
+    this.vuls = {
+      integer: new Integer(cache, srcmap),
+    }
   }
 
-  start() {
-    const { calls } = this.cache.mem
-    const tree = new Tree(this.cache)
-    calls.forEach((call, endPointIdx) => {
-      toPairs(call).forEach(([epIdx, value]) => {
-        tree.build(endPointIdx, epIdx, value)
-      })
-    })
-    tree.root.prettify(0, this.srcmap)
+  scan() {
+    for (const k in this.vuls) {
+      this.vuls[k].scan()
+    }
   }
+
 } 
 
 module.exports = { Scanner }
