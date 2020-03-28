@@ -1,6 +1,5 @@
 const assert = require('assert')
 const { isEmpty, toPairs } = require('lodash')
-const hash = require('object-hash')
 const { prettify } = require('../shared')
 const { DNode } = require('../analyzer')
 
@@ -10,9 +9,15 @@ class Scanner {
     this.srcmap = srcmap
   }
 
+  toKey(endPointIdx, epIdx) {
+    assert(endPointIdx >= 0 && epIdx >= 0)
+    return [endPointIdx, epIdx].join(':')
+  }
+
   connect(directParent, endPointIdx, epIdx, value, visited) {
-    if (visited.has(epIdx)) return
-    visited.add(epIdx)
+    const key = this.toKey(endPointIdx, epIdx)
+    if (visited.has(key)) return
+    visited.add(key)
     const { expression, sloads, mloads, links } = value
     const { mem: { branches, mstores, sstores } } = this.cache
     const { pc } = this.cache.endPoints[endPointIdx].ep[epIdx]
