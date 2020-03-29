@@ -8,9 +8,16 @@ const {
 } = require('../shared')
 
 class DNode {
-  constructor(symbol, pc) {
-    assert(symbol && pc >= 0)
-    this.node = { me: symbol, pc, childs: [], alias: '' }
+  constructor(symbol, pc, endPointIdx, epIdx) {
+    assert(symbol && pc >= 0 && endPointIdx >= 0 && epIdx >= 0)
+    this.node = {
+      me: symbol,
+      pc,
+      childs: [],
+      endPointIdx,
+      epIdx,
+      alias: ''
+    }
   }
 
   prettify(level = 0, srcmap) {

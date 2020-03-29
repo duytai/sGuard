@@ -4,9 +4,9 @@ const { prettify } = require('../shared')
 const Integer = require('./integer')
 
 class Scanner {
-  constructor(cache, srcmap) {
+  constructor(cache, srcmap, ast) {
     this.vuls = {
-      integer: new Integer(cache, srcmap),
+      integer: new Integer(cache, srcmap, ast),
     }
   }
 

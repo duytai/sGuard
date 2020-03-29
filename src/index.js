@@ -20,12 +20,16 @@ const jsonFile = `${contractFile}.json`
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
 logger.info(`compile ${gb(contract)} by using env compiler`)
-shell.exec(`solc --combined-json bin-runtime,srcmap-runtime ${contractFile} > ${jsonFile}`)
+shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast ${contractFile} > ${jsonFile}`)
 assert(fs.existsSync(jsonFile), 'json must exist')
 
 const source = fs.readFileSync(contractFile, 'utf8')
 const output = fs.readFileSync(jsonFile, 'utf8')
-forEach(JSON.parse(output).contracts, (contractJson, name) => {
+const jsonOutput = JSON.parse(output)
+assert(jsonOutput.sourceList.length == 1)
+const sourceIndex = jsonOutput.sourceList[0]
+const { AST } = jsonOutput.sources[sourceIndex]
+forEach(jsonOutput.contracts, (contractJson, name) => {
   const rawBin = contractJson['bin-runtime']
     .split('_').join('0')
     .split('$').join('0')
@@ -43,7 +47,7 @@ forEach(JSON.parse(output).contracts, (contractJson, name) => {
   } else {
     const condition = new Condition(endPoints)
     const cache = new Cache(condition, endPoints)
-    const scanner = new Scanner(cache, srcmap) 
+    const scanner = new Scanner(cache, srcmap, AST) 
     scanner.scan()
   }
 })

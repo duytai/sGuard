@@ -5,7 +5,7 @@ const { DNode } = require('../analyzer')
 class Tree {
 
   constructor(cache) {
-    this.root = new DNode(['symbol', 'root'], 0)
+    this.root = new DNode(['symbol', 'root'], 0, 0, 0)
     this.visited = new Set()
     this.cache = cache
   }
@@ -26,7 +26,7 @@ class Tree {
     const { expression, sloads, mloads, links } = value
     const { mem: { branches, mstores, sstores } } = this.cache
     const { pc } = this.cache.endPoints[endPointIdx].ep[epIdx]
-    const dnode = new DNode(expression, pc)
+    const dnode = new DNode(expression, pc, endPointIdx, epIdx)
     const branch = branches[endPointIdx]
     directParent.node.childs.push(dnode)
     links.forEach(epIdx => {

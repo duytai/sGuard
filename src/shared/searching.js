@@ -12,7 +12,15 @@ const findSymbol = (symbol, cond) => {
   )
 }
 
+const lookBack = (source, startAt) => {
+  const separators = [';', '{', '}']
+  while (!separators.includes(source[startAt - 1])) startAt -= 1 
+  return startAt
+}
+
+
 module.exports = {
   findSymbol,
+  lookBack,
 }
 
