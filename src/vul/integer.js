@@ -1,7 +1,7 @@
 const assert = require('assert')
 const jp = require('jsonpath')
 const { toPairs } = require('lodash')
-const { prettify, formatSymbol, lookBack, logger, gb } = require('../shared')
+const { prettify, findSymbols, logger, gb } = require('../shared')
 const { StateVariable } = require('../variable')
 const Tree = require('./tree')
 
@@ -10,6 +10,21 @@ class Integer {
     this.cache = cache
     this.srcmap = srcmap
     this.ast = ast
+  }
+
+  extractOperands(pc) {
+    const { s, l } = this.srcmap.toSL(pc)
+    const key = [s, l, 0].join(':')
+    const response = jp.query(this.ast, `$..children[?(@.src=="${key}")]`) 
+    assert(response.length >= 1)
+    const { children } = response[response.length - 1]
+    const operands = []
+    children.forEach(({ src }) => {
+      const [s, l] = src.split(':').map(x => parseInt(x))
+      const operand = this.srcmap.source.slice(s, s + l)
+      operands.push(operand)
+    })
+    return operands
   }
 
   scan() {
@@ -21,59 +36,43 @@ class Integer {
       })
     })
     /// Find SUB
-    const candidates = new Set() 
     const nodeStack = [tree.root]
     while (nodeStack.length > 0) {
       const node = nodeStack.pop()
-      const { node: { me, childs, pc, endPointIdx, epIdx } } = node
-      if (formatSymbol(me).includes('SUB')) {
-        candidates.add(pc)
+      const { node: { me, childs, pc, endPointIdx } } = node
+      const subs = findSymbols(me, ([_, name]) => name == 'SUB')
+      const endPoint = endPoints[endPointIdx]
+      if (subs.length) {
+        /// Find operands of sub
+        const sub = subs[0]
+        const [left, right, epSize] = sub.slice(2)
+        const subEpIdx = epSize[1].toNumber() - 1
+        const { pc, opcode: { name } } = endPoint.get(subEpIdx)
+        console.log('>>> Execute')
+        prettify([left, right])
+        const child = childs[0]
+        const { node: { me } } = child
+        if (me[1] == 'ISZERO') {
+          const lts = findSymbols(me, ([_, name]) => name == 'LT')
+          lts.forEach(lt => {
+            const [left, right, epSize] = lt.slice(2)
+            const ltEpIdx = epSize[1].toNumber() - 1
+            const { pc, opcode: { name } } = endPoint.get(ltEpIdx)
+            console.log('>>> Condition')
+            prettify([left, right])
+            for (let i = ltEpIdx; i < subEpIdx; i++) {
+              const { pc, opcode: { name }, stack } = endPoint.get(i)
+              if (name == 'MSTORE') {
+                stack.prettify()
+              }
+            }
+          })
+        }
       }
+      /// Find condition 
       childs.forEach(child => nodeStack.push(child))
     }
     /// Map to source 
-    candidates.forEach(pc => {
-      const { s, l } = this.srcmap.toSL(pc)
-      const key = [s,l,0].join(':')
-      const response = jp.query(this.ast, `$..children[?(@.src=="${key}")]`)
-      assert(response.length >= 1)
-      const astStack = [response[0]]
-      const underflowCheck = []
-      while (astStack.length > 0) {
-        const astNode = astStack.pop()
-        const { attributes, children } = astNode
-        if (attributes && attributes.operator) {
-          if (attributes.operator.startsWith('-')) {
-            assert(children.length == 2)
-            const operands = []
-            children.forEach(({ src }) => {
-              const [s, l] = src.split(':').map(x => parseInt(x))
-              const operand = this.srcmap.source.slice(s, s + l)
-              operands.push(operand)
-            })
-            underflowCheck.push(operands.join(' >= '))
-          }
-        }
-        (astNode.children || []).forEach(child => {
-          astStack.push(child)
-        })
-      }
-      const { source } = this.srcmap
-      const splitAt = lookBack(source, s)
-      const startAt = lookBack(source, splitAt - 1)
-      const first = source.slice(0, splitAt)
-      const last = source.slice(splitAt)
-      const check = `require(${underflowCheck.join('&&')})`
-      const existingCheck = source.slice(startAt, splitAt - 1).trim()
-      console.log(existingCheck)
-      if (check == existingCheck) {
-        logger.info(`${gb('SUB')} is checked at ${gb(existingCheck)}`)
-      }
-
-      // console.log(first)
-      // console.log('---')
-      // console.log(last)
-    })
     tree.root.prettify(0, this.srcmap)
   }
 }
