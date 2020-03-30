@@ -1,8 +1,14 @@
 const assert = require('assert')
 const jp = require('jsonpath')
-const { toPairs } = require('lodash')
-const { prettify, findSymbols, formatWithoutTrace } = require('../shared')
+const { toPairs, isEmpty } = require('lodash')
 const Tree = require('./tree')
+const {
+  prettify,
+  formatWithoutTrace,
+  formatSymbol,
+  findSymbols,
+  logger,
+} = require('../shared')
 
 class Integer {
   constructor(cache, srcmap, ast) {
@@ -34,25 +40,44 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    /// Find SUB
-    const nodeStack = [tree.root]
-    while (nodeStack.length > 0) {
-      const node = nodeStack.pop()
-      const { node: { me, childs, pc, endPointIdx } } = node
-      const subs = findSymbols(me, ([_, name]) => name == 'SUB')
-      const endPoint = endPoints[endPointIdx]
-      subs.forEach(sub => {
-        const [left, right, epSize] = sub.slice(2)
-        console.log('--')
-        console.log(formatWithoutTrace(left))
-        console.log(formatWithoutTrace(right))
-        prettify([left, right])
-      })
-      /// Find condition 
-      childs.forEach(child => nodeStack.push(child))
-    }
-    /// Map to source 
     tree.root.prettify(0, this.srcmap)
+    /// Find SUB
+    const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
+    subNodes.forEach(subNode => {
+      const { node: { me } } = subNode 
+      const subs = findSymbols(me, ([_, name]) => name == 'SUB') 
+      const trace = {} 
+      subs.forEach(sub => {
+        const [left, right] = sub.slice(2)
+        const subExpression = [left, right].map(formatWithoutTrace).join(':')
+        trace[subExpression] = true
+      })
+      console.log('------------')
+      console.log(trace)
+      const comNodes = subNode.traverse(({ node: { me } }) => {
+        const f = formatSymbol(me) 
+        return f.includes('LT(') || f.includes('GT(')
+      })
+      comNodes.forEach(comNode => {
+        let { node: { me } } = comNode 
+        const orders = [0, 1]
+        while (me[1] != 'LT' && me[1] != 'GT') {
+          assert(me[1] == 'ISZERO')
+          me = me[2]
+          orders.reverse()
+        }
+        if (me[1] == 'LT') orders.reverse()
+        const [left, right] = orders.map(order => me[order + 2])
+        const ltExpression = [left, right].map(formatWithoutTrace).join(':')
+        delete trace[ltExpression]
+      })
+      if (isEmpty(trace)) {
+        logger.info('CHECKED')
+      } else {
+        logger.info('UNCHECKED')
+        console.log(Object.keys(trace))
+      }
+    })
   }
 }
 

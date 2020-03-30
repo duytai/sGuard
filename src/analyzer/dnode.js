@@ -20,6 +20,18 @@ class DNode {
     }
   }
 
+  traverse(cond) {
+    assert(cond)
+    const dnodes = []
+    const stack = [this]
+    while (stack.length > 0) {
+      const dnode = stack.pop()
+      if (cond(dnode)) dnodes.push(dnode)
+      dnode.node.childs.forEach(dnode => stack.push(dnode))
+    }
+    return dnodes
+  }
+
   prettify(level = 0, srcmap) {
     if (level == 0) {
       logger.debug(chalk.magenta.bold('>> Full DTREE'))
