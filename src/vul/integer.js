@@ -1,7 +1,7 @@
 const assert = require('assert')
 const jp = require('jsonpath')
 const { toPairs } = require('lodash')
-const { prettify, findSymbols, logger, gb } = require('../shared')
+const { prettify, findSymbols, formatWithoutTrace } = require('../shared')
 const Tree = require('./tree')
 
 class Integer {
@@ -43,11 +43,9 @@ class Integer {
       const endPoint = endPoints[endPointIdx]
       subs.forEach(sub => {
         const [left, right, epSize] = sub.slice(2)
-        const epIdx = epSize[1].toNumber() - 1
-        const { pc } = endPoint.get(epIdx) 
-        /// To Variable
-        const subEpSize = left[4][1].toNumber()
-        const subEp = endPoint.sub(subEpSize)
+        console.log('--')
+        console.log(formatWithoutTrace(left))
+        console.log(formatWithoutTrace(right))
         prettify([left, right])
       })
       /// Find condition 

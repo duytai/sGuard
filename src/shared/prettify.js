@@ -12,7 +12,9 @@ const formatSymbol = ([type, name, ...params]) => {
 const formatWithoutTrace = ([type, name, ...params]) => {
   if (type == 'const') return name.toString(16) 
   if (!params.length) return name
-  return `${name}(${params.map(p => formatWithoutTrace(p)).join(',')})`
+  const config = { SLOAD: 1, MLOAD: 2 }
+  const ps = config[name] ? params.slice(0, config[name]) : params
+  return `${name}(${ps.map(p => formatWithoutTrace(p)).join(',')})`
 }
 
 const prettify = (values, spaceLen = 0) => {
