@@ -2,7 +2,6 @@ const assert = require('assert')
 const jp = require('jsonpath')
 const { toPairs } = require('lodash')
 const { prettify, findSymbols, logger, gb } = require('../shared')
-const { StateVariable } = require('../variable')
 const Tree = require('./tree')
 
 class Integer {
@@ -42,33 +41,15 @@ class Integer {
       const { node: { me, childs, pc, endPointIdx } } = node
       const subs = findSymbols(me, ([_, name]) => name == 'SUB')
       const endPoint = endPoints[endPointIdx]
-      if (subs.length) {
-        /// Find operands of sub
-        const sub = subs[0]
+      subs.forEach(sub => {
         const [left, right, epSize] = sub.slice(2)
-        const subEpIdx = epSize[1].toNumber() - 1
-        const { pc, opcode: { name } } = endPoint.get(subEpIdx)
-        console.log('>>> Execute')
+        const epIdx = epSize[1].toNumber() - 1
+        const { pc } = endPoint.get(epIdx) 
+        /// To Variable
+        const subEpSize = left[4][1].toNumber()
+        const subEp = endPoint.sub(subEpSize)
         prettify([left, right])
-        const child = childs[0]
-        const { node: { me } } = child
-        if (me[1] == 'ISZERO') {
-          const lts = findSymbols(me, ([_, name]) => name == 'LT')
-          lts.forEach(lt => {
-            const [left, right, epSize] = lt.slice(2)
-            const ltEpIdx = epSize[1].toNumber() - 1
-            const { pc, opcode: { name } } = endPoint.get(ltEpIdx)
-            console.log('>>> Condition')
-            prettify([left, right])
-            for (let i = ltEpIdx; i < subEpIdx; i++) {
-              const { pc, opcode: { name }, stack } = endPoint.get(i)
-              if (name == 'MSTORE') {
-                stack.prettify()
-              }
-            }
-          })
-        }
-      }
+      })
       /// Find condition 
       childs.forEach(child => nodeStack.push(child))
     }

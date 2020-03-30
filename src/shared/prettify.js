@@ -9,6 +9,12 @@ const formatSymbol = ([type, name, ...params]) => {
   return `${name}(${params.map(p => formatSymbol(p)).join(',')})`
 }
 
+const formatWithoutTrace = ([type, name, ...params]) => {
+  if (type == 'const') return name.toString(16) 
+  if (!params.length) return name
+  return `${name}(${params.map(p => formatWithoutTrace(p)).join(',')})`
+}
+
 const prettify = (values, spaceLen = 0) => {
   const space = range(0, spaceLen).map(i => ' ').join('') || ''
   values.forEach((v, idx) => logger.debug(`${space}${formatSymbol(v)}`))
@@ -17,6 +23,7 @@ const prettify = (values, spaceLen = 0) => {
 module.exports = {
   prettify,
   formatSymbol,
+  formatWithoutTrace,
   gb: chalk.green.bold,
 }
 
