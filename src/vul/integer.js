@@ -34,14 +34,7 @@ class Integer {
     return operands
   }
 
-  scan() {
-    const { mem: { calls }, endPoints } = this.cache
-    const tree = new Tree(this.cache)
-    calls.forEach((call, endPointIdx) => {
-      toPairs(call).forEach(([epIdx, value]) => {
-        tree.build(endPointIdx, epIdx, value)
-      })
-    })
+  fixSubtract(tree, endPoints) {
     /// Find SUB
     const operandLocs = {}
     const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
@@ -87,19 +80,32 @@ class Integer {
       }
     })
     /// Try to fix
-    let source = this.srcmap.source
     const bugFixes = []
     for (const pc in operandLocs) {
       const { s } = this.srcmap.toSL(pc)
-      const { newlines, spaces, tabs, start } = insertLoc(source, s)
+      const { newlines, spaces, tabs, start } = insertLoc(this.srcmap.source, s)
       let check = ''
       range(spaces).forEach(_ => check += ' ')
       range(tabs).forEach(_ => check += '\t')
       check += `require(${operandLocs[pc].join(' >= ')});\n`
       bugFixes.push({ start, check, len: check.length })
     }
+    return bugFixes 
+  }
+
+  scan() {
+    const { mem: { calls }, endPoints } = this.cache
+    const tree = new Tree(this.cache)
+    calls.forEach((call, endPointIdx) => {
+      toPairs(call).forEach(([epIdx, value]) => {
+        tree.build(endPointIdx, epIdx, value)
+      })
+    })
+    const bugFixes = this.fixSubtract(tree, endPoints)
+    // Apply bugFixes
     bugFixes.sort((x, y) => x.start - y.start)
     let acc = 0
+    let source = this.srcmap.source
     bugFixes.forEach(bugFix => {
       bugFix.start = bugFix.start + acc
       // Begin fix here
