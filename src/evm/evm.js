@@ -318,8 +318,9 @@ class Evm {
         }
         case 'SUB': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             stack.push(['const', x[1].sub(y[1]).toTwos(256)])
           }

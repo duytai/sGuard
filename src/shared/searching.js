@@ -21,16 +21,39 @@ const findSymbols = (symbol, cond) => {
   )
 }
 
-const lookBack = (source, startAt) => {
-  const separators = [';', '{', '}']
-  while (!separators.includes(source[startAt - 1])) startAt -= 1 
-  return startAt
+const insertLoc = (source, s) => {
+  assert(source && s >= 0)
+  const seps = [';', '{', '}']
+  while (!seps.includes(source[s])) s -= 1
+  const config = {
+    newline: true,
+    start: s,
+    spaces: 0,
+    tabs: 0,
+  }
+  for (; config.start < source.length - 1; config.start ++) {
+    const c = source[config.start + 1]
+    if (c == '\n') {
+      config.newline = true
+      config.tabs = 0
+      config.spaces = 0
+    } else if (c == '\t') {
+      config.tabs ++
+    } else if (c == ' ') {
+      config.spaces ++
+    } else {
+      break
+    }
+  }
+  if (config.newline) {
+    config.start = config.start - config.tabs - config.spaces 
+  }
+  return config 
 }
-
 
 module.exports = {
   findSymbol,
   findSymbols,
-  lookBack,
+  insertLoc,
 }
 

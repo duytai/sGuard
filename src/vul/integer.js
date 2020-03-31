@@ -1,6 +1,6 @@
 const assert = require('assert')
 const jp = require('jsonpath')
-const { toPairs, isEmpty } = require('lodash')
+const { toPairs, isEmpty, range } = require('lodash')
 const Tree = require('./tree')
 const {
   prettify,
@@ -8,6 +8,7 @@ const {
   formatSymbol,
   findSymbols,
   logger,
+  insertLoc,
 } = require('../shared')
 
 class Integer {
@@ -42,20 +43,27 @@ class Integer {
     })
     tree.root.prettify(0, this.srcmap)
     /// Find SUB
+    const operandLocs = {}
     const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
     subNodes.forEach(subNode => {
-      const { node: { me } } = subNode 
+      const { node: { me, endPointIdx } } = subNode 
       const subs = findSymbols(me, ([_, name]) => name == 'SUB') 
       const trace = {} 
       subs.forEach(sub => {
-        const [left, right] = sub.slice(2)
+        const [left, right, epSize] = sub.slice(2)
         const subExpression = [left, right].map(formatWithoutTrace).join(':')
-        trace[subExpression] = true
+        const epIdx = epSize[1].toNumber() - 1
+        const endPoint = endPoints[endPointIdx]
+        const { pc, opcode } = endPoint.get(epIdx)
+        assert(opcode.name == 'SUB')
+        trace[subExpression] = { pc, operands: this.extractOperands(pc) }
       })
+      /// Search for comparison node 
       const comNodes = subNode.traverse(({ node: { me } }) => {
         const f = formatSymbol(me) 
         return f.includes('LT(') || f.includes('GT(')
       })
+      /// Verify comparison
       comNodes.forEach(comNode => {
         let { node: { me } } = comNode 
         const orders = [0, 1]
@@ -72,9 +80,37 @@ class Integer {
       if (isEmpty(trace)) {
         logger.info('CHECKED')
       } else {
-        logger.info('UNCHECKED')
+        for (const t in trace) {
+          const { operands, pc } = trace[t]
+          operandLocs[pc] = operands 
+        }
       }
     })
+    /// Try to fix
+    let source = this.srcmap.source
+    const bugFixes = []
+    for (const pc in operandLocs) {
+      const { s } = this.srcmap.toSL(pc)
+      const { newlines, spaces, tabs, start } = insertLoc(source, s)
+      let check = ''
+      range(spaces).forEach(_ => check += ' ')
+      range(tabs).forEach(_ => check += '\t')
+      check += `require(${operandLocs[pc].join(' >= ')});\n`
+      bugFixes.push({ start, check, len: check.length })
+    }
+    bugFixes.sort((x, y) => x.start - y.start)
+    let acc = 0
+    bugFixes.forEach(bugFix => {
+      bugFix.start = bugFix.start + acc
+      // Begin fix here
+      const first = source.slice(0, bugFix.start + 1)
+      const last = source.slice(bugFix.start + 1)
+      source = [first, bugFix.check, last].join('')
+      // End fix
+      acc += bugFix.len
+    })
+    logger.info(`FIXED`)
+    console.log(source)
   }
 }
 

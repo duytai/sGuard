@@ -12,7 +12,7 @@ const formatSymbol = ([type, name, ...params]) => {
 const formatWithoutTrace = ([type, name, ...params]) => {
   if (type == 'const') return name.toString(16) 
   if (!params.length) return name
-  const config = { SLOAD: 1, MLOAD: 2 }
+  const config = { SLOAD: 1, MLOAD: 2, SUB: 2 }
   const ps = config[name] ? params.slice(0, config[name]) : params
   return `${name}(${ps.map(p => formatWithoutTrace(p)).join(',')})`
 }
