@@ -9,6 +9,7 @@ const {
   findSymbols,
   logger,
   insertLoc,
+  gb,
 } = require('../shared')
 
 class Integer {
@@ -41,7 +42,6 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    tree.root.prettify(0, this.srcmap)
     /// Find SUB
     const operandLocs = {}
     const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
@@ -105,6 +105,7 @@ class Integer {
       // Begin fix here
       const first = source.slice(0, bugFix.start + 1)
       const last = source.slice(bugFix.start + 1)
+      logger.info(`PATCH: ${gb(bugFix.check.trim())}`)
       source = [first, bugFix.check, last].join('')
       // End fix
       acc += bugFix.len
