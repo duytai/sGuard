@@ -15,11 +15,28 @@ class Cache {
     assert(epIndexes.length >= 0 && subEp)
     const links = new Set()
     epIndexes.forEach(epIndex => {
-      let dependOn = null 
+      const marker = { found: false, fullControl: [] }
       for (let i = epIndex; i >= 0; i--) {
         const { opcode: { name }, pc } = subEp.get(i)
-        dependOn = dependOn ? dependOn : this.condition.fullControls[pc]
-        if (dependOn && dependOn.includes(pc)) links.add(i)
+        if (!marker.found) {
+          marker.fullControl = this.condition.fullControls[pc] || []
+          marker.found = marker.fullControl.length > 0
+        }
+        if (marker.fullControl.includes(pc)) {
+          if (name == 'JUMPI') {
+            links.add(i)
+          } else {
+            assert(name == 'JUMPDEST')
+            marker.fullControl = marker.fullControl.filter(x => pc!= x)
+            assert(this.condition.fullControls[pc])
+            marker.fullControl = [
+              ...new Set([
+                ...marker.fullControl,
+                ...this.condition.fullControls[pc]
+              ])
+            ]
+          }
+        }
       }
     })
     return [...links] 

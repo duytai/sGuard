@@ -52,8 +52,6 @@ class Integer {
         const subExpression = [left, right].map(formatWithoutTrace).join(':')
         trace[subExpression] = true
       })
-      console.log('------------')
-      console.log(trace)
       const comNodes = subNode.traverse(({ node: { me } }) => {
         const f = formatSymbol(me) 
         return f.includes('LT(') || f.includes('GT(')
@@ -75,7 +73,6 @@ class Integer {
         logger.info('CHECKED')
       } else {
         logger.info('UNCHECKED')
-        console.log(Object.keys(trace))
       }
     })
   }
