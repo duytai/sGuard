@@ -34,6 +34,70 @@ class Integer {
     return operands
   }
 
+  fixAddition(tree, endPoints) {
+    // Fin Add
+    const operandLocs = {}
+    const addNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
+    addNodes.forEach(addNode => {
+      const { node: { me, endPointIdx } } = addNode 
+      const adds = findSymbols(me, ([_, name]) => name == 'ADD')
+      const trace = {}
+      adds.forEach(add => {
+        const [left, right, epSize] = add.slice(2)
+        const addExpression = [left, right].map(formatWithoutTrace).join(':')
+        const epIdx = epSize[1].toNumber() - 1
+        const endPoint = endPoints[endPointIdx]
+        const { pc, opcode } = endPoint.get(epIdx)
+        assert(opcode.name == 'ADD')
+        trace[addExpression] = { pc, operands: this.extractOperands(pc) }
+      })
+      /// Search for comparison node 
+      const comNodes = addNode.traverse(({ node: { me } }) => {
+        const f = formatSymbol(me) 
+        return f.includes('LT(') || f.includes('GT(')
+      })
+      comNodes.forEach(comNode => {
+        let { node: { me } } = comNode 
+        const orders = [0, 1]
+        while (me[1] != 'LT' && me[1] != 'GT') {
+          assert(me[1] == 'ISZERO')
+          me = me[2]
+          orders.reverse()
+        }
+        if (me[1] == 'LT') orders.reverse()
+        const [left, right] = orders.map(order => me[order + 2])
+        if (left[1] == 'ADD') {
+          const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
+          const rightCom = formatWithoutTrace(right)
+          if (rightCom == leftAdd || rightCom == rightAdd) {
+            const gtExpression = [leftAdd, rightAdd].join(':')
+            delete trace[gtExpression]
+          }
+        }
+      })
+      if (isEmpty(trace)) {
+        logger.info('CHECKED')
+      } else {
+        for (const t in trace) {
+          const { operands, pc } = trace[t]
+          operandLocs[pc] = operands
+        }
+      }
+    })
+    /// Try to fix
+    const bugFixes = []
+    for (const pc in operandLocs) {
+      const { s } = this.srcmap.toSL(pc)
+      const { newlines, spaces, tabs, start } = insertLoc(this.srcmap.source, s)
+      let check = ''
+      range(spaces).forEach(_ => check += ' ')
+      range(tabs).forEach(_ => check += '\t')
+      check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
+      bugFixes.push({ start, check, len: check.length })
+    }
+    return bugFixes
+  }
+
   fixSubtract(tree, endPoints) {
     /// Find SUB
     const operandLocs = {}
@@ -101,8 +165,10 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    const bugFixes = this.fixSubtract(tree, endPoints)
-    return bugFixes
+    return [
+      // ...this.fixSubtract(tree, endPoints),
+      ...this.fixAddition(tree, endPoints)
+    ]
   }
 }
 
