@@ -309,8 +309,9 @@ class Evm {
         }
         case 'MUL': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             stack.push(['const', x[1].mul(y[1]).mod(TWO_POW256)])
           }

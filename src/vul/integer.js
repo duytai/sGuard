@@ -137,6 +137,16 @@ class Integer {
     return this.generateBugfixes(operandLocs, 'SUB')
   }
 
+  fixMul(tree, endPoints) {
+    const operandLocs = {}
+    const mulNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('MUL('))
+    mulNodes.forEach(mulNode => {
+      const checkPoints = this.generateCheckpoints(mulNode, 'MUL')
+      // this.removeCheckpoints(subNode, checkPoints, 'SUB')
+    })
+    return []
+  }
+
   scan() {
     const { mem: { calls }, endPoints } = this.cache
     const tree = new Tree(this.cache)
@@ -147,7 +157,8 @@ class Integer {
     })
     return [
       ...this.fixSubtract(tree, endPoints),
-      ...this.fixAddition(tree, endPoints)
+      ...this.fixAddition(tree, endPoints),
+      ...this.fixMul(tree, endPoints),
     ]
   }
 }
