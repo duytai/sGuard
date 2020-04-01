@@ -37,8 +37,10 @@ class Scanner {
       // End fix
       acc += bugFix.len
     })
-    logger.info(`FIXED`)
-    console.log(source)
+    if (bugFixes.length) {
+      logger.info(`FIXED`)
+      console.log(source)
+    }
   }
 
 } 

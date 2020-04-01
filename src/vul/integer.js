@@ -1,5 +1,4 @@
 const assert = require('assert')
-const jp = require('jsonpath')
 const { toPairs, isEmpty, range } = require('lodash')
 const Tree = require('./tree')
 const {
@@ -10,6 +9,7 @@ const {
   logger,
   insertLoc,
   gb,
+  extractOperands,
 } = require('../shared')
 
 class Integer {
@@ -17,21 +17,6 @@ class Integer {
     this.cache = cache
     this.srcmap = srcmap
     this.ast = ast
-  }
-
-  extractOperands(pc) {
-    const { s, l } = this.srcmap.toSL(pc)
-    const key = [s, l, 0].join(':')
-    const response = jp.query(this.ast, `$..children[?(@.src=="${key}")]`) 
-    assert(response.length >= 1)
-    const { children } = response[response.length - 1]
-    const operands = []
-    children.forEach(({ src }) => {
-      const [s, l] = src.split(':').map(x => parseInt(x))
-      const operand = this.srcmap.source.slice(s, s + l)
-      operands.push(operand)
-    })
-    return operands
   }
 
   fixAddition(tree, endPoints) {
@@ -49,7 +34,7 @@ class Integer {
         const endPoint = endPoints[endPointIdx]
         const { pc, opcode } = endPoint.get(epIdx)
         assert(opcode.name == 'ADD')
-        trace[addExpression] = { pc, operands: this.extractOperands(pc) }
+        trace[addExpression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
       })
       /// Search for comparison node 
       const comNodes = addNode.traverse(({ node: { me } }) => {
@@ -113,7 +98,7 @@ class Integer {
         const endPoint = endPoints[endPointIdx]
         const { pc, opcode } = endPoint.get(epIdx)
         assert(opcode.name == 'SUB')
-        trace[subExpression] = { pc, operands: this.extractOperands(pc) }
+        trace[subExpression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
       })
       /// Search for comparison node 
       const comNodes = subNode.traverse(({ node: { me } }) => {

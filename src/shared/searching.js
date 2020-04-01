@@ -2,6 +2,7 @@ const assert = require('assert')
 const { uniqBy } = require('lodash')
 const { prettify, formatSymbol } = require('./prettify')
 const BN = require('bn.js')
+const jp = require('jsonpath')
 
 const findSymbol = (symbol, cond) => {
   const [type, name, ...params] = symbol
@@ -51,9 +52,26 @@ const insertLoc = (source, s) => {
   return config 
 }
 
+const extractOperands = (pc, srcmap, ast) => {
+  const { s, l } = srcmap.toSL(pc)
+  const key = [s, l, 0].join(':')
+  const response = jp.query(ast, `$..children[?(@.src=="${key}")]`) 
+  assert(response.length >= 1)
+  const { children } = response[response.length - 1]
+  const operands = []
+  children.forEach(({ src }) => {
+    const [s, l] = src.split(':').map(x => parseInt(x))
+    const operand = srcmap.source.slice(s, s + l)
+    operands.push(operand)
+  })
+  return operands
+}
+
+
 module.exports = {
   findSymbol,
   findSymbols,
   insertLoc,
+  extractOperands,
 }
 
