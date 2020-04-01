@@ -19,57 +19,67 @@ class Integer {
     this.ast = ast
   }
 
-  fixAddition(tree, endPoints) {
-    // Fin Add
-    const operandLocs = {}
-    const addNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
-    addNodes.forEach(addNode => {
-      const { node: { me, endPointIdx } } = addNode 
-      const adds = findSymbols(me, ([_, name]) => name == 'ADD')
-      const trace = {}
-      adds.forEach(add => {
-        const [left, right, epSize] = add.slice(2)
-        const addExpression = [left, right].map(formatWithoutTrace).join(':')
-        const epIdx = epSize[1].toNumber() - 1
-        const endPoint = endPoints[endPointIdx]
-        const { pc, opcode } = endPoint.get(epIdx)
-        assert(opcode.name == 'ADD')
-        trace[addExpression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
-      })
-      /// Search for comparison node 
-      const comNodes = addNode.traverse(({ node: { me } }) => {
-        const f = formatSymbol(me) 
-        return f.includes('LT(') || f.includes('GT(')
-      })
-      comNodes.forEach(comNode => {
-        let { node: { me } } = comNode 
-        const orders = [0, 1]
-        while (me[1] != 'LT' && me[1] != 'GT') {
-          assert(me[1] == 'ISZERO')
-          me = me[2]
-          orders.reverse()
-        }
-        if (me[1] == 'LT') orders.reverse()
-        const [left, right] = orders.map(order => me[order + 2])
-        if (left[1] == 'ADD') {
-          const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
-          const rightCom = formatWithoutTrace(right)
-          if (rightCom == leftAdd || rightCom == rightAdd) {
-            const gtExpression = [leftAdd, rightAdd].join(':')
-            delete trace[gtExpression]
+  generateCheckpoints(dnode, opcodeName) {
+    assert(opcodeName && dnode)
+    const { endPoints } = this.cache
+    const checkPoints = {}
+    const { node: { me, endPointIdx } } = dnode 
+    const nodes = findSymbols(me, ([_, name]) => name == opcodeName)
+    nodes.forEach(node => {
+      const [left, right, epSize] = node.slice(2)
+      const expression = [left, right].map(formatWithoutTrace).join(':')
+      const epIdx = epSize[1].toNumber() - 1
+      const endPoint = endPoints[endPointIdx]
+      const { pc, opcode } = endPoint.get(epIdx)
+      assert(opcode.name == opcodeName)
+      checkPoints[expression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
+    })
+    return checkPoints
+  }
+
+  removeCheckpoints(dnode, checkPoints, opcodeName) {
+    assert(dnode && checkPoints && opcodeName)
+    /// Search for comparison node 
+    const comNodes = dnode.traverse(({ node: { me } }) => {
+      const f = formatSymbol(me) 
+      return f.includes('LT(') || f.includes('GT(')
+    })
+    comNodes.forEach(comNode => {
+      let { node: { me } } = comNode 
+      const orders = [0, 1]
+      while (me[1] != 'LT' && me[1] != 'GT') {
+        assert(me[1] == 'ISZERO')
+        me = me[2]
+        orders.reverse()
+      }
+      if (me[1] == 'LT') orders.reverse()
+      const [left, right] = orders.map(order => me[order + 2])
+      switch (opcodeName) {
+        case 'ADD': {
+          if (left[1] == 'ADD') {
+            const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
+            const rightCom = formatWithoutTrace(right)
+            if (rightCom == leftAdd || rightCom == rightAdd) {
+              const gtExpression = [leftAdd, rightAdd].join(':')
+              delete checkPoints[gtExpression]
+            }
           }
+          break
         }
-      })
-      if (isEmpty(trace)) {
-        logger.info('CHECKED')
-      } else {
-        for (const t in trace) {
-          const { operands, pc } = trace[t]
-          operandLocs[pc] = operands
+        case 'SUB': {
+          const gtExpression = [left, right].map(formatWithoutTrace).join(':')
+          delete checkPoints[gtExpression]
+          break
+        }
+        default: {
+          assert(false, `does not support ${opcodeName}`)
         }
       }
     })
-    /// Try to fix
+  }
+
+  generateBugfixes(operandLocs, opcodeName) {
+    assert(operandLocs && opcodeName)
     const bugFixes = []
     for (const pc in operandLocs) {
       const { s } = this.srcmap.toSL(pc)
@@ -77,69 +87,54 @@ class Integer {
       let check = ''
       range(spaces).forEach(_ => check += ' ')
       range(tabs).forEach(_ => check += '\t')
-      check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
+      switch (opcodeName) {
+        case 'ADD': {
+          check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
+          break
+        }
+        case 'SUB': {
+          check += `require(${operandLocs[pc].join(' >= ')});\n`
+          break
+        }
+        default: {
+          assert(false, `does not support ${opcodeName}`)
+        }
+      }
       bugFixes.push({ start, check, len: check.length })
     }
     return bugFixes
   }
 
-  fixSubtract(tree, endPoints) {
-    /// Find SUB
+  fixAddition(tree, endPoints) {
     const operandLocs = {}
-    const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
-    subNodes.forEach(subNode => {
-      const { node: { me, endPointIdx } } = subNode 
-      const subs = findSymbols(me, ([_, name]) => name == 'SUB') 
-      const trace = {} 
-      subs.forEach(sub => {
-        const [left, right, epSize] = sub.slice(2)
-        const subExpression = [left, right].map(formatWithoutTrace).join(':')
-        const epIdx = epSize[1].toNumber() - 1
-        const endPoint = endPoints[endPointIdx]
-        const { pc, opcode } = endPoint.get(epIdx)
-        assert(opcode.name == 'SUB')
-        trace[subExpression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
-      })
-      /// Search for comparison node 
-      const comNodes = subNode.traverse(({ node: { me } }) => {
-        const f = formatSymbol(me) 
-        return f.includes('LT(') || f.includes('GT(')
-      })
-      /// Verify comparison
-      comNodes.forEach(comNode => {
-        let { node: { me } } = comNode 
-        const orders = [0, 1]
-        while (me[1] != 'LT' && me[1] != 'GT') {
-          assert(me[1] == 'ISZERO')
-          me = me[2]
-          orders.reverse()
-        }
-        if (me[1] == 'LT') orders.reverse()
-        const [left, right] = orders.map(order => me[order + 2])
-        const ltExpression = [left, right].map(formatWithoutTrace).join(':')
-        delete trace[ltExpression]
-      })
-      if (isEmpty(trace)) {
-        logger.info('CHECKED')
-      } else {
-        for (const t in trace) {
-          const { operands, pc } = trace[t]
-          operandLocs[pc] = operands 
+    const addNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
+    addNodes.forEach(addNode => {
+      const checkPoints = this.generateCheckpoints(addNode, 'ADD')
+      this.removeCheckpoints(addNode, checkPoints, 'ADD')
+      if (!isEmpty(checkPoints)) {
+        for (const t in checkPoints) {
+          const { operands, pc } = checkPoints[t]
+          operandLocs[pc] = operands
         }
       }
     })
-    /// Try to fix
-    const bugFixes = []
-    for (const pc in operandLocs) {
-      const { s } = this.srcmap.toSL(pc)
-      const { newlines, spaces, tabs, start } = insertLoc(this.srcmap.source, s)
-      let check = ''
-      range(spaces).forEach(_ => check += ' ')
-      range(tabs).forEach(_ => check += '\t')
-      check += `require(${operandLocs[pc].join(' >= ')});\n`
-      bugFixes.push({ start, check, len: check.length })
-    }
-    return bugFixes 
+    return this.generateBugfixes(operandLocs, 'ADD')
+  }
+
+  fixSubtract(tree, endPoints) {
+    const operandLocs = {}
+    const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
+    subNodes.forEach(subNode => {
+      const checkPoints = this.generateCheckpoints(subNode, 'SUB')
+      this.removeCheckpoints(subNode, checkPoints, 'SUB')
+      if (!isEmpty(checkPoints)) {
+        for (const t in checkPoints) {
+          const { operands, pc } = checkPoints[t]
+          operandLocs[pc] = operands
+        }
+      }
+    })
+    return this.generateBugfixes(operandLocs, 'SUB')
   }
 
   scan() {
@@ -151,7 +146,7 @@ class Integer {
       })
     })
     return [
-      // ...this.fixSubtract(tree, endPoints),
+      ...this.fixSubtract(tree, endPoints),
       ...this.fixAddition(tree, endPoints)
     ]
   }
