@@ -1,28 +1,22 @@
-const { uniq } = require('lodash')
 const assert = require('assert')
+const hash = require('object-hash')
 
-class StackVar {
-  constructor(ep) {
-    assert(ep)
-    this.ep = ep
-    this.assignmentPcs = new Set()
+class LocalAssignment {
+  constructor(subEp, trackingPos) {
+    assert(trackingPos >= 0 && subEp)
+    this.epIndexes = new Set()
     this.visited = new Set()
+    this.locateAssignments(subEp, trackingPos)
+    this.epIndexes = [...this.epIndexes]
   }
 
-  toVisitedKey(trackingPos, epSize) {
+  toKey(epSize, trackingPos) {
     assert(trackingPos >= 0 && epSize >= 0)
-    return `${trackingPos}:${epSize}`
+    return hash([epSize, trackingPos].join(':')).slice(0, 4)
   }
 
-  myAncestors(trackingPos) {
-    this.assignmentPcs.clear()
-    this.visited.clear()
-    this.whereAreAssignments(trackingPos, this.ep)
-    return [...this.assignmentPcs]
-  }
-
-  whereAreAssignments(trackingPos, ep) {
-    const key = this.toVisitedKey(trackingPos, ep.size())
+  locateAssignments(ep, trackingPos) {
+    const key = this.toKey(ep.size(), trackingPos)
     if (this.visited.has(key)) return
     this.visited.add(key)
     for (let i = ep.size() - 1; i >= 0; i--) {
@@ -31,7 +25,7 @@ class StackVar {
       if (lastStackPos >= trackingPos && name == 'SWAP') {
         const swapN = opVal - 0x8f
         if (trackingPos + swapN == lastStackPos) {
-          this.assignmentPcs.add(pc)
+          this.epIndexes.add(i)
           trackingPos = trackingPos + swapN
         } else if (lastStackPos == trackingPos) {
           trackingPos = trackingPos - swapN
@@ -43,11 +37,11 @@ class StackVar {
       }
       if (trackingPos == lastStackPos) {
         const { stack: prevStack, opcode: { name: prevName, ins: prevIns }} = ep.get(i - 1)
-        /// An expression, need to consider all operands 
+        /// An expression, need to consider all operands
         if (prevIns > 0) {
           for (let opIdx = 0; opIdx < prevIns; opIdx ++) {
             const subEp = ep.sub(i)
-            this.whereAreAssignments(lastStackPos + opIdx, subEp)
+            this.locateAssignments(subEp, lastStackPos + opIdx)
           }
           break
         }
@@ -57,4 +51,4 @@ class StackVar {
   }
 }
 
-module.exports = StackVar 
+module.exports = LocalAssignment 

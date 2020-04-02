@@ -8,27 +8,16 @@ const {
 } = require('../shared')
 
 class DNode {
-  constructor(symbol, pc, id) {
-    assert(symbol && pc >= 0 && id)
-    this.node = { id, me: symbol, pc, childs: [], alias: 'N/A', variable: null, parent: null }
-  }
-
-  addChild(child) {
-    assert(child)
-    this.node.childs.push(child)
-  }
-
-  addParent(parent) {
-    assert(parent)
-    this.node.parent = parent
-  }
-
-  findSloads() {
-    const cond = (dnode) => {
-      const { node: { me, childs } } = dnode
-      return me[1] == 'SLOAD'
+  constructor(symbol, pc, endPointIdx, epIdx) {
+    assert(symbol && pc >= 0 && endPointIdx >= 0 && epIdx >= 0)
+    this.node = {
+      me: symbol,
+      pc,
+      childs: [],
+      endPointIdx,
+      epIdx,
+      alias: ''
     }
-    return this.traverse(cond)
   }
 
   traverse(cond) {

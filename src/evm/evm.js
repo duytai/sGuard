@@ -5,7 +5,7 @@ const dotenv = require('dotenv')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
 const Decoder = require('./decoder')
-const { logger, prettify, formatSymbol } = require('../shared')
+const { logger } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
@@ -309,8 +309,9 @@ class Evm {
         }
         case 'MUL': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             stack.push(['const', x[1].mul(y[1]).mod(TWO_POW256)])
           }
@@ -318,8 +319,9 @@ class Evm {
         }
         case 'SUB': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             stack.push(['const', x[1].sub(y[1]).toTwos(256)])
           }
@@ -327,8 +329,9 @@ class Evm {
         }
         case 'ADD': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             stack.push(['const', x[1].add(y[1]).mod(TWO_POW256)])
           }
@@ -336,8 +339,9 @@ class Evm {
         }
         case 'DIV': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             if (y[1].isZero()) {
               stack.push(y)

@@ -1,70 +1,106 @@
-const { uniqBy, uniq } = require('lodash')
+const assert = require('assert')
+const { toPairs, fromPairs, intersection, union, xor } = require('lodash')
 const { prettify, formatSymbol, logger } = require('../shared')
 
 class Condition {
-  constructor(ep, endPoints) {
-    this.ep = ep
-    this.endPoints = endPoints
+  constructor(endPoints) {
+    assert(endPoints.length >= 0)
+    this.start = 0
+    this.end = 100000
+    this.buildGraph(endPoints)
+    this.computeDominators()
+    this.computeControls()
   }
 
-  toKey(pc, cond) {
-    return `${pc}:${formatSymbol(cond)}`
-  }
-
-  batchFindConds(trackingPcs = []) {
-    return uniqBy(
-      trackingPcs.reduce((agg, trackingPc) => [...agg, ...this.findConds(trackingPc)], []),
-      ({ cond, pc }) => this.toKey(pc, formatSymbol(cond))
+  buildGraph(endPoints) {
+    const successors = {}
+    const predecessors = {} 
+    const nodes = new Set([this.start, this.end])
+    endPoints.forEach(({ ep }) => {
+      ep.forEach(({ opcode: { name }, pc }, idx) => {
+        if (name == 'JUMPI' || (idx >= 1 && ep[idx - 1].opcode.name == 'JUMPI')) {
+          nodes.add(pc)
+        }
+      })
+    })
+    endPoints.forEach(({ ep }) => {
+      const markers = [
+        { pc: this.start },
+        ...ep.filter(({ pc }) => nodes.has(pc)),
+        { pc: this.end }
+      ]
+      markers.slice(1).forEach(({ pc: to }, idx) => {
+        const from = markers[idx].pc
+        if (!successors[from]) successors[from] = new Set()
+        successors[from].add(to)
+        if (!predecessors[to]) predecessors[to] = new Set()
+        predecessors[to].add(from)
+      })
+    })
+    this.successors = fromPairs(
+      toPairs(successors).map(([key, values]) => [key, [...values]])
     )
+    this.predecessors = fromPairs(
+      toPairs(predecessors).map(([key, values]) => [key, [...values]])
+    )
+    this.nodes = [...nodes]
   }
-  /// Find jumpi nodes where our `pc` depends on
-  /// and collect conditions at that jumpi
-  findConds(trackingPc) {
-    /// Find previous jumpis 
-    let allPrevJumpis = []
-    const allUnrelatedJumpis = []
-    this.endPoints.forEach(ep => {
-      let encounterTrackingPc = false
-      const prevJumpis = []
-      for (let i = 0; i < ep.size(); i++) {
-        const { pc, opcode: { name } } = ep.get(i)
-        if (name == 'JUMPI') prevJumpis.push(pc)
-        if (pc == trackingPc && prevJumpis.length) {
-          allPrevJumpis.push([...prevJumpis])
-          prevJumpis.length = 0 
-          encounterTrackingPc = true
+
+  computeDominators() {
+    const trees = [
+      {
+        predecessors: this.predecessors,
+        successors: this.successors,
+        nodes: this.nodes,
+        start: this.start,
+      },
+      {
+        predecessors: this.successors,
+        successors: this.predecessors,
+        nodes: this.nodes,
+        start: this.end,
+      }
+    ]
+    const [dominators, postdominators] = trees.map(({ start, predecessors, successors, nodes }) => {
+      const dominators = {}
+      nodes.forEach(node => dominators[node] = nodes)
+      let workList = [start]
+      while (workList.length > 0) {
+        const node = workList.pop()
+        const preds = predecessors[node] || []
+        const pdominators = intersection.apply(intersection, preds.map(p => dominators[p]))
+        const ndominators = union([node], pdominators)
+        if (ndominators.join('') != dominators[node].join('')) {
+          dominators[node] = ndominators
+          const succs = successors[node]
+          workList = union(workList, succs)
         }
       }
-      if (!encounterTrackingPc) {
-        allUnrelatedJumpis.push([...prevJumpis])
+      return dominators
+    })
+    this.dominators = dominators
+    this.postdominators = postdominators
+  }
+
+  computeControls() {
+    this.fullControls = {}
+    const domDict = this.nodes.map(node => {
+      const succs = this.successors[node] || []
+      return {
+        node,
+        iters: intersection.apply(intersection, succs.map(s => this.postdominators[s])),
+        unios: union.apply(union, succs.map(s => this.postdominators[s]))
       }
     })
-    /// Detect control dependency
-    const controlJumpis = []
-    while (true) {
-      /// If no more jumpi control then break
-      const closestJumpis = uniq(allPrevJumpis.map(p => p[p.length - 1]))
-      if (!closestJumpis.length) break
-      closestJumpis.forEach(jumpi => {
-        allUnrelatedJumpis.forEach(uJumpis => {
-          if (uJumpis.includes(jumpi) && !controlJumpis.includes(jumpi)) {
-            controlJumpis.push(jumpi)
-          }
-        })
+    this.nodes.forEach(node => {
+      if (node == this.start) return
+      toPairs(domDict).forEach(([_, { node: onode, iters, unios }]) => {
+        if (!iters.includes(node) && unios.includes(node)) {
+          !this.fullControls[node] && (this.fullControls[node] = [])
+          this.fullControls[node].push(onode)
+        }
       })
-      /// Update allPrevJumpis
-      allPrevJumpis = allPrevJumpis.map(p => p.slice(0, -1)).filter(p => p.length)
-    }
-    /// Get condition at jumpi
-    const conds = []
-    for (let i = 0; i < this.ep.size(); i ++) {
-      const { pc, opcode: { name }, stack } = this.ep.get(i)
-      if (controlJumpis.includes(pc)) {
-        const cond = stack.get(stack.size() - 2)
-        conds.push({ pc, cond, epIdx: i, trackingPos: stack.size() - 2 })
-      }
-    }
-    return uniqBy(conds, ({ cond, pc }) => this.toKey(pc, formatSymbol(cond)))
+    })
   }
 }
 

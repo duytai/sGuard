@@ -9,6 +9,12 @@ class SRCMap {
     this.pcInst = this.pcToInst(bin)
   }
 
+  toSL(pc) {
+    const inst = this.pcInst[pc]
+    if (!inst) return { txt: '', line: -1 }
+    return this.srcmap[inst]
+  }
+
   toSrc(pc) {
     const inst = this.pcInst[pc]
     if (!inst) return { txt: '', line: -1 }
