@@ -33,7 +33,10 @@ class Integer {
       const endPoint = endPoints[endPointIdx]
       const { pc, opcode } = endPoint.get(epIdx)
       assert(opcode.name == opcodeName)
-      checkPoints[expression] = { pc, operands: extractOperands(pc, this.srcmap, this.ast) }
+      const operands = extractOperands(pc, this.srcmap, this.ast)
+      // ++, --
+      if (operands.length < 2) operands.push('1')
+      checkPoints[expression] = { pc, operands }
     })
     return checkPoints
   }
@@ -156,7 +159,7 @@ class Integer {
     addNodes.forEach(addNode => {
       const checkPoints = this.generateCheckpoints(addNode, 'ADD')
       // TODO
-      // this.removeCheckpoints(addNode, checkPoints, 'ADD')
+      this.removeCheckpoints(addNode, checkPoints, 'ADD')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('ADD')) {
@@ -175,7 +178,7 @@ class Integer {
     subNodes.forEach(subNode => {
       const checkPoints = this.generateCheckpoints(subNode, 'SUB')
       // TODO
-      // this.removeCheckpoints(subNode, checkPoints, 'SUB')
+      this.removeCheckpoints(subNode, checkPoints, 'SUB')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('SUB')) {
@@ -194,7 +197,7 @@ class Integer {
     mulNodes.forEach(mulNode => {
       const checkPoints = this.generateCheckpoints(mulNode, 'MUL')
       // TODO:
-      // this.removeCheckpoints(mulNode, checkPoints, 'MUL')
+      this.removeCheckpoints(mulNode, checkPoints, 'MUL')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('MUL')) {
@@ -215,6 +218,7 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
+    tree.root.prettify()
     return [
       ...this.fixSubtract(tree, endPoints),
       ...this.fixAddition(tree, endPoints),
