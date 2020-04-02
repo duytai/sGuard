@@ -28,7 +28,7 @@ class Integer {
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
       if (left[1] == 'ISZERO' || right[1] == 'ISZERO') return
-      const expression = [left, right].map(formatWithoutTrace).join(':')
+      const expression = formatWithoutTrace(node)
       const epIdx = epSize[1].toNumber() - 1
       const endPoint = endPoints[endPointIdx]
       const { pc, opcode } = endPoint.get(epIdx)
@@ -64,15 +64,20 @@ class Integer {
                 const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
                 const rightCom = formatWithoutTrace(right)
                 if (rightCom == leftAdd || rightCom == rightAdd) {
-                  const gtExpression = [leftAdd, rightAdd].join(':')
-                  delete checkPoints[gtExpression]
+                  const expressions = [
+                    `ADD(${leftAdd},${rightAdd})`,
+                    `ADD(${rightAdd},${leftAdd})`,
+                  ]
+                  expressions.forEach(expression => {
+                    delete checkPoints[expression]
+                  })
                 }
               }
               break
             }
             case 'SUB': {
-              const gtExpression = [left, right].map(formatWithoutTrace).join(':')
-              delete checkPoints[gtExpression]
+              const expression = `SUB(${[left, right].map(formatWithoutTrace).join(',')})`
+              delete checkPoints[expression]
               break
             }
           }
@@ -84,12 +89,36 @@ class Integer {
         console.log(checkPoints)
         comNodes.forEach(comNode => {
           const { node: { me } } = comNode
+          // a * b / a == b || a * b / b == a
           if (me[1] == 'ISZERO' && me[2][1] == 'ISZERO' && me[2][2][1] == 'EQ') {
-            const t = me[2][2]
-            prettify([t])
+            const [leftEq, rightEq] = me[2][2].slice(2)
+              .map((symbol, idx) => idx == 1 ? formatWithoutTrace(symbol) : symbol)
+            if (leftEq[1] == 'DIV') {
+              const [leftDiv, rightDiv] = leftEq.slice(2)
+                .map((symbol, idx) => idx == 1 ? formatWithoutTrace(symbol) : symbol)
+              if (leftDiv[1] == 'MUL') {
+                const [leftMul, rightMul] = leftDiv.slice(2).map(formatWithoutTrace)
+                if ((leftMul == rightDiv && rightMul == rightEq) || (rightMul == rightDiv && leftMul == rightEq)) {
+                  const expressions = [
+                    `MUL(${leftMul},${rightMul})`,
+                    `MUL(${rightMul},${leftMul})`,
+                  ]
+                  expressions.forEach(expression => {
+                    delete checkPoints[expression]
+                  })
+                }
+              }
+            }
           }
+          // if (a == 0)
+          // if (me[1] == 'ISZERO' && me[2][1] == 'EQ') {
+            // const [leftEq, rightEq] = me[2].slice(2)
+            // if ((leftEq[0] == 'const' && leftEq[1].isZero()) || (rightEq[0] == 'const' && rightEq[1].isZero())) {
+              // delete checkPoints[expression]
+            // }
+          // }
         })
-        assert(false, 'LOL')
+        console.log(checkPoints)
         break
       }
     }
@@ -130,8 +159,10 @@ class Integer {
       this.removeCheckpoints(addNode, checkPoints, 'ADD')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
-          const { operands, pc } = checkPoints[t]
-          operandLocs[pc] = operands
+          if (t.startsWith('ADD')) {
+            const { operands, pc } = checkPoints[t]
+            operandLocs[pc] = operands
+          }
         }
       }
     })
@@ -146,8 +177,10 @@ class Integer {
       this.removeCheckpoints(subNode, checkPoints, 'SUB')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
-          const { operands, pc } = checkPoints[t]
-          operandLocs[pc] = operands
+          if (t.startsWith('SUB')) {
+            const { operands, pc } = checkPoints[t]
+            operandLocs[pc] = operands
+          }
         }
       }
     })
@@ -160,6 +193,14 @@ class Integer {
     mulNodes.forEach(mulNode => {
       const checkPoints = this.generateCheckpoints(mulNode, 'MUL')
       this.removeCheckpoints(mulNode, checkPoints, 'MUL')
+      if (!isEmpty(checkPoints)) {
+        for (const t in checkPoints) {
+          if (t.startsWith('MUL')) {
+            const { operands, pc } = checkPoints[t]
+            operandLocs[pc] = operands
+          }
+        }
+      }
     })
     return []
   }
