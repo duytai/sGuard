@@ -7,7 +7,7 @@ const {
   formatSymbol,
   findSymbols,
   logger,
-  insertLoc,
+  insertLocs,
   gb,
   extractOperands,
 } = require('../shared')
@@ -121,29 +121,32 @@ class Integer {
     const bugFixes = []
     for (const pc in operandLocs) {
       const { s } = this.srcmap.toSL(pc)
-      const { newlines, spaces, tabs, start } = insertLoc(this.srcmap.source, s)
-      let check = ''
-      range(spaces).forEach(_ => check += ' ')
-      range(tabs).forEach(_ => check += '\t')
-      switch (opcodeName) {
-        case 'ADD': {
-          check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
-          break
+      const locConfigs = insertLocs(this.srcmap.source, s)
+      locConfigs.forEach(locConfig => {
+        const { newlines, spaces, tabs, start } = locConfig
+        let check = ''
+        range(spaces).forEach(_ => check += ' ')
+        range(tabs).forEach(_ => check += '\t')
+        switch (opcodeName) {
+          case 'ADD': {
+            check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
+            break
+          }
+          case 'SUB': {
+            check += `require(${operandLocs[pc].join(' >= ')});\n`
+            break
+          }
+          case 'MUL': {
+            const [left, right] = operandLocs[pc]
+            check += `require(${left} == 0 || ${left} * ${right} / ${left} == ${right});\n`
+            break
+          }
+          default: {
+            assert(false, `does not support ${opcodeName}`)
+          }
         }
-        case 'SUB': {
-          check += `require(${operandLocs[pc].join(' >= ')});\n`
-          break
-        }
-        case 'MUL': {
-          const [left, right] = operandLocs[pc]
-          check += `require(${left} == 0 || ${left} * ${right} / ${left} == ${right});\n`
-          break
-        }
-        default: {
-          assert(false, `does not support ${opcodeName}`)
-        }
-      }
-      bugFixes.push({ start, check, len: check.length })
+        bugFixes.push({ start, check, len: check.length })
+      })
     }
     return bugFixes
   }
@@ -210,7 +213,6 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    tree.root.prettify()
     return [
       ...this.fixSubtract(tree, endPoints),
       ...this.fixAddition(tree, endPoints),

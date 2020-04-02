@@ -22,7 +22,7 @@ const findSymbols = (symbol, cond) => {
   )
 }
 
-const insertLoc = (source, s) => {
+const insertLocs = (source, s) => {
   assert(source && s >= 0)
   const seps = [';', '{', '}']
   while (!seps.includes(source[s])) s -= 1
@@ -49,7 +49,7 @@ const insertLoc = (source, s) => {
   if (config.newline) {
     config.start = config.start - config.tabs - config.spaces 
   }
-  return config 
+  return [config]
 }
 
 const extractOperands = (pc, srcmap, ast) => {
@@ -71,7 +71,7 @@ const extractOperands = (pc, srcmap, ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  insertLoc,
+  insertLocs,
   extractOperands,
 }
 
