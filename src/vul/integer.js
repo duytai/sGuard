@@ -212,8 +212,8 @@ class Integer {
     })
     tree.root.prettify()
     return [
-      // ...this.fixSubtract(tree, endPoints),
-      // ...this.fixAddition(tree, endPoints),
+      ...this.fixSubtract(tree, endPoints),
+      ...this.fixAddition(tree, endPoints),
       ...this.fixMul(tree, endPoints),
     ]
   }
