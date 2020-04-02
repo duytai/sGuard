@@ -155,7 +155,8 @@ class Integer {
     const addNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
     addNodes.forEach(addNode => {
       const checkPoints = this.generateCheckpoints(addNode, 'ADD')
-      this.removeCheckpoints(addNode, checkPoints, 'ADD')
+      // TODO
+      // this.removeCheckpoints(addNode, checkPoints, 'ADD')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('ADD')) {
@@ -173,7 +174,8 @@ class Integer {
     const subNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
     subNodes.forEach(subNode => {
       const checkPoints = this.generateCheckpoints(subNode, 'SUB')
-      this.removeCheckpoints(subNode, checkPoints, 'SUB')
+      // TODO
+      // this.removeCheckpoints(subNode, checkPoints, 'SUB')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('SUB')) {
@@ -191,7 +193,8 @@ class Integer {
     const mulNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('MUL('))
     mulNodes.forEach(mulNode => {
       const checkPoints = this.generateCheckpoints(mulNode, 'MUL')
-      this.removeCheckpoints(mulNode, checkPoints, 'MUL')
+      // TODO:
+      // this.removeCheckpoints(mulNode, checkPoints, 'MUL')
       if (!isEmpty(checkPoints)) {
         for (const t in checkPoints) {
           if (t.startsWith('MUL')) {
