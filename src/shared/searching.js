@@ -52,11 +52,54 @@ const findInsertLoc = (source, s) => {
   return config
 }
 
-const insertLoc = (srcmap, ast, pc) => {
+const insertLocs = (srcmap, ast, pc) => {
   assert(srcmap && ast && pc >= 0)
   const { s, l } = srcmap.toSL(pc)
   const forStatements = jp.query(ast, `$..children[?(@.name=="ForStatement")]`)
+  const whileStatements = jp.query(ast, `$..children[?(@.name=="WhileStatement")]`)
+  const dowhileStatements = jp.query(ast, `$..children[?(@.name=="DoWhileStatement")]`)
   const ret = []
+
+  dowhileStatements.forEach(({ children, src }) => {
+    const [whileS, whileL] = src.split(':').map(x => parseInt(x))
+    if (s >= whileS && s + l <= whileS + whileL) {
+      if (children.length > 0 && children[0].name != 'Block') {
+        const { name, src } = children[0]
+        const [condS, condL] = src.split(':').map(x => parseInt(x))
+        if (s >= condS && s + l <= condS + condL) {
+          const block = children.find(({ name }) => name == 'Block')
+          if (block) {
+            const { src } = block
+            const [blockS, blockL] = src.split(':').map(x => parseInt(x))
+            const r = findInsertLoc(srcmap.source, blockS + blockL - 2)
+            ret.push(r)
+          }
+        }
+      }
+    }
+  })
+
+  whileStatements.forEach(({ children, src }) => {
+    const [whileS, whileL] = src.split(':').map(x => parseInt(x))
+    if (s >= whileS && s + l <= whileS + whileL) {
+      if (children.length > 0 && children[0].name != 'Block') {
+        const { name, src } = children[0]
+        const [condS, condL] = src.split(':').map(x => parseInt(x))
+        if (s >= condS && s + l <= condS + condL) {
+          const r = findInsertLoc(srcmap.source, condS)
+          ret.push(r)
+          const block = children.find(({ name }) => name == 'Block')
+          if (block) {
+            const { src } = block
+            const [blockS, blockL] = src.split(':').map(x => parseInt(x))
+            const r = findInsertLoc(srcmap.source, blockS + blockL - 2)
+            ret.push(r)
+          }
+        }
+      }
+    }
+  })
+
   forStatements.forEach(({ children, src }) => {
     const [forS, forL] = src.split(':').map(x => parseInt(x))
     if (s >= forS && s + l <= forS + forL) {
@@ -80,8 +123,8 @@ const insertLoc = (srcmap, ast, pc) => {
       }
     }
   })
-  assert(ret.length == 1)
-  return ret[0]
+  assert(ret.length >= 1)
+  return ret
 }
 
 const extractOperands = (pc, srcmap, ast) => {
@@ -103,7 +146,7 @@ const extractOperands = (pc, srcmap, ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  insertLoc,
+  insertLocs,
   extractOperands,
 }
 

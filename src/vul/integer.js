@@ -7,7 +7,7 @@ const {
   formatSymbol,
   findSymbols,
   logger,
-  insertLoc,
+  insertLocs,
   gb,
   extractOperands,
 } = require('../shared')
@@ -120,29 +120,32 @@ class Integer {
     assert(operandLocs && opcodeName)
     const bugFixes = []
     for (const pc in operandLocs) {
-      const { newlines, spaces, tabs, start } = insertLoc(this.srcmap, this.ast, pc)
-      let check = ''
-      range(spaces).forEach(_ => check += ' ')
-      range(tabs).forEach(_ => check += '\t')
-      switch (opcodeName) {
-        case 'ADD': {
-          check += `require(${operandLocs[pc].join(' + ')} >= ${operandLocs[pc][0]});\n`
-          break
+      const configLocs = insertLocs(this.srcmap, this.ast, pc)
+      configLocs.forEach(configLoc => {
+        const { newlines, spaces, tabs, start } = configLoc
+        let check = ''
+        range(spaces).forEach(_ => check += ' ')
+        range(tabs).forEach(_ => check += '\t')
+        switch (opcodeName) {
+          case 'ADD': {
+            check += `require(${operandLocs[pc].join(' + ')} >= ${operandLocs[pc][0]});\n`
+            break
+          }
+          case 'SUB': {
+            check += `require(${operandLocs[pc].join(' >= ')});\n`
+            break
+          }
+          case 'MUL': {
+            const [left, right] = operandLocs[pc]
+            check += `require(${left} == 0 || ${left} * ${right} / ${left} == ${right});\n`
+            break
+          }
+          default: {
+            assert(false, `does not support ${opcodeName}`)
+          }
         }
-        case 'SUB': {
-          check += `require(${operandLocs[pc].join(' >= ')});\n`
-          break
-        }
-        case 'MUL': {
-          const [left, right] = operandLocs[pc]
-          check += `require(${left} == 0 || ${left} * ${right} / ${left} == ${right});\n`
-          break
-        }
-        default: {
-          assert(false, `does not support ${opcodeName}`)
-        }
-      }
-      bugFixes.push({ start, check, len: check.length })
+        bugFixes.push({ start, check, len: check.length })
+      })
     }
     return bugFixes
   }
