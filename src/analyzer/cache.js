@@ -26,7 +26,6 @@ class Cache {
           if (name == 'JUMPI') {
             links.add(i)
           } else {
-            assert(name == 'JUMPDEST')
             marker.fullControl = marker.fullControl.filter(x => pc!= x)
             assert(this.condition.fullControls[pc])
             marker.fullControl = [

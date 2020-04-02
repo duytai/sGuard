@@ -27,6 +27,7 @@ class Integer {
     const nodes = findSymbols(me, ([_, name]) => name == opcodeName)
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
+      if (left[1] == 'ISZERO' || right[1] == 'ISZERO') return
       const expression = [left, right].map(formatWithoutTrace).join(':')
       const epIdx = epSize[1].toNumber() - 1
       const endPoint = endPoints[endPointIdx]
@@ -40,42 +41,58 @@ class Integer {
   removeCheckpoints(dnode, checkPoints, opcodeName) {
     assert(dnode && checkPoints && opcodeName)
     /// Search for comparison node 
-    const comNodes = dnode.traverse(({ node: { me } }) => {
-      const f = formatSymbol(me) 
-      return f.includes('LT(') || f.includes('GT(')
-    })
-    comNodes.forEach(comNode => {
-      let { node: { me } } = comNode 
-      const orders = [0, 1]
-      while (me[1] != 'LT' && me[1] != 'GT') {
-        assert(me[1] == 'ISZERO')
-        me = me[2]
-        orders.reverse()
-      }
-      if (me[1] == 'LT') orders.reverse()
-      const [left, right] = orders.map(order => me[order + 2])
-      switch (opcodeName) {
-        case 'ADD': {
-          if (left[1] == 'ADD') {
-            const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
-            const rightCom = formatWithoutTrace(right)
-            if (rightCom == leftAdd || rightCom == rightAdd) {
-              const gtExpression = [leftAdd, rightAdd].join(':')
+    switch (opcodeName) {
+      case 'ADD':
+      case 'SUB': {
+        const comNodes = dnode.traverse(({ node: { me } }) => {
+          const f = formatSymbol(me) 
+          return f.includes('LT(') || f.includes('GT(')
+        })
+        comNodes.forEach(comNode => {
+          let { node: { me } } = comNode 
+          const orders = [0, 1]
+          while (me[1] != 'LT' && me[1] != 'GT') {
+            assert(me[1] == 'ISZERO')
+            me = me[2]
+            orders.reverse()
+          }
+          if (me[1] == 'LT') orders.reverse()
+          const [left, right] = orders.map(order => me[order + 2])
+          switch (opcodeName) {
+            case 'ADD': {
+              if (left[1] == 'ADD') {
+                const [leftAdd, rightAdd] = left.slice(2).map(formatWithoutTrace)
+                const rightCom = formatWithoutTrace(right)
+                if (rightCom == leftAdd || rightCom == rightAdd) {
+                  const gtExpression = [leftAdd, rightAdd].join(':')
+                  delete checkPoints[gtExpression]
+                }
+              }
+              break
+            }
+            case 'SUB': {
+              const gtExpression = [left, right].map(formatWithoutTrace).join(':')
               delete checkPoints[gtExpression]
+              break
             }
           }
-          break
-        }
-        case 'SUB': {
-          const gtExpression = [left, right].map(formatWithoutTrace).join(':')
-          delete checkPoints[gtExpression]
-          break
-        }
-        default: {
-          assert(false, `does not support ${opcodeName}`)
-        }
+        })
+        break
       }
-    })
+      case 'MUL': {
+        const comNodes = dnode.traverse(({ node: { me } }) => formatSymbol(me).includes('EQ('))
+        console.log(checkPoints)
+        comNodes.forEach(comNode => {
+          const { node: { me } } = comNode
+          if (me[1] == 'ISZERO' && me[2][1] == 'ISZERO' && me[2][2][1] == 'EQ') {
+            const t = me[2][2]
+            prettify([t])
+          }
+        })
+        assert(false, 'LOL')
+        break
+      }
+    }
   }
 
   generateBugfixes(operandLocs, opcodeName) {
@@ -142,7 +159,7 @@ class Integer {
     const mulNodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('MUL('))
     mulNodes.forEach(mulNode => {
       const checkPoints = this.generateCheckpoints(mulNode, 'MUL')
-      // this.removeCheckpoints(subNode, checkPoints, 'SUB')
+      this.removeCheckpoints(mulNode, checkPoints, 'MUL')
     })
     return []
   }
@@ -155,9 +172,10 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
+    tree.root.prettify()
     return [
-      ...this.fixSubtract(tree, endPoints),
-      ...this.fixAddition(tree, endPoints),
+      // ...this.fixSubtract(tree, endPoints),
+      // ...this.fixAddition(tree, endPoints),
       ...this.fixMul(tree, endPoints),
     ]
   }

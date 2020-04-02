@@ -339,8 +339,9 @@ class Evm {
         }
         case 'DIV': {
           const [x, y] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (x[0] != 'const' || y[0] != 'const') {
-            stack.push(['symbol', name, x, y])
+            stack.push(['symbol', name, x, y, epSize])
           } else {
             if (y[1].isZero()) {
               stack.push(y)
