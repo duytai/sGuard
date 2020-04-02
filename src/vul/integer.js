@@ -89,6 +89,7 @@ class Integer {
         comNodes.forEach(comNode => {
           const { node: { me } } = comNode
           // a * b / a == b || a * b / b == a
+          /// TODO: check if a == 0 
           if (me[1] == 'ISZERO' && me[2][1] == 'ISZERO' && me[2][2][1] == 'EQ') {
             const [leftEq, rightEq] = me[2][2].slice(2)
               .map((symbol, idx) => idx == 1 ? formatWithoutTrace(symbol) : symbol)
@@ -105,22 +106,8 @@ class Integer {
                   expressions.forEach(expression => {
                     delete checkPoints[expression]
                   })
-                  // if (a == 0)
-                  checkPoints[rightDiv] = true
                 }
               }
-            }
-          }
-          // if (a == 0)
-          if (me[1] == 'ISZERO' && me[2][1] == 'EQ') {
-            const [leftEq, rightEq] = me[2].slice(2)
-            if (leftEq[0] == 'const' && leftEq[1].isZero()) {
-              const expression = formatWithoutTrace(rightEq)
-              delete checkPoints[expression]
-            }
-            if(rightEq[0] == 'const' && rightEq[1].isZero()) {
-              const expression = formatWithoutTrace(leftEq)
-              delete checkPoints[expression]
             }
           }
         })
@@ -145,6 +132,11 @@ class Integer {
         }
         case 'SUB': {
           check += `require(${operandLocs[pc].join(' >= ')});\n`
+          break
+        }
+        case 'MUL': {
+          const [left, right] = operandLocs[pc]
+          check += `require(${left} == 0 || ${left} * ${right} / ${left} == ${right});\n`
           break
         }
         default: {
@@ -207,7 +199,7 @@ class Integer {
         }
       }
     })
-    return []
+    return this.generateBugfixes(operandLocs, 'MUL')
   }
 
   scan() {
