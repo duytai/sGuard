@@ -123,7 +123,11 @@ const insertLocs = (srcmap, ast, pc) => {
       }
     }
   })
-  assert(ret.length >= 1)
+
+  if (!ret.length) {
+    const r = findInsertLoc(srcmap.source, s)
+    ret.push(r)
+  }
   return ret
 }
 
