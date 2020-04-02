@@ -126,7 +126,7 @@ class Integer {
       range(tabs).forEach(_ => check += '\t')
       switch (opcodeName) {
         case 'ADD': {
-          check += `require(${operandLocs[pc].join(' + ')} > ${operandLocs[pc][0]});\n`
+          check += `require(${operandLocs[pc].join(' + ')} >= ${operandLocs[pc][0]});\n`
           break
         }
         case 'SUB': {
