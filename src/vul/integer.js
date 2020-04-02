@@ -86,7 +86,6 @@ class Integer {
       }
       case 'MUL': {
         const comNodes = dnode.traverse(({ node: { me } }) => formatSymbol(me).includes('EQ('))
-        console.log(checkPoints)
         comNodes.forEach(comNode => {
           const { node: { me } } = comNode
           // a * b / a == b || a * b / b == a
@@ -106,19 +105,25 @@ class Integer {
                   expressions.forEach(expression => {
                     delete checkPoints[expression]
                   })
+                  // if (a == 0)
+                  checkPoints[rightDiv] = true
                 }
               }
             }
           }
           // if (a == 0)
-          // if (me[1] == 'ISZERO' && me[2][1] == 'EQ') {
-            // const [leftEq, rightEq] = me[2].slice(2)
-            // if ((leftEq[0] == 'const' && leftEq[1].isZero()) || (rightEq[0] == 'const' && rightEq[1].isZero())) {
-              // delete checkPoints[expression]
-            // }
-          // }
+          if (me[1] == 'ISZERO' && me[2][1] == 'EQ') {
+            const [leftEq, rightEq] = me[2].slice(2)
+            if (leftEq[0] == 'const' && leftEq[1].isZero()) {
+              const expression = formatWithoutTrace(rightEq)
+              delete checkPoints[expression]
+            }
+            if(rightEq[0] == 'const' && rightEq[1].isZero()) {
+              const expression = formatWithoutTrace(leftEq)
+              delete checkPoints[expression]
+            }
+          }
         })
-        console.log(checkPoints)
         break
       }
     }
