@@ -52,7 +52,7 @@ const findInsertLoc = (source, s) => {
   return config
 }
 
-const insertLocs = (srcmap, ast, pc) => {
+const intInsertLocs = (srcmap, ast, pc) => {
   assert(srcmap && ast && pc >= 0)
   const { s, l } = srcmap.toSL(pc)
   const forStatements = jp.query(ast, `$..children[?(@.name=="ForStatement")]`)
@@ -150,7 +150,7 @@ const extractOperands = (pc, srcmap, ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  insertLocs,
+  intInsertLocs,
   extractOperands,
 }
 

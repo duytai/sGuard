@@ -2,12 +2,14 @@ const assert = require('assert')
 const { toPairs } = require('lodash')
 const { prettify, logger, gb } = require('../shared')
 const Integer = require('./integer')
+const UncheckReturnValue = require('./uncheck')
 
 class Scanner {
   constructor(cache, srcmap, ast) {
     this.srcmap = srcmap
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
+      uncheck: new UncheckReturnValue(cache, srcmap, ast),
     }
   }
 

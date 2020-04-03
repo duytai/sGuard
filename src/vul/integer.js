@@ -7,7 +7,7 @@ const {
   formatSymbol,
   findSymbols,
   logger,
-  insertLocs,
+  intInsertLocs,
   gb,
   extractOperands,
 } = require('../shared')
@@ -123,7 +123,7 @@ class Integer {
     assert(operandLocs && opcodeName)
     const bugFixes = []
     for (const pc in operandLocs) {
-      const configLocs = insertLocs(this.srcmap, this.ast, pc)
+      const configLocs = intInsertLocs(this.srcmap, this.ast, pc)
       configLocs.forEach(configLoc => {
         const { newlines, spaces, tabs, start } = configLoc
         let check = ''
@@ -218,7 +218,6 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    tree.root.prettify()
     return [
       ...this.fixSubtract(tree, endPoints),
       ...this.fixAddition(tree, endPoints),

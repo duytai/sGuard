@@ -92,12 +92,13 @@ class Cache {
   }
 
   build() {
-    this.mem = { branches: [], mstores: [], sstores: [], calls: [] }
+    this.mem = { branches: [], mstores: [], sstores: [], calls: [], ends: [] }
     this.endPoints.forEach((endPoint) => {
       const branch = {}
       const mstore = {}
       const sstore = {}
       const call = {}
+      const end = {}
       const { ep, trace } = endPoint
       trace.ts.forEach(({ t, epIdx, kTrackingPos, vTrackingPos }) => {
         const entries = {
@@ -132,8 +133,15 @@ class Cache {
             const sloads = []
             const mloads = []
             const links = []
-            const entries = [stack.size() - 1, stack.size() - 2, stack.size() - 3]
-              .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
+            const entries = [
+              stack.size() - 1,
+              stack.size() - 2,
+              stack.size() - 3,
+              stack.size() - 4,
+              stack.size() - 5,
+              stack.size() - 6,
+              stack.size() - 7,
+            ].map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
             const operands = []
             entries.forEach(({ trackingPos, symbol }) => {
               const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
@@ -147,11 +155,17 @@ class Cache {
             break
           }
         }
+        if (epIdx == ep.length - 1) {
+          const links = this.controlLinks([epIdx], endPoint)
+          const expression = ['symbol', 'END']
+          end[epIdx] = { sloads: [], mloads: [], links, expression }
+        }
       })
 
       this.mem.branches.push(branch)
       this.mem.mstores.push(mstore)
       this.mem.sstores.push(sstore)
+      this.mem.ends.push(end)
       this.mem.calls.push(call)
     })
   }
