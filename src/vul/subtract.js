@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { toPairs } = require('lodash')
+const { toPairs, sortBy } = require('lodash')
 const { 
   formatWithoutTrace: formatSymbol,
   findSymbols,
@@ -50,16 +50,39 @@ class Subtract {
 
   generateBugFixes(uncheckOperands) {
     const bugFixes = []
-    const pairs = toPairs(uncheckOperands)
-    pairs.sort((x, y) => x[1].range[0] - y[1].range[0])
-    let acc = 0 
+    const pairs = sortBy(toPairs(uncheckOperands), [
+      (x) => x[1].range[0],
+      (y) => - y[1].range[1],
+    ])
     for (const idx in pairs) {
       const [pc, { range, operands }] = pairs[idx]
-      const [from, to] = range.map(x => x + acc)
+      const [from, to] = range
       const check = `sub(${operands.map(x => x.id).join(', ')})`
       const diff = check.length - (to - from)
-      bugFixes.push({ action: 'REP', from, to, check })
-      acc += diff
+      const [left, right] = operands 
+      for (let next = parseInt(idx) + 1; next < pairs.length; next ++) {
+        const nextRange = pairs[next][1].range
+        let isModified = false 
+        // Left operand
+        if (nextRange[0] >= left.range[0] && nextRange[1] <= left.range[1] && !isModified) {
+          nextRange[0] += 4 
+          nextRange[1] += 4 
+          isModified = true
+        }
+        // Right operand
+        if (nextRange[0] >= right.range[0] && nextRange[1] <= right.range[1] && !isModified) {
+          nextRange[0] += 2 - (right.range[0] - left.range[1]) + 4
+          nextRange[1] += 2 - (right.range[0] - left.range[1]) + 4
+          isModified = true
+        }
+        // After both operands
+        if (nextRange[0] >= to && !isModified) {
+          nextRange[0] += diff
+          nextRange[1] += diff
+          isModified = true
+        }
+      }
+      bugFixes.push({ from, to, check })
     }
     return bugFixes
   }
