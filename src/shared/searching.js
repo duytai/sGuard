@@ -28,14 +28,14 @@ const findOperands = (pc, srcmap, ast) => {
   const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
   assert(response.length >= 1)
   const { children, name } = response[response.length - 1]
-  const operands = []
+  const ret = { range: [s, s + l], operands: [] }
   children.forEach(({ src, attributes }) => {
     const { type } = attributes 
     const [s, l] = src.split(':').map(x => parseInt(x))
     const id = srcmap.source.slice(s, s + l)
-    operands.push({ id, type })
+    ret.operands.push({ id, type, range: [s, s + l]})
   })
-  return operands 
+  return ret
 }
 
 module.exports = {

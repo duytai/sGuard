@@ -48,8 +48,20 @@ class Subtract {
     return uncheckOperands
   }
 
-  generateBugFixes(operands) {
-    console.log(operands)
+  generateBugFixes(uncheckOperands) {
+    const bugFixes = []
+    const pairs = toPairs(uncheckOperands)
+    pairs.sort((x, y) => x[1].range[0] - y[1].range[0])
+    let acc = 0 
+    for (const idx in pairs) {
+      const [pc, { range, operands }] = pairs[idx]
+      const [from, to] = range.map(x => x + acc)
+      const check = `sub(${operands.map(x => x.id).join(', ')})`
+      const diff = check.length - (to - from)
+      bugFixes.push({ action: 'REP', from, to, check })
+      acc += diff
+    }
+    return bugFixes
   }
 
   scan() {
@@ -62,7 +74,7 @@ class Subtract {
     })
     const uncheckOperands = this.findUncheckOperands(tree, endPoints)
     const bugFixes = this.generateBugFixes(uncheckOperands)
-    return []
+    return bugFixes
   }
 } 
 

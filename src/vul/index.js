@@ -19,9 +19,22 @@ class Scanner {
         ...(this.vuls[k].scan() || [])
       ]
     }
+    this.fix(bugFixes)
   }
 
   fix(bugFixes) {
+    let source = this.srcmap.source
+    console.log(source)
+    for (const idx in bugFixes) {
+      const { action, from, to, check } = bugFixes[idx]
+      if (action == 'REP') {
+        const first = source.slice(0, from)
+        const second = source.slice(to)
+        source = [first, check, second].join('')
+      }
+    }
+    console.log('----')
+    console.log(source)
   }
 
 } 
