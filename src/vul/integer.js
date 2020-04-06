@@ -1,13 +1,9 @@
 const assert = require('assert')
 const { toPairs } = require('lodash')
-const { 
-  formatWithoutTrace: formatSymbol,
-  findSymbols,
-  findOperands
-} = require('../shared')
 const Tree = require('./tree')
 const Subtract = require('./subtract')
 const Addition = require('./addition')
+const Multiply = require('./multiply')
 
 class Integer {
   constructor(cache, srcmap, ast) {
@@ -26,9 +22,11 @@ class Integer {
     })
     const subtract = new Subtract(this.cache, this.srcmap, this.ast)
     const addition = new Addition(this.cache, this.srcmap, this.ast)
+    const multiply = new Multiply(this.cache, this.srcmap, this.ast)
     return [
       ...subtract.scan(tree),
       ...addition.scan(tree),
+      ...multiply.scan(tree),
     ]
   }
 } 
