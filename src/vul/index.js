@@ -1,5 +1,6 @@
 const assert = require('assert')
 const { prettify, logger, gb } = require('../shared')
+const { random } = require('lodash')
 const Subtract = require('./subtract')
 const Addition = require('./addition')
 
@@ -20,67 +21,54 @@ class Scanner {
         ...(this.vuls[k].scan() || [])
       ]
     }
-    const bugFixes = []
-    for (const idx in uncheckOperands) {
-      const [pc, { range, operands, type }] = uncheckOperands[idx]
-      const func = type.toLowerCase()
-      const check = { id: func, range , operands }
-      console.log(check)
-    }
+    const bugFixes = this.generateBugFixes(uncheckOperands)
+    this.fix(bugFixes)
   }
 
-  // generateBugFixes(pairs) {
-    // const bugFixes = []
-    // const bugStack = pairs
-    // while (bugStack.length) {
-      // const [pc, { range, operands, type }] = bugStack.pop()
-      // const [from, to] = range
-      // const func = type.toLowerCase()
-      // const check = `${func}(${operands.map(x => x.id).join(', ')})`
-    // }
-    // for (const idx in pairs) {
-      // const [pc, { range, operands, type }] = pairs[idx]
-      // switch (type) {
-        // case 'ADD':
-        // case 'SUB': {
-          // const [from, to] = range
-          // const func = type.toLowerCase()
-          // const check = `${func}(${operands.map(x => x.id).join(', ')})`
-          // const diff = check.length - (to - from)
-          // const [left, right] = operands
-          // console.log(`check: ${check}`)
-          // console.log(`diff: ${diff}`)
-          // for (let next = 0; next < pairs.length; next ++) {
-            // const { range: nextRange } = pairs[next][1]
-            // if (nextRange[1] <= from) continue
-            // if (nextRange[0] >= to) {
-              // nextRange[0] += diff
-              // nextRange[1] += diff
-              // continue
-            // }
-          // }
-          // bugFixes.push({ from, to, check })
-          // break
-        // }
-      // }
-    // }
-    // return bugFixes
-  // }
+  fix({ bugFixes, source }) {
+    for (const _ in bugFixes) {
+      for (const key in bugFixes) {
+        source = source.replace(key, bugFixes[key])
+      }
+    }
+    console.log('--------')
+    console.log(this.srcmap.source)
+    console.log('++++++++')
+    console.log(source)
+  }
 
-
-  // fix(bugFixes) {
-    // let source = this.srcmap.source
-    // console.log(source)
-    // for (const idx in bugFixes) {
-      // const { from, to, check } = bugFixes[idx]
-      // const first = source.slice(0, from)
-      // const second = source.slice(to)
-      // source = [first, check, second].join('')
-    // }
-    // console.log('----')
-    // console.log(source)
-  // }
-
+  generateBugFixes(pairs) {
+    let source = this.srcmap.source
+    const bugFixes = {}
+    while (pairs.length) {
+      for (const idx in pairs) {
+        const outerRange = pairs[idx][1].range
+        let containOtherRange = false 
+        for (const pidx in pairs) {
+          if (idx == pidx) continue
+          const range = pairs[pidx][1].range
+          if (outerRange[0] <= range[0] && range[1] <= outerRange[1]) {
+            containOtherRange = true
+            break
+          }
+        }
+        if (!containOtherRange) {
+          const [pc, { range, operands, type }] = pairs[idx]
+          const func = type.toLowerCase()
+          const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+          const check = `${func}(${ops.join(', ')})`
+          const first = source.slice(0, range[0])
+          const middle = source.slice(range[0], range[1])
+          const last = source.slice(range[1])
+          const key = Array(middle.length).fill(0).map(x => random(0, 9)).join('')
+          source = [first, key, last].join('')
+          bugFixes[key] = check
+          pairs.splice(idx, 1)
+        }
+      }
+    }
+    return { bugFixes, source }
+  }
 } 
 
 module.exports = { Scanner }
