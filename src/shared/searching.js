@@ -27,8 +27,9 @@ const findOperands = (pc, srcmap, ast) => {
   const key = [s, l, 0].join(':')
   const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
   assert(response.length >= 1)
-  const { children, name } = response[response.length - 1]
-  const ret = { range: [s, s + l], operands: [] }
+  const { children, name, attributes } = response[response.length - 1]
+  const { operator } = attributes
+  const ret = { range: [s, s + l], operands: [], operator }
   children.forEach(({ src, attributes }) => {
     const { type } = attributes 
     const [s, l] = src.split(':').map(x => parseInt(x))

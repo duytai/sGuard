@@ -29,7 +29,6 @@ class Addition {
       const { pc, opcode } = endPoint.get(epIdx)
       assert(opcode.name == 'ADD')
       const operands = findOperands(pc, this.srcmap, this.ast)
-      operands.type = 'ADD'
       checkPoints[expression] = { pc, operands }
     })
     return checkPoints

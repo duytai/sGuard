@@ -29,7 +29,6 @@ class Subtract {
       const { pc, opcode } = endPoint.get(epIdx)
       assert(opcode.name == 'SUB')
       const operands = findOperands(pc, this.srcmap, this.ast)
-      operands.type = 'SUB'
       checkPoints[expression] = { pc, operands }
     })
     return checkPoints
