@@ -34,8 +34,8 @@ class Subtract {
     return checkPoints
   }
 
-  findUncheckOperands(tree, endPoints) {
-    assert(tree && endPoints)
+  findUncheckOperands(tree) {
+    assert(tree)
     const uncheckOperands = {}
     const dnodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('SUB('))
     dnodes.forEach(dnode => {
@@ -48,15 +48,8 @@ class Subtract {
     return uncheckOperands
   }
 
-  scan() {
-    const { mem: { calls }, endPoints } = this.cache
-    const tree = new Tree(this.cache)
-    calls.forEach((call, endPointIdx) => {
-      toPairs(call).forEach(([epIdx, value]) => {
-        tree.build(endPointIdx, epIdx, value)
-      })
-    })
-    const uncheckOperands = this.findUncheckOperands(tree, endPoints)
+  scan(tree) {
+    const uncheckOperands = this.findUncheckOperands(tree)
     return toPairs(uncheckOperands)
   }
 } 
