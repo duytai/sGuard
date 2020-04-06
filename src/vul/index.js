@@ -13,6 +13,10 @@ class Scanner {
     }
   }
 
+  keyByLen(len) {
+    return Array(len).fill(0).map(x => random(0, 9)).join('')
+  }
+
   scan() {
     let uncheckOperands = []
     for (const k in this.vuls) {
@@ -60,7 +64,7 @@ class Scanner {
           const first = source.slice(0, range[0])
           const middle = source.slice(range[0], range[1])
           const last = source.slice(range[1])
-          const key = Array(middle.length).fill(0).map(x => random(0, 9)).join('')
+          const key = this.keyByLen(middle.length)
           source = [first, key, last].join('')
           bugFixes[key] = check
           pairs.splice(idx, 1)
