@@ -59,9 +59,53 @@ class Scanner {
         if (!containOtherRange) {
           const [pc, { range, operands, operator }] = pairs[idx]
           switch (operator) {
+            case '--': {
+              const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              const check = `(${ops[0]} = sub(${ops[0]}, 1))`
+              const first = source.slice(0, range[0])
+              const middle = source.slice(range[0], range[1])
+              const last = source.slice(range[1])
+              const key = this.keyByLen(middle.length)
+              source = [first, key, last].join('')
+              bugFixes[key] = check
+              break
+            }
+            case '-=': {
+              const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              const check = `${ops[0]} = sub(${ops.join(', ')})`
+              const first = source.slice(0, range[0])
+              const middle = source.slice(range[0], range[1])
+              const last = source.slice(range[1])
+              const key = this.keyByLen(middle.length)
+              source = [first, key, last].join('')
+              bugFixes[key] = check
+              break
+            }
             case '-': {
               const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
               const check = `sub(${ops.join(', ')})`
+              const first = source.slice(0, range[0])
+              const middle = source.slice(range[0], range[1])
+              const last = source.slice(range[1])
+              const key = this.keyByLen(middle.length)
+              source = [first, key, last].join('')
+              bugFixes[key] = check
+              break
+            }
+            case '++': {
+              const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              const check = `(${ops[0]} = add(${ops[0]}, 1))`
+              const first = source.slice(0, range[0])
+              const middle = source.slice(range[0], range[1])
+              const last = source.slice(range[1])
+              const key = this.keyByLen(middle.length)
+              source = [first, key, last].join('')
+              bugFixes[key] = check
+              break
+            }
+            case '+=': {
+              const ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              const check = `${ops[0]} = add(${ops.join(', ')})`
               const first = source.slice(0, range[0])
               const middle = source.slice(range[0], range[1])
               const last = source.slice(range[1])
