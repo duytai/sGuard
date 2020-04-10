@@ -99,8 +99,13 @@ class Scanner {
               check = `${ops[0]} = mul(${ops.join(', ')})`
               break
             }
+            case '/': {
+              ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              check = `div(${ops.join(', ')})`
+              break
+            }
             default: {
-              assert(false, 'Unknown operator')
+              assert(false, `Unknown operator: ${operator}`)
             }
           }
           const first = source.slice(0, range[0])
