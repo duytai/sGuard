@@ -429,13 +429,14 @@ class Evm {
         }
         case 'EXP': {
           const [base, exponent] = stack.popN(ins)
+          const epSize = ['const', new BN(ep.size())]
           if (exponent[0] == 'const' && exponent[1].isZero()) {
             stack.push(['const', new BN(1)])
           } else if (base[0] == 'const' && base[1].isZero()) {
             stack.push(['const', new BN(0)])
           } else {
             if (base[0] != 'const' || exponent[0] != 'const') {
-              stack.push(['symbol', name, base, exponent])
+              stack.push(['symbol', name, base, exponent, epSize])
             } else {
               const byteLength = exponent[1].byteLength()
               assert(byteLength >= 1 && byteLength <= 32)

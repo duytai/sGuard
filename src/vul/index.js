@@ -104,6 +104,16 @@ class Scanner {
               check = `div(${ops.join(', ')})`
               break
             }
+            case '/=': {
+              ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              check = `${ops[0]} = div(${ops.join(', ')})`
+              break
+            }
+            case '**': {
+              ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
+              check = `pow(${ops.join(', ')})`
+              break
+            }
             default: {
               assert(false, `Unknown operator: ${operator}`)
             }

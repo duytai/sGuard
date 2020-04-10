@@ -5,6 +5,7 @@ const Subtract = require('./subtract')
 const Addition = require('./addition')
 const Multiply = require('./multiply')
 const Division = require('./division')
+const Pow = require('./pow')
 
 class Integer {
   constructor(cache, srcmap, ast) {
@@ -21,16 +22,17 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
-    tree.root.prettify()
     const subtract = new Subtract(this.cache, this.srcmap, this.ast)
     const addition = new Addition(this.cache, this.srcmap, this.ast)
     const multiply = new Multiply(this.cache, this.srcmap, this.ast)
     const division = new Division(this.cache, this.srcmap, this.ast)
+    const pow = new Pow(this.cache, this.srcmap, this.ast)
     return [
       ...subtract.scan(tree),
       ...addition.scan(tree),
       ...multiply.scan(tree),
       ...division.scan(tree),
+      ...pow.scan(tree)
     ]
   }
 } 
