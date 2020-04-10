@@ -4,8 +4,8 @@ const {
   formatWithoutTrace: formatSymbol,
   findSymbols,
   findOperands
-} = require('../shared')
-const Tree = require('./tree')
+} = require('../../shared')
+const Tree = require('../tree')
 
 class Subtract {
   constructor(cache, srcmap, ast) {

@@ -4,10 +4,10 @@ const {
   formatWithoutTrace: formatSymbol,
   findSymbols,
   findOperands
-} = require('../shared')
-const Tree = require('./tree')
+} = require('../../shared')
+const Tree = require('../tree')
 
-class Addition {
+class Multiply {
   constructor(cache, srcmap, ast) {
     this.cache = cache
     this.srcmap = srcmap
@@ -19,7 +19,7 @@ class Addition {
     const checkPoints = {}
     const { endPoints } = this.cache
     const { node: { me, endPointIdx } } = dnode
-    const nodes = findSymbols(me, ([_, name]) => name == 'ADD')
+    const nodes = findSymbols(me, ([_, name]) => name == 'MUL')
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
       if (left[1] == 'ISZERO' || right[1] == 'ISZERO') return
@@ -27,7 +27,7 @@ class Addition {
       const epIdx = epSize[1].toNumber() - 1
       const endPoint = endPoints[endPointIdx]
       const { pc, opcode } = endPoint.get(epIdx)
-      assert(opcode.name == 'ADD')
+      assert(opcode.name == 'MUL')
       const operands = findOperands(pc, this.srcmap, this.ast)
       if (!operands.operator) return
       checkPoints[expression] = { pc, operands }
@@ -38,7 +38,7 @@ class Addition {
   findUncheckOperands(tree) {
     assert(tree)
     const uncheckOperands = {}
-    const dnodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
+    const dnodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('MUL('))
     dnodes.forEach(dnode => {
       const checkPoints = this.generateCheckPoints(dnode)
       for (const t in checkPoints) {
@@ -55,4 +55,4 @@ class Addition {
   }
 } 
 
-module.exports = Addition
+module.exports = Multiply 

@@ -4,10 +4,10 @@ const {
   formatWithoutTrace: formatSymbol,
   findSymbols,
   findOperands
-} = require('../shared')
-const Tree = require('./tree')
+} = require('../../shared')
+const Tree = require('../tree')
 
-class Pow {
+class Division {
   constructor(cache, srcmap, ast) {
     this.cache = cache
     this.srcmap = srcmap
@@ -19,7 +19,7 @@ class Pow {
     const checkPoints = {}
     const { endPoints } = this.cache
     const { node: { me, endPointIdx } } = dnode
-    const nodes = findSymbols(me, ([_, name]) => name == 'EXP')
+    const nodes = findSymbols(me, ([_, name]) => name == 'DIV')
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
       if (left[1] == 'ISZERO' || right[1] == 'ISZERO') return
@@ -27,7 +27,7 @@ class Pow {
       const epIdx = epSize[1].toNumber() - 1
       const endPoint = endPoints[endPointIdx]
       const { pc, opcode } = endPoint.get(epIdx)
-      assert(opcode.name == 'EXP')
+      assert(opcode.name == 'DIV')
       const operands = findOperands(pc, this.srcmap, this.ast)
       if (!operands.operator) return
       checkPoints[expression] = { pc, operands }
@@ -38,7 +38,7 @@ class Pow {
   findUncheckOperands(tree) {
     assert(tree)
     const uncheckOperands = {}
-    const dnodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('EXP('))
+    const dnodes = tree.root.traverse(({ node: { me } }) => formatSymbol(me).includes('DIV('))
     dnodes.forEach(dnode => {
       const checkPoints = this.generateCheckPoints(dnode)
       for (const t in checkPoints) {
@@ -55,4 +55,4 @@ class Pow {
   }
 } 
 
-module.exports = Pow
+module.exports = Division

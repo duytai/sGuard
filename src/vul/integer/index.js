@@ -1,6 +1,6 @@
 const assert = require('assert')
 const { toPairs } = require('lodash')
-const Tree = require('./tree')
+const Tree = require('../tree')
 const Subtract = require('./subtract')
 const Addition = require('./addition')
 const Multiply = require('./multiply')
