@@ -2,12 +2,14 @@ const assert = require('assert')
 const { prettify, logger, gb } = require('../shared')
 const { random } = require('lodash')
 const Integer = require('./integer')
+const Disorder = require('./disorder')
 
 class Scanner {
   constructor(cache, srcmap, ast) {
     this.srcmap = srcmap
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
+      disorder: new Disorder(cache, srcmap, ast),
     }
   }
 

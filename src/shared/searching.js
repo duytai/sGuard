@@ -25,6 +25,7 @@ const findSymbols = (symbol, cond) => {
 const findOperands = (pc, srcmap, ast) => {
   const { s, l } = srcmap.toSL(pc)
   const key = [s, l, 0].join(':')
+  console.log(key)
   const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
   assert(response.length >= 1)
   const { children, name, attributes } = response[response.length - 1]
