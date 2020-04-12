@@ -48,7 +48,11 @@ const findMsgValues = (srcmap, ast) => {
     const maSrc = ma.src.split(':').map(x => parseInt(x))
     const snippet = srcmap.source.slice(maSrc[0], maSrc[0] + maSrc[1])
     if (snippet == 'msg.value') {
-      ret.push({ range: [maSrc[0], maSrc[0] + maSrc[1]], operator: 'msg:value' })
+      ret.push({
+        range: [maSrc[0], maSrc[0] + maSrc[1]],
+        operands: [],
+        operator: 'msg:value',
+      })
     }
   }
   return ret
@@ -67,7 +71,11 @@ const findPayables = (srcmap, ast) => {
     const source = srcmap.source.slice(0, blockSrc[0])
     const s = source.lastIndexOf('payable')
     assert(s != -1)
-    ret.push({ range: [s, s + 'payable'.length], operator: 'payable' })
+    ret.push({
+      range: [s, s + 'payable'.length],
+      operands: [],
+      operator: 'payable'
+    })
   }
   return ret
 }

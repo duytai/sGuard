@@ -46,6 +46,7 @@ class Scanner {
   generateBugFixes(pairs) {
     let source = this.srcmap.source
     const bugFixes = {}
+    const wrappers = new Set()
     while (pairs.length) {
       for (const idx in pairs) {
         const outerRange = pairs[idx][1].range

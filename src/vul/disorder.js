@@ -32,7 +32,11 @@ class Disorder {
             const { s, l } = this.srcmap.toSL(pc)
             checkPoints[pc] = {
               pc,
-              operands: { range: [s, s + l], operator: 'single:disorder' },
+              operands: {
+                range: [s, s + l],
+                operands: [],
+                operator: 'single:disorder'
+              },
             }
             break
           }
@@ -40,7 +44,11 @@ class Disorder {
             const { s, l } = this.srcmap.toSL(pc)
             checkPoints[pc] = {
               pc,
-              operands: { range: [s, s + l], operator: 'double:disorder' },
+              operands: {
+                range: [s, s + l],
+                operands: [],
+                operator: 'double:disorder'
+              },
             }
             break
           }
