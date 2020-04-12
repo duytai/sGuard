@@ -1,5 +1,5 @@
 const assert = require('assert')
-const { uniqBy } = require('lodash')
+const { uniqBy, lastIndexOf } = require('lodash')
 const { prettify, formatSymbol } = require('./prettify')
 const BN = require('bn.js')
 const jp = require('jsonpath')
@@ -39,9 +39,29 @@ const findOperands = (pc, srcmap, ast) => {
   return ret
 }
 
+const findPayables = (srcmap, ast) => {
+  const selector = `$..children[?(@.name=="FunctionDefinition" && @.attributes.stateMutability=="payable")]`
+  const response = jp.query(ast, selector)
+  assert(response.length >= 1)
+  const ret = []
+  for (const idx in response) {
+    const func = response[idx]
+    assert(func.name == 'FunctionDefinition')
+    const block = func.children[func.children.length - 1]
+    assert(block.name == 'Block')
+    const blockSrc = block.src.split(':').map(x => parseInt(x))
+    const source = srcmap.source.slice(0, blockSrc[0])
+    const s = source.lastIndexOf('payable')
+    assert(s != -1)
+    ret.push({ range: [s, s + 'payable'.length], operator: 'payable' })
+  }
+  return ret
+}
+
 module.exports = {
   findSymbol,
   findSymbols,
   findOperands,
+  findPayables,
 }
 

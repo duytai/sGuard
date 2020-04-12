@@ -3,6 +3,7 @@ const { prettify, logger, gb } = require('../shared')
 const { random } = require('lodash')
 const Integer = require('./integer')
 const Disorder = require('./disorder')
+const Freezing = require('./freezing')
 
 class Scanner {
   constructor(cache, srcmap, ast) {
@@ -10,6 +11,7 @@ class Scanner {
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
       disorder: new Disorder(cache, srcmap, ast),
+      freezing: new Freezing(cache, srcmap, ast),
     }
   }
 
@@ -124,6 +126,10 @@ class Scanner {
             case 'double:disorder': {
               ops = source.slice(range[0], range[1])
               check = `check(${ops})`
+              break
+            }
+            case 'payable': {
+              check = ''
               break
             }
             default: {
