@@ -26,15 +26,15 @@ class Disorder {
         for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
           const { pc, stack, opcode: { name } } = endPoint.get(i)
           const symbol = formatSymbol(stack.get(stack.size() - 1))
-          if (symbol == callSymbol) {
-            opcodes.push(name)
-          }
+          if (symbol == callSymbol) opcodes.push(name)
         }
         switch (opcodes.join(':')) {
           case 'SWAP:POP': {
+            console.log('swap:pop')
             break
           }
           case 'SWAP:RETURNDATASIZE:POP': {
+            console.log('swap:datasize:pop')
             break
           }
         }

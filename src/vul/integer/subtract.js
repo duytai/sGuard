@@ -27,14 +27,13 @@ class Subtract {
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
       if (left[1] == 'ISZERO' || right[1] == 'ISZERO') return
-      const expression = formatSymbol(node)
       const epIdx = epSize[1].toNumber() - 1
       const endPoint = endPoints[endPointIdx]
       const { pc, opcode } = endPoint.get(epIdx)
       assert(opcode.name == 'SUB')
       const operands = findOperands(pc, this.srcmap, this.ast)
       if (!operands.operator) return
-      checkPoints[expression] = { pc, operands }
+      checkPoints[pc] = { pc, operands }
     })
     return checkPoints
   }
