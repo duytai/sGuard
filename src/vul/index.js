@@ -132,6 +132,10 @@ class Scanner {
               check = ''
               break
             }
+            case 'msg:value': {
+              check = '0'
+              break
+            }
             default: {
               assert(false, `Unknown operator: ${operator}`)
             }
