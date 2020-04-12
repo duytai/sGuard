@@ -116,6 +116,16 @@ class Scanner {
               check = `pow(${ops.join(', ')})`
               break
             }
+            case 'single:disorder': {
+              ops = source.slice(range[0], range[1])
+              check = `check(${ops})`
+              break
+            }
+            case 'double:disorder': {
+              ops = source.slice(range[0], range[1])
+              check = `check(${ops})`
+              break
+            }
             default: {
               assert(false, `Unknown operator: ${operator}`)
             }

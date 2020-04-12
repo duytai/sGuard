@@ -3,7 +3,6 @@ const { toPairs } = require('lodash')
 const { 
   formatWithoutTrace: formatSymbol,
   findSymbols,
-  findOperands
 } = require('../shared')
 const Tree = require('./tree')
 
@@ -14,13 +13,13 @@ class Disorder {
     this.ast = ast
   }
 
-  scan() {
+  generateCheckPoints() {
     const checkPoints = {}
     const { mem: { calls }, endPoints } = this.cache
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx]) => {
         const endPoint = endPoints[endPointIdx]
-        const { stack } = endPoint.get(parseInt(epIdx) + 1)
+        const { stack, pc } = endPoint.get(parseInt(epIdx) + 1)
         const callSymbol = formatSymbol(stack.get(stack.size() - 1))
         const opcodes = []
         for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
@@ -30,17 +29,40 @@ class Disorder {
         }
         switch (opcodes.join(':')) {
           case 'SWAP:POP': {
-            console.log('swap:pop')
+            const { s, l } = this.srcmap.toSL(pc)
+            checkPoints[pc] = {
+              pc,
+              operands: { range: [s, s + l], operator: 'single:disorder' },
+            }
             break
           }
           case 'SWAP:RETURNDATASIZE:POP': {
-            console.log('swap:datasize:pop')
+            const { s, l } = this.srcmap.toSL(pc)
+            checkPoints[pc] = {
+              pc,
+              operands: { range: [s, s + l], operator: 'double:disorder' },
+            }
             break
           }
         }
       })
     })
-    return []
+    return checkPoints
+  }
+
+  findUncheckOperands() {
+    const uncheckOperands = {}
+    const checkPoints = this.generateCheckPoints()
+    for (const t in checkPoints) {
+      const { operands, pc } = checkPoints[t]
+      uncheckOperands[pc] = operands
+    }
+    return uncheckOperands
+  }
+
+  scan() {
+    const uncheckOperands = this.findUncheckOperands()
+    return toPairs(uncheckOperands)
   }
 }
 
