@@ -1,5 +1,5 @@
 const { isEmpty, toPairs } = require('lodash')
-const { findPayables } = require('../shared')
+const { findPayables, findMsgValues } = require('../shared')
 
 class Freezing {
   constructor(cache, srcmap, ast) {
@@ -15,15 +15,18 @@ class Freezing {
       const { opcode: { name } } = endPoints[endPointIdx].get(3)
       config.isPayable = !(name == 'CALLVALUE') || config.isPayable
     }
-    const ret = {}
+    const ret = []
     const freezed = !config.hasCall && config.isPayable
     if (freezed) {
-      const payables = findPayables(this.srcmap, this.ast)
-      for (const idx in payables) {
-        ret[idx] = payables[idx]
+      const entries = [
+        ...findPayables(this.srcmap, this.ast),
+        ...findMsgValues(this.srcmap, this.ast),
+      ]
+      for (const idx in entries) {
+        ret.push([ret.length, entries[idx]])
       }
     }
-    return toPairs(ret)
+    return ret
   }
 }
 

@@ -39,10 +39,24 @@ const findOperands = (pc, srcmap, ast) => {
   return ret
 }
 
+const findMsgValues = (srcmap, ast) => {
+  const selector = `$..children[?(@.name=="MemberAccess" && @.attributes.member_name=="value")]`
+  const response = jp.query(ast, selector)
+  const ret = []
+  for (const idx in response) {
+    const ma = response[idx]
+    const maSrc = ma.src.split(':').map(x => parseInt(x))
+    const snippet = srcmap.source.slice(maSrc[0], maSrc[0] + maSrc[1])
+    if (snippet == 'msg.value') {
+      ret.push({ range: [maSrc[0], maSrc[0] + maSrc[1]], operator: 'msg:value' })
+    }
+  }
+  return ret
+}
+
 const findPayables = (srcmap, ast) => {
   const selector = `$..children[?(@.name=="FunctionDefinition" && @.attributes.stateMutability=="payable")]`
   const response = jp.query(ast, selector)
-  assert(response.length >= 1)
   const ret = []
   for (const idx in response) {
     const func = response[idx]
@@ -63,5 +77,6 @@ module.exports = {
   findSymbols,
   findOperands,
   findPayables,
+  findMsgValues,
 }
 
