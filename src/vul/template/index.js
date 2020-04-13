@@ -16,7 +16,12 @@ class Template {
       const [name, type] = wrapper.split('_')
       const isUint = type.startsWith('uint')
       const isInt = type.startsWith('int')
-      const view = { [name]: true, type, isUint, isInt }
+      const view = {
+        [name]: true,
+        type,
+        isUint,
+        isInt,
+      }
       const output = mustache.render(this.safemath, view).trim()
       output && ret.push(output)
     }

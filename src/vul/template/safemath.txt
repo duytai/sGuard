@@ -62,3 +62,11 @@ function add_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
 {{/isInt}}
 
 {{/add}}
+
+{{#check}}
+function check_bool(bool x) internal pure returns(bool) {
+  assert(x);
+  return true;
+}
+{{/check}}
+

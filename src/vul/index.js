@@ -40,7 +40,10 @@ class Scanner {
       }
     }
     const checks = this.template.loads([...wrappers])
-    console.log(checks)
+    checks.forEach(check => {
+      console.log(check)
+      console.log('::::')
+    })
     console.log('--------')
     console.log(this.srcmap.source)
     console.log('++++++++')
@@ -148,9 +151,9 @@ class Scanner {
               break
             }
             case 'double:disorder': {
-              name = `check_tuple`
+              name = `check_bool`
               ops = source.slice(range[0], range[1])
-              check = `${name}(${ops})`
+              check = `(bool _, ) = ${ops}; check_bool(_)`
               break
             }
             case 'payable': {
