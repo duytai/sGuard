@@ -42,9 +42,10 @@ class Scanner {
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
     const safeCheck = ['contract SafeCheck {\n', lines, '\n}'].join('')
+    // Add safeCheck inherit
+    const guard = [safeCheck, source].join('\n')
     console.log('++++++++')
-    console.log(safeCheck)
-    console.log(source)
+    console.log(guard)
   }
 
   generateBugFixes(pairs) {
