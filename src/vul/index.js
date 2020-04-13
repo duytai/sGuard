@@ -39,14 +39,11 @@ class Scanner {
         source = source.replace(key, bugFixes[key])
       }
     }
-    const checks = this.template.loads([...wrappers])
-    checks.forEach(check => {
-      console.log(check)
-      console.log('::::')
-    })
-    console.log('--------')
-    console.log(this.srcmap.source)
+    const check = this.template.loads([...wrappers]).join('\n\n')
+    const lines = check.split('\n').map(l => `  ${l}`).join('\n')
+    const safeCheck = ['contract SafeCheck {\n', lines, '\n}'].join('')
     console.log('++++++++')
+    console.log(safeCheck)
     console.log(source)
   }
 

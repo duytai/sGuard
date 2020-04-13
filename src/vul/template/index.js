@@ -5,8 +5,8 @@ const mustache = require('mustache')
 
 class Template {
   constructor() {
-    const file = path.join(__dirname, './safemath.txt') 
-    this.safemath = fs.readFileSync(file, 'utf8')
+    const file = path.join(__dirname, './safecheck.txt') 
+    this.safecheck = fs.readFileSync(file, 'utf8')
   }
 
   loads(wrappers) {
@@ -22,7 +22,7 @@ class Template {
         isUint,
         isInt,
       }
-      const output = mustache.render(this.safemath, view).trim()
+      const output = mustache.render(this.safecheck, view).trim()
       output && ret.push(output)
     }
     return ret
