@@ -10,6 +10,7 @@ class Template {
   }
 
   loads(wrappers) {
+    const ret = []
     for (const idx in wrappers) {
       const wrapper = wrappers[idx]
       const [name, type] = wrapper.split('_')
@@ -17,8 +18,9 @@ class Template {
       const isInt = type.startsWith('int')
       const view = { [name]: true, type, isUint, isInt }
       const output = mustache.render(this.safemath, view).trim()
-      console.log(output)
+      output && ret.push(output)
     }
+    return ret
   }
 }
 

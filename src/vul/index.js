@@ -39,7 +39,8 @@ class Scanner {
         source = source.replace(key, bugFixes[key])
       }
     }
-    this.template.loads([...wrappers])
+    const checks = this.template.loads([...wrappers])
+    console.log(checks)
     console.log('--------')
     console.log(this.srcmap.source)
     console.log('++++++++')
