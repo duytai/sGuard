@@ -152,8 +152,13 @@ class Scanner {
             }
             case 'double:disorder': {
               name = `check_bool`
+              let preRange = range[0]
+              while (source[preRange - 1] == ' ') {
+                preRange --
+              }
+              const distance = Array(range[0] - preRange).fill(0).map(x => ' ').join('')
               ops = source.slice(range[0], range[1])
-              check = `(bool _, ) = ${ops}; check_bool(_)`
+              check = `(bool _, ) = ${ops};\n${distance}${name}(_)`
               break
             }
             case 'payable': {
