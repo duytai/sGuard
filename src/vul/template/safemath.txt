@@ -1,0 +1,64 @@
+{{#mul}}
+function mul_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  if (a == 0) {
+    return 0;
+  }
+  {{type}} c = a * b;
+  assert(c / a == b);
+  return c;
+}
+{{/mul}}
+
+{{#div}}
+function div_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  {{type}} c = a / b;
+  return c;
+}
+{{/div}}
+
+{{#sub}}
+
+{{#isUint}}
+function sub_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  assert(b <= a);
+  return a - b;
+}
+{{/isUint}}
+
+{{#isInt}}
+function sub_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  {{type}} c = a - b;
+  if (a > 0 && b < 0) {
+    assert (c > a);
+  } else if(a < 0 && b > 0) {
+    assert (c < a);
+  }
+  return c;
+}
+{{/isInt}}
+
+{{/sub}}
+
+{{#add}}
+
+{{#isUint}}
+function add_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  {{type}} c = a + b;
+  assert(c >= a);
+  return c;
+}
+{{/isUint}}
+
+{{#isInt}}
+function add_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  {{type}} c = a + b;
+  if(a > 0 && b > 0) {
+    assert(c > a);
+  } else if (a < 0 && b < 0) {
+    assert(c < a);
+  }
+  return c;
+}
+{{/isInt}}
+
+{{/add}}

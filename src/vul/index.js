@@ -1,6 +1,7 @@
 const assert = require('assert')
 const { prettify, logger, gb } = require('../shared')
 const { random } = require('lodash')
+const Template = require('./template')
 const Integer = require('./integer')
 const Disorder = require('./disorder')
 const Freezing = require('./freezing')
@@ -8,6 +9,7 @@ const Freezing = require('./freezing')
 class Scanner {
   constructor(cache, srcmap, ast) {
     this.srcmap = srcmap
+    this.template = new Template() 
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
       disorder: new Disorder(cache, srcmap, ast),
@@ -31,12 +33,13 @@ class Scanner {
     this.fix(bugFixes)
   }
 
-  fix({ bugFixes, source }) {
+  fix({ bugFixes, source, wrappers }) {
     for (const _ in bugFixes) {
       for (const key in bugFixes) {
         source = source.replace(key, bugFixes[key])
       }
     }
+    this.template.loads([...wrappers])
     console.log('--------')
     console.log(this.srcmap.source)
     console.log('++++++++')
@@ -63,70 +66,90 @@ class Scanner {
           const [pc, { range, operands, operator }] = pairs[idx]
           let ops = []
           let check = ''
+          let name = ''
+          const pivot = operands.find(operand => {
+            const isUint = operand.type.startsWith('uint')
+            const isInt = operand.type.startsWith('int') 
+            return isUint || isInt
+          }) || {}
+          const { type } = pivot
           switch (operator) {
             case '--': {
+              name = `sub_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `(${ops[0]} = sub(${ops[0]}, 1))`
+              check = `(${ops[0]} = ${name}(${ops[0]}, 1))`
               break
             }
             case '-=': {
+              name = `sub_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `${ops[0]} = sub(${ops.join(', ')})`
+              check = `${ops[0]} = ${name}(${ops.join(', ')})`
               break
             }
             case '-': {
+              name = `sub_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `sub(${ops.join(', ')})`
+              check = `${name}(${ops.join(', ')})`
               break
             }
             case '++': {
+              name = `add_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `(${ops[0]} = add(${ops[0]}, 1))`
+              check = `(${ops[0]} = ${name}(${ops[0]}, 1))`
               break
             }
             case '+=': {
+              name = `add_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `${ops[0]} = add(${ops.join(', ')})`
+              check = `${ops[0]} = ${name}(${ops.join(', ')})`
               break
             }
             case '+': {
+              name = `add_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `add(${ops.join(', ')})`
+              check = `${name}(${ops.join(', ')})`
               break
             }
             case '*': {
+              name = `mul_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `mul(${ops.join(', ')})`
+              check = `${name}(${ops.join(', ')})`
               break
             }
             case '*=': {
+              name = `mul_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `${ops[0]} = mul(${ops.join(', ')})`
+              check = `${ops[0]} = ${name}(${ops.join(', ')})`
               break
             }
             case '/': {
+              name = `div_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `div(${ops.join(', ')})`
+              check = `${name}(${ops.join(', ')})`
               break
             }
             case '/=': {
+              name = `div_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `${ops[0]} = div(${ops.join(', ')})`
+              check = `${ops[0]} = ${name}(${ops.join(', ')})`
               break
             }
             case '**': {
+              name = `pow_${type}`
               ops = operands.map(({ range }) => source.slice(range[0], range[1])) 
-              check = `pow(${ops.join(', ')})`
+              check = `${name}(${ops.join(', ')})`
               break
             }
             case 'single:disorder': {
+              name = `check_bool`
               ops = source.slice(range[0], range[1])
-              check = `check(${ops})`
+              check = `${name}(${ops})`
               break
             }
             case 'double:disorder': {
+              name = `check_tuple`
               ops = source.slice(range[0], range[1])
-              check = `check(${ops})`
+              check = `${name}(${ops})`
               break
             }
             case 'payable': {
@@ -148,10 +171,11 @@ class Scanner {
           source = [first, key, last].join('')
           bugFixes[key] = check
           pairs.splice(idx, 1)
+          name && wrappers.add(name)
         }
       }
     }
-    return { bugFixes, source }
+    return { bugFixes, source, wrappers }
   }
 } 
 

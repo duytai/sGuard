@@ -17,6 +17,7 @@
     "get-line-from-pos": "^1.0.0",
     "jsonpath": "^1.0.2",
     "lodash": "^4.17.15",
+    "mustache": "^4.0.1",
     "object-hash": "^2.0.3",
     "shelljs": "^0.8.3",
     "web3": "^1.2.4",
