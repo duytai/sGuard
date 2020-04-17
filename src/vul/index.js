@@ -5,6 +5,7 @@ const Template = require('./template')
 const Integer = require('./integer')
 const Disorder = require('./disorder')
 const Freezing = require('./freezing')
+const Reentrancy = require('./reentrancy')
 
 class Scanner {
   constructor(cache, srcmap, ast) {
@@ -14,6 +15,7 @@ class Scanner {
       integer: new Integer(cache, srcmap, ast),
       disorder: new Disorder(cache, srcmap, ast),
       freezing: new Freezing(cache, srcmap, ast),
+      reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }
 
@@ -59,7 +61,7 @@ class Scanner {
         for (const pidx in pairs) {
           if (idx == pidx) continue
           const range = pairs[pidx][1].range
-          if (outerRange[0] <= range[0] && range[1] <= outerRange[1]) {
+          if (outerRange[0] < range[0] && range[1] < outerRange[1]) {
             containOtherRange = true
             break
           }
@@ -165,6 +167,12 @@ class Scanner {
             }
             case 'msg:value': {
               check = '0'
+              break
+            }
+            case 'reentrancy': {
+              // TODO: add a lock to all function
+              ops = source.slice(range[0], range[1])
+              check = ops
               break
             }
             default: {
