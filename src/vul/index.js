@@ -170,7 +170,6 @@ class Scanner {
               break
             }
             case 'reentrancy': {
-              // TODO: add a lock to all function
               ops = source.slice(range[0], range[1])
               check = ops
               break

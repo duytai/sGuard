@@ -22,6 +22,14 @@ const findSymbols = (symbol, cond) => {
   )
 } 
 
+const firstMeet = (dnode, cond) => {
+  assert(dnode && cond)
+  if (cond(dnode)) return [dnode]
+  return dnode.node
+    .childs
+    .reduce((all, next) => [...all, ...firstMeet(next, cond)], [])
+}
+
 const findOperands = (pc, srcmap, ast) => {
   const { s, l } = srcmap.toSL(pc)
   const key = [s, l, 0].join(':')
@@ -80,11 +88,29 @@ const findPayables = (srcmap, ast) => {
   return ret
 }
 
+const findFunctions = (srcmap, ast, selectors) => {
+  const ret = []
+  for (const idx in selectors) {
+    const selector = selectors[idx]
+    const [response] = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
+    const { src, children } = response
+    const block = children[children.length - 1]
+    assert(block.name == 'Block')
+    let [s, l] = src.split(':').map(x => parseInt(x))
+    const [blockS, blockL] = block.src.split(':').map(x => parseInt(x))
+    l = blockS - s
+    ret.push({ range: [s, s + l], type: '' })
+  }
+  return ret
+} 
+
 module.exports = {
   findSymbol,
   findSymbols,
   findOperands,
   findPayables,
   findMsgValues,
+  firstMeet,
+  findFunctions,
 }
 
