@@ -99,7 +99,7 @@ const findFunctions = (srcmap, ast, selectors) => {
     let [s, l] = src.split(':').map(x => parseInt(x))
     const [blockS, blockL] = block.src.split(':').map(x => parseInt(x))
     l = blockS - s
-    ret.push({ range: [s, s + l], type: '' })
+    ret.push({ range: [s, s + l], operands: [], operator: 'lock' })
   }
   return ret
 } 

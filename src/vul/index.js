@@ -169,8 +169,9 @@ class Scanner {
               check = '0'
               break
             }
-            case 'reentrancy': {
+            case 'lock': {
               ops = source.slice(range[0], range[1])
+              ops = `${ops}nonReentrant() `
               check = ops
               break
             }

@@ -10,8 +10,8 @@ class Reentrancy {
     this.ast = ast
   }
 
-  generateCheckPoints() {
-    const checkPoints = {}
+  scan() {
+    const selectors = new Set()
     const { mem: { calls }, endPoints } = this.cache
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
@@ -33,51 +33,15 @@ class Reentrancy {
             const reg = /EQ\([0-f]{8},SHR\(e0,CALLDATALOAD\(0,20\)\)\)/
             return reg.test(formatSymbol(me))
           })
-          const selectors = new Set()
           dnodes.forEach(({ node: { me } }) => {
             const [selector] = me.slice(2)
             selectors.add(selector[1].toString(16))
           })
-          if (selectors.size) {
-            const operands = findFunctions(this.srcmap, this.ast, [...selectors])
-            if (!checkPoints[pc]) {
-              checkPoints[pc] = {
-                pc,
-                operands: {
-                  range: [s, s + l],
-                  operands,
-                  operator: 'reentrancy'
-                },
-              }
-            } else {
-              const curOperands = checkPoints[pc].operands.operands
-              operands.forEach(operand => {
-                const found = curOperands.find(c => c.range.join(':') == operand.range.join(':'))
-                if (!found) {
-                  curOperands.push(operand)
-                }
-              })
-            }
-          }
         }
       })
     })
-    return checkPoints
-  }
-
-  findUncheckOperands() {
-    const uncheckOperands = {}
-    const checkPoints = this.generateCheckPoints()
-    for (const t in checkPoints) {
-      const { operands, pc } = checkPoints[t]
-      uncheckOperands[pc] = operands
-    }
-    return uncheckOperands
-  }
-
-  scan() {
-    const uncheckOperands = this.findUncheckOperands()
-    return toPairs(uncheckOperands)
+    const locks = findFunctions(this.srcmap, this.ast, [...selectors])
+    return toPairs(locks)
   }
 } 
 
