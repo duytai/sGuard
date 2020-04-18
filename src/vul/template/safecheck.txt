@@ -70,3 +70,12 @@ function check_bool(bool x) internal pure returns(bool) {
 }
 {{/check}}
 
+{{#nonReentrant}}
+bool private _notEntered = true;
+modifier nonReentrant() {
+  require(_notEntered, "ReentrancyGuard: reentrant call");
+  _notEntered = false;
+  _;
+  _notEntered = true;
+}
+{{/nonReentrant}}
