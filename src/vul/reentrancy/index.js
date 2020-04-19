@@ -13,6 +13,7 @@ class Reentrancy {
   scan() {
     const selectors = new Set()
     const { mem: { calls }, endPoints } = this.cache
+    const unlocks = []
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
         const endPoint = endPoints[endPointIdx]
@@ -37,11 +38,12 @@ class Reentrancy {
             const [selector] = me.slice(2)
             selectors.add(selector[1].toString(16))
           })
+          unlocks.push({ range: [s, s + l], operands: [], operator: 'unlock' })
         }
       })
     })
     const locks = findFunctions(this.srcmap, this.ast, [...selectors])
-    return toPairs(locks)
+    return toPairs([...locks, ...unlocks])
   }
 } 
 
