@@ -51,14 +51,24 @@ class Reentrancy {
               operands: {
                 range: [s, s + l],
                 operands: [],
-                operator: 'lock_tuple'
+                operator: 'lock:tuple'
               },
             }
           }
         }
       })
     })
-    const locks = findFunctions(this.srcmap, this.ast, [...selectors])
+    let locks = []
+    // lock:tuple
+    for (const t in checkPoints) {
+      const { operands, pc } = checkPoints[t]
+      locks = locks.concat(operands)
+    }
+    locks = [
+      ...locks,
+      // lock:function
+      ...findFunctions(this.srcmap, this.ast, [...selectors])
+    ]
     return toPairs(locks)
   }
 } 
