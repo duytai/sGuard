@@ -44,9 +44,7 @@ class Scanner {
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
     const safeCheck = ['contract SafeCheck {\n', lines, '\n}'].join('')
-    // Add safeCheck inherit
     const guard = [safeCheck, source].join('\n')
-    console.log('++++++++')
     console.log(guard)
   }
 
@@ -173,6 +171,11 @@ class Scanner {
               name = 'nonReentrant'
               ops = source.slice(range[0], range[1])
               ops = `${ops}${name}() `
+              check = ops
+              break
+            }
+            case 'unlock': {
+              ops = source.slice(range[0], range[1])
               check = ops
               break
             }

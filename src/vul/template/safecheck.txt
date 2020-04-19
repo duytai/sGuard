@@ -79,8 +79,4 @@ modifier nonReentrant() {
   _;
   _notEntered = true;
 }
-
-function unlock() private {
-  _notEntered = true;
-}
 {{/nonReentrant}}

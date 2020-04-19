@@ -93,7 +93,7 @@ const findFunctions = (srcmap, ast, selectors) => {
   for (const idx in selectors) {
     const selector = selectors[idx]
     const [response] = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
-    const { src, children } = response
+    const { src, children, attributes: { name } } = response
     const block = children[children.length - 1]
     assert(block.name == 'Block')
     let [s, l] = src.split(':').map(x => parseInt(x))
