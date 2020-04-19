@@ -30,7 +30,7 @@ class Disorder {
         switch (opcodes.join(':')) {
           case 'SWAP:POP': {
             const { s, l } = this.srcmap.toSL(pc)
-            checkPoints[pc] = {
+            checkPoints[pc + callSymbol] = {
               pc,
               operands: {
                 range: [s, s + l],
@@ -42,7 +42,7 @@ class Disorder {
           }
           case 'SWAP:RETURNDATASIZE:POP': {
             const { s, l } = this.srcmap.toSL(pc)
-            checkPoints[pc] = {
+            checkPoints[pc + callSymbol] = {
               pc,
               operands: {
                 range: [s, s + l],

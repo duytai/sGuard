@@ -167,15 +167,10 @@ class Scanner {
               check = '0'
               break
             }
-            case 'lock': {
+            case 'lock:function': {
               name = 'nonReentrant'
               ops = source.slice(range[0], range[1])
               ops = `${ops}${name}() `
-              check = ops
-              break
-            }
-            case 'unlock': {
-              ops = source.slice(range[0], range[1])
               check = ops
               break
             }

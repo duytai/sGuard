@@ -2,9 +2,10 @@ const assert = require('assert')
 const { toPairs } = require('lodash')
 const Tree = require('../tree')
 const { 
-  formatSymbol,
+  formatWithoutTrace: formatSymbol,
   firstMeet,
   findFunctions,
+  findReturnType,
 } = require('../../shared')
 
 class Reentrancy {
@@ -16,8 +17,8 @@ class Reentrancy {
 
   scan() {
     const selectors = new Set()
+    const checkPoints = {}
     const { mem: { calls }, endPoints } = this.cache
-    const unlocks = []
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
         const endPoint = endPoints[endPointIdx]
@@ -42,12 +43,23 @@ class Reentrancy {
             const [selector] = me.slice(2)
             selectors.add(selector[1].toString(16))
           })
-          unlocks.push({ range: [s, s + l], operands: [], operator: 'unlock' })
+          const resultType = findReturnType(pc, this.srcmap, this.ast)
+          if (resultType.startsWith('tuple(')) {
+            const callSymbol = formatSymbol(stack.get(stack.size() - 1))
+            checkPoints[pc + callSymbol] = {
+              pc,
+              operands: {
+                range: [s, s + l],
+                operands: [],
+                operator: 'lock_tuple'
+              },
+            }
+          }
         }
       })
     })
     const locks = findFunctions(this.srcmap, this.ast, [...selectors])
-    return toPairs([...locks, ...unlocks])
+    return toPairs(locks)
   }
 } 
 

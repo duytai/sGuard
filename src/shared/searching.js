@@ -101,11 +101,19 @@ const findFunctions = (srcmap, ast, selectors) => {
     l = blockS - s
     const elems = srcmap.source.slice(s, s + l).split('returns(')
     l = l - (elems[1] ? elems[1].length + 'returns('.length : 0)
-    // console.log(srcmap.source.slice(s, s+ l))
-    ret.push({ range: [s, s + l], operands: [], operator: 'lock' })
+    ret.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
   }
   return ret
 } 
+
+const findReturnType = (pc, srcmap, ast) => {
+  const { s, l } = srcmap.toSL(pc)
+  const key = [s, l, 0].join(':')
+  const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
+  assert(response.length >= 1)
+  const { children, name, attributes: { type } } = response[response.length - 1]
+  return type
+}
 
 module.exports = {
   findSymbol,
@@ -115,5 +123,6 @@ module.exports = {
   findMsgValues,
   firstMeet,
   findFunctions,
+  findReturnType,
 }
 
