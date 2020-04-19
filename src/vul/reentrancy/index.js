@@ -44,14 +44,23 @@ class Reentrancy {
             selectors.add(selector[1].toString(16))
           })
           const resultType = findReturnType(pc, this.srcmap, this.ast)
+          const callSymbol = formatSymbol(stack.get(stack.size() - 1))
           if (resultType.startsWith('tuple(')) {
-            const callSymbol = formatSymbol(stack.get(stack.size() - 1))
             checkPoints[pc + callSymbol] = {
               pc,
               operands: {
                 range: [s, s + l],
                 operands: [],
                 operator: 'lock:tuple'
+              },
+            }
+          } else {
+            checkPoints[pc + callSymbol] = {
+              pc,
+              operands: {
+                range: [s, s + l],
+                operands: [],
+                operator: 'lock:nontuple'
               },
             }
           }

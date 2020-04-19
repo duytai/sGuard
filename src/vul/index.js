@@ -187,6 +187,11 @@ class Scanner {
                 check = `locked = true;\n${distance}${ops};\n${distance}locked = false`
                 break
               }
+              case 'lock:nontuple': {
+                ops = source.slice(range[0], range[1])
+                check = `D(locked = true, ${ops}, locked = false).y` 
+                break
+              }
               case 'lock:function': {
                 name = 'nonReentrant'
                 ops = source.slice(range[0], range[1])

@@ -71,7 +71,7 @@ function check_bool(bool x) internal pure returns(bool) {
 {{/check}}
 
 {{#nonReentrant}}
-bool private locked = false;
+bool internal locked = false;
 modifier nonReentrant() {
   require(!locked, "ReentrancyGuard: reentrant call");
   locked = true;
