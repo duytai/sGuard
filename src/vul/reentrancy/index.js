@@ -1,7 +1,11 @@
 const assert = require('assert')
 const { toPairs } = require('lodash')
 const Tree = require('../tree')
-const { formatSymbol, firstMeet, findFunctions } = require('../../shared')
+const { 
+  formatSymbol,
+  firstMeet,
+  findFunctions,
+} = require('../../shared')
 
 class Reentrancy {
   constructor(cache, srcmap, ast) {
