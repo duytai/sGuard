@@ -52,6 +52,14 @@ class Scanner {
     let source = this.srcmap.source
     const bugFixes = {}
     const wrappers = new Set()
+    // make sure: add lock before disorder 
+    pairs.sort(x => {
+      console.log(x[1].operator)
+      if (x[1].operator.startsWith('lock:')) return -1 
+      if (x[1].operator.endsWith(':disorder')) return 1
+      return 0
+    })
+    console.log(pairs)
     while (pairs.length) {
       for (const idx in pairs) {
         const outerRange = pairs[idx][1].range
