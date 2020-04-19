@@ -79,3 +79,7 @@ modifier nonReentrant() {
   locked = false;
 }
 {{/nonReentrant}}
+
+{{#lock}}
+struct Lock_{{type}} { bool x; {{type}} y; bool z; }
+{{/lock}}

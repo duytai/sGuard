@@ -75,7 +75,7 @@ class Scanner {
             }
           }
           if (!containOtherRange) {
-            const [pc, { range, operands, operator }] = pairs[idx]
+            const [pc, { range, operands, operator, resultType }] = pairs[idx]
             let ops = []
             let check = ''
             let name = ''
@@ -188,8 +188,9 @@ class Scanner {
                 break
               }
               case 'lock:nontuple': {
+                name = `lock_${resultType}`
                 ops = source.slice(range[0], range[1])
-                check = `D(locked = true, ${ops}, locked = false).y` 
+                check = `Lock_${resultType}(locked = true, ${ops}, locked = false).y` 
                 break
               }
               case 'lock:function': {

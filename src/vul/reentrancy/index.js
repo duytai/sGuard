@@ -60,7 +60,8 @@ class Reentrancy {
               operands: {
                 range: [s, s + l],
                 operands: [],
-                operator: 'lock:nontuple'
+                operator: 'lock:nontuple',
+                resultType
               },
             }
           }
