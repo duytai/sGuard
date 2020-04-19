@@ -115,6 +115,9 @@ const findReturnType = (pc, srcmap, ast) => {
   return type
 }
 
+const findContracts = (ast)  => {
+}
+
 module.exports = {
   findSymbol,
   findSymbols,
@@ -124,5 +127,6 @@ module.exports = {
   firstMeet,
   findFunctions,
   findReturnType,
+  findContracts,
 }
 
