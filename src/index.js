@@ -29,25 +29,26 @@ const jsonOutput = JSON.parse(output)
 assert(jsonOutput.sourceList.length == 1)
 const sourceIndex = jsonOutput.sourceList[0]
 const { AST } = jsonOutput.sources[sourceIndex]
-forEach(jsonOutput.contracts, (contractJson, name) => {
-  const rawBin = contractJson['bin-runtime']
-    .split('_').join('0')
-    .split('$').join('0')
-  const bin = Buffer.from(rawBin, 'hex')
-  const evm = new Evm(bin)
-  const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
-  const { endPoints, coverage } = evm.start()
-  logger.info(`----------------------------------------------`)
-  logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
-  logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
-  logger.info(`----------------------------------------------`)
-  if (conversion) {
-    endPoints.forEach(ep => ep.showTrace(srcmap))
-  } else {
-    const condition = new Condition(endPoints)
-    const cache = new Cache(condition, endPoints)
-    const scanner = new Scanner(cache, srcmap, AST) 
-    scanner.scan()
-  }
-})
+const contracts = Object.entries(jsonOutput.contracts)
+assert(contracts.length > 0)
+const [name, contractJson] = contracts[contracts.length - 1]
+const rawBin = contractJson['bin-runtime']
+  .split('_').join('0')
+  .split('$').join('0')
+const bin = Buffer.from(rawBin, 'hex')
+const evm = new Evm(bin)
+const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
+logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
+const { endPoints, coverage } = evm.start()
+logger.info(`----------------------------------------------`)
+logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
+logger.info(`----------------------------------------------`)
+if (conversion) {
+  endPoints.forEach(ep => ep.showTrace(srcmap))
+} else {
+  const condition = new Condition(endPoints)
+  const cache = new Cache(condition, endPoints)
+  const scanner = new Scanner(cache, srcmap, AST) 
+  scanner.scan()
+}
