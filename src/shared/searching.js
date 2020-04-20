@@ -120,12 +120,13 @@ const findInheritance = (srcmap, ast)  => {
   const responses = jp.query(ast, `$..children[?(@.attributes.contractKind=="contract")]`)
   responses.forEach(({ src, attributes }) => {
     const [s] = src.split(':').map(x => parseInt(x))
-    let l = 0
-    while (srcmap.source[s + l + 1] != '{') l++
-    const contractdependencies = attributes.contractdependencies.filter(x => !!x)
-    if (contractDependencies.length > 0) {
+    if (attributes.linearizedBaseContracts.length > 1) {
+      let l = 3
+      while (srcmap.source.slice(s + l - 3, s + l) != ' is') l++
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
     } else {
+      let l = 0
+      while (srcmap.source[s + l + 1] != '{') l++
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
     }
   })

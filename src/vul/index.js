@@ -1,6 +1,6 @@
 const assert = require('assert')
 const { prettify, logger, gb, findInheritance } = require('../shared')
-const { random, uniqBy, sortBy } = require('lodash')
+const { random, uniqBy, sortBy, toPairs } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
 const Disorder = require('./disorder')
@@ -32,6 +32,10 @@ class Scanner {
         ...(this.vuls[k].scan() || [])
       ]
     }
+    uncheckOperands = [
+      ...uncheckOperands,
+      ...toPairs(findInheritance(this.srcmap, this.ast)),
+    ]
     const bugFixes = this.generateBugFixes(uncheckOperands)
     this.fix(bugFixes)
   }
@@ -204,6 +208,16 @@ class Scanner {
             ops = source.slice(range[0], range[1])
             ops = `${ops}${name}() `
             check = ops
+            break
+          }
+          case 'inheritance:multiple': {
+            ops = source.slice(range[0], range[1])
+            check = `${ops} SafeCheck,`
+            break
+          }
+          case 'inheritance:single': {
+            ops = source.slice(range[0], range[1])
+            check = `${ops} is SafeCheck` 
             break
           }
           default: {
