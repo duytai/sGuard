@@ -19,7 +19,6 @@ class Subtract {
     const checkPoints = {}
     const { endPoints } = this.cache
     const { node: { me, endPointIdx } } = dnode
-    if (formatSymbol(me).includes('SUB(CALLDATASIZE,4)')) return {}
     const nodes = findSymbols(me, ([_, name]) => name == 'SUB')
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
