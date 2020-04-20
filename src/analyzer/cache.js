@@ -5,9 +5,10 @@ const { LocalVariable, StateVariable } = require('../variable')
 const LocalAssignment = require('./assignment')
 
 class Cache {
-  constructor(condition, endPoints) {
+  constructor(condition, endPoints, srcmap) {
     this.condition = condition
     this.endPoints = endPoints
+    this.srcmap = srcmap
     this.build()
   }
 
@@ -52,6 +53,11 @@ class Cache {
         case 'MLOAD': {
           const subEpSize = symbol[5][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
+          // console.log('-----')
+          // const { pc } = subEp.get(subEp.size() - 1)
+          // const { s, l } = this.srcmap.toSL(pc)
+          // console.log(this.srcmap.source.slice(s, s + l))
+          // prettify([symbol[2]])
           const variable = new LocalVariable(symbol[2], subEp)
           mloads.push(variable)
           /// MLOAD Loc 

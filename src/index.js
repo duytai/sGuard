@@ -48,7 +48,7 @@ if (conversion) {
   endPoints.forEach(ep => ep.showTrace(srcmap))
 } else {
   const condition = new Condition(endPoints)
-  const cache = new Cache(condition, endPoints)
+  const cache = new Cache(condition, endPoints, srcmap)
   const scanner = new Scanner(cache, srcmap, AST) 
   scanner.scan()
 }

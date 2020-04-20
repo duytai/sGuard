@@ -19,8 +19,7 @@ class Addition {
     const checkPoints = {}
     const { endPoints } = this.cache
     const { node: { me, endPointIdx } } = dnode
-    const compilerChecks = [] 
-    if (compilerChecks.includes(formatSymbol(me))) return {}
+    if (formatSymbol(me).includes('SUB(CALLDATASIZE,4)')) return {}
     const nodes = findSymbols(me, ([_, name]) => name == 'ADD')
     nodes.forEach(node => {
       const [left, right, epSize] = node.slice(2)
