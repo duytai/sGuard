@@ -4,7 +4,7 @@ const path = require('path')
 const shell = require('shelljs')
 const dotenv = require('dotenv')
 const { Evm } = require('./evm')
-const { logger, gb, prettify, findContracts } = require('./shared')
+const { logger, gb, prettify } = require('./shared')
 const { forEach } = require('lodash')
 const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
@@ -29,7 +29,6 @@ const jsonOutput = JSON.parse(output)
 assert(jsonOutput.sourceList.length == 1)
 const sourceIndex = jsonOutput.sourceList[0]
 const { AST } = jsonOutput.sources[sourceIndex]
-findContracts(AST)
 forEach(jsonOutput.contracts, (contractJson, name) => {
   const rawBin = contractJson['bin-runtime']
     .split('_').join('0')

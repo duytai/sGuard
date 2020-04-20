@@ -1,6 +1,6 @@
 const assert = require('assert')
-const { prettify, logger, gb } = require('../shared')
-const { random } = require('lodash')
+const { prettify, logger, gb, findInheritance } = require('../shared')
+const { random, toPairs } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
 const Disorder = require('./disorder')
@@ -11,6 +11,7 @@ class Scanner {
   constructor(cache, srcmap, ast) {
     this.srcmap = srcmap
     this.template = new Template() 
+    this.ast = ast
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
       disorder: new Disorder(cache, srcmap, ast),
@@ -38,7 +39,7 @@ class Scanner {
     }
     const bugFixes = this.generateBugFixes([
       uncheckedOthers,
-      uncheckedReentrancy
+      uncheckedReentrancy,
     ])
     this.fix(bugFixes)
   }

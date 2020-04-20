@@ -115,7 +115,21 @@ const findReturnType = (pc, srcmap, ast) => {
   return type
 }
 
-const findContracts = (ast)  => {
+const findInheritance = (srcmap, ast)  => {
+  const ret = []
+  const responses = jp.query(ast, `$..children[?(@.attributes.contractKind=="contract")]`)
+  responses.forEach(({ src, attributes }) => {
+    const [s] = src.split(':').map(x => parseInt(x))
+    let l = 0
+    while (srcmap.source[s + l + 1] != '{') l++
+    const contractdependencies = attributes.contractdependencies.filter(x => !!x)
+    if (contractDependencies.length > 0) {
+      ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
+    } else {
+      ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
+    }
+  })
+  return ret
 }
 
 module.exports = {
@@ -127,6 +141,6 @@ module.exports = {
   firstMeet,
   findFunctions,
   findReturnType,
-  findContracts,
+  findInheritance,
 }
 
