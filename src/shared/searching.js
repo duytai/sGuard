@@ -40,6 +40,7 @@ const findOperands = (pc, srcmap, ast) => {
   const { operator } = attributes
   const ret = { range: [s, s + l], operands: [], operator }
   if (!children) return { operator: null }
+  if (children.length > 2) return { operator: null }
   children.forEach(({ src, attributes }) => {
     const { type } = attributes 
     const [s, l] = src.split(':').map(x => parseInt(x))
