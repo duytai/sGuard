@@ -1,5 +1,6 @@
 const assert = require('assert')
 const { uniqBy, lastIndexOf } = require('lodash')
+const ethutil = require('ethereumjs-util')
 const { prettify, formatSymbol } = require('./prettify')
 const BN = require('bn.js')
 const jp = require('jsonpath')
@@ -38,6 +39,7 @@ const findOperands = (pc, srcmap, ast) => {
   const { children, name, attributes } = response[response.length - 1]
   const { operator } = attributes
   const ret = { range: [s, s + l], operands: [], operator }
+  if (!children) return { operator: null }
   children.forEach(({ src, attributes }) => {
     const { type } = attributes 
     const [s, l] = src.split(':').map(x => parseInt(x))

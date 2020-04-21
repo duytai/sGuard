@@ -36,7 +36,7 @@ class Reentrancy {
           const tree = new Tree(this.cache)
           tree.build(endPointIdx, epIdx, value)
           const dnodes = firstMeet(tree.root, ({ node: { me } }) => {
-            const reg = /EQ\([0-f]{8},SHR\(e0,CALLDATALOAD\(0,20\)\)\)/
+            const reg = /EQ\([0-f]{8},/
             return reg.test(formatSymbol(me))
           })
           dnodes.forEach(({ node: { me } }) => {

@@ -24,6 +24,7 @@ class Disorder {
         const opcodes = []
         for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
           const { pc, stack, opcode: { name } } = endPoint.get(i)
+          if (stack.size() == 0) continue
           const symbol = formatSymbol(stack.get(stack.size() - 1))
           if (symbol == callSymbol) opcodes.push(name)
         }
