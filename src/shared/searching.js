@@ -136,6 +136,18 @@ const findInheritance = (srcmap, ast)  => {
   return ret
 }
 
+const addFunctionSelector = (ast) => {
+  const responses = jp.query(ast, `$..children[?(@.name=="FunctionDefinition")]`)
+  responses.forEach(({ children, attributes }) => {
+    const { name: functionName } = attributes
+    const [params] = children
+    const d = params.children.map(c => c.attributes.type)
+    const functionSignature = `${functionName||"fallback"}(${d.join(',')})`
+    const functionSelector = ethutil.keccak(functionSignature).toString('hex').slice(0, 8)
+    attributes.functionSelector = functionSelector
+  })
+}
+
 module.exports = {
   findSymbol,
   findSymbols,
@@ -146,5 +158,6 @@ module.exports = {
   findFunctions,
   findReturnType,
   findInheritance,
+  addFunctionSelector,
 }
 

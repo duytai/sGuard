@@ -4,7 +4,7 @@ const path = require('path')
 const shell = require('shelljs')
 const dotenv = require('dotenv')
 const { Evm } = require('./evm')
-const { logger, gb, prettify } = require('./shared')
+const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
 const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
@@ -31,6 +31,7 @@ const sourceIndex = jsonOutput.sourceList[0]
 const { AST } = jsonOutput.sources[sourceIndex]
 const { children } = AST
 const { attributes: { name } } = children[children.length - 1]
+addFunctionSelector(AST)
 forEach(jsonOutput.contracts, (contractJson, full) => {
   const contractName = full.split(':')[1]
   if (name != contractName) return
