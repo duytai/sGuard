@@ -35,7 +35,7 @@ const findOperands = (pc, srcmap, ast) => {
   const { s, l } = srcmap.toSL(pc)
   const key = [s, l, 0].join(':')
   const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
-  assert(response.length >= 1)
+  if (!response.length) return { operator: null }
   const { children, name, attributes } = response[response.length - 1]
   const { operator } = attributes
   const ret = { range: [s, s + l], operands: [], operator }
