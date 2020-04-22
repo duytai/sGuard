@@ -142,8 +142,10 @@ const addFunctionSelector = (ast) => {
     const { name: functionName } = attributes
     const [params] = children
     const d = params.children.map(c => c.attributes.type)
-    const functionSignature = `${functionName||"fallback"}(${d.join(',')})`
-    const functionSelector = ethutil.keccak(functionSignature).toString('hex').slice(0, 8)
+    const functionSignature = `${functionName}(${d.join(',')})`
+    const functionSelector = functionName
+      ? ethutil.keccak(functionSignature).toString('hex').slice(0, 8)
+      : 'fallback'
     attributes.functionSelector = functionSelector
   })
 }

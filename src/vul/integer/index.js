@@ -22,6 +22,7 @@ class Integer {
         tree.build(endPointIdx, epIdx, value)
       })
     })
+    tree.root.prettify()
     const subtract = new Subtract(this.cache, this.srcmap, this.ast)
     const addition = new Addition(this.cache, this.srcmap, this.ast)
     const multiply = new Multiply(this.cache, this.srcmap, this.ast)
