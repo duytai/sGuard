@@ -53,34 +53,45 @@ class Cache {
         case 'MLOAD': {
           const subEpSize = symbol[5][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
-          // console.log('-----')
-          // const { pc } = subEp.get(subEp.size() - 1)
-          // const { s, l } = this.srcmap.toSL(pc)
-          // console.log(this.srcmap.source.slice(s, s + l))
-          // prettify([symbol[2]])
-          const variable = new LocalVariable(symbol[2], subEp)
-          mloads.push(variable)
-          /// MLOAD Loc 
-          const trackingPos = subEp.stack.size() - 1
-          const epIdx = subEpSize - 1
-          const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
-          mloads = [...mloads, ...t.mloads]
-          sloads = [...sloads, ...t.sloads]
-          links = [...links, ...t.links]
+          try {
+            const variable = new LocalVariable(symbol[2], subEp)
+            mloads.push(variable)
+            /// MLOAD Loc 
+            const trackingPos = subEp.stack.size() - 1
+            const epIdx = subEpSize - 1
+            const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+            mloads = [...mloads, ...t.mloads]
+            sloads = [...sloads, ...t.sloads]
+            links = [...links, ...t.links]
+          } catch (e) {
+            console.log(`>> Mload conversion`)
+            const { pc } = subEp.get(subEp.size() - 1)
+            const { s, l } = this.srcmap.toSL(pc)
+            console.log(this.srcmap.source.slice(s, s + l))
+            prettify([symbol[2]])
+          }
           break
         }
         case 'SLOAD': {
-          const subEpSize = symbol[4][1].toNumber()
-          const subEp = endPoint.sub(subEpSize)
-          const variable = new StateVariable(symbol[2], subEp)
-          sloads.push(variable)
-          /// SLOAD Loc
-          const trackingPos = subEp.stack.size() - 1
-          const epIdx = subEpSize - 1
-          const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
-          mloads = [...mloads, ...t.mloads]
-          sloads = [...sloads, ...t.sloads]
-          links = [...links, ...t.links]
+          try {
+            const subEpSize = symbol[4][1].toNumber()
+            const subEp = endPoint.sub(subEpSize)
+            const variable = new StateVariable(symbol[2], subEp)
+            sloads.push(variable)
+            /// SLOAD Loc
+            const trackingPos = subEp.stack.size() - 1
+            const epIdx = subEpSize - 1
+            const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+            mloads = [...mloads, ...t.mloads]
+            sloads = [...sloads, ...t.sloads]
+            links = [...links, ...t.links]
+          } catch (e) {
+            console.log(`>> Sload conversion`)
+            const { pc } = subEp.get(subEp.size() - 1)
+            const { s, l } = this.srcmap.toSL(pc)
+            console.log(this.srcmap.source.slice(s, s + l))
+            console.log([symbol[2]])
+          }
           break
         }
         default: {
@@ -113,16 +124,24 @@ class Cache {
         }
         const [_, name, loc, value] = t
         if (entries[name]) {
-          const [ Variable, store ] = entries[name]
-          const storedKey = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
-          const storedValue = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
-          const sloads = [...storedKey.sloads, ...storedValue.sloads]
-          const mloads = [...storedKey.mloads, ...storedValue.mloads]
-          const links = [...new Set([...storedKey.links, ...storedValue.links])]
-          const subEp = endPoint.sub(epIdx + 1)
-          const variable = new Variable(loc, subEp)
-          const expression = ['symbol', name, loc, value]
-          store[epIdx] = { key: variable, sloads, mloads, links, expression }
+          try {
+            const [ Variable, store ] = entries[name]
+            const storedKey = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
+            const storedValue = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
+            const sloads = [...storedKey.sloads, ...storedValue.sloads]
+            const mloads = [...storedKey.mloads, ...storedValue.mloads]
+            const links = [...new Set([...storedKey.links, ...storedValue.links])]
+            const subEp = endPoint.sub(epIdx + 1)
+            const variable = new Variable(loc, subEp)
+            const expression = ['symbol', name, loc, value]
+            store[epIdx] = { key: variable, sloads, mloads, links, expression }
+          } catch (e) {
+            console.log(`>> Either conversion`)
+            const subEp = endPoint.sub(epIdx + 1)
+            const { pc } = subEp.get(subEp.size() - 1)
+            const { s, l } = this.srcmap.toSL(pc)
+            console.log(this.srcmap.source.slice(s, s + l))
+          }
         }
       })
 

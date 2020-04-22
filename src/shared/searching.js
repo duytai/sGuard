@@ -38,6 +38,8 @@ const findOperands = (pc, srcmap, ast) => {
   if (!response.length) return { operator: null }
   const { children, name, attributes } = response[response.length - 1]
   const { operator } = attributes
+  const validOperators = ['--', '-=', '-', '++', '+=', '+', '*', '*=', '/', '/=', '**']
+  if (!validOperators.includes(operator)) return { operator: null }
   const ret = { range: [s, s + l], operands: [], operator }
   if (!children) return { operator: null }
   if (children.length > 2) return { operator: null }
@@ -115,7 +117,7 @@ const findReturnType = (pc, srcmap, ast) => {
   const { s, l } = srcmap.toSL(pc)
   const key = [s, l, 0].join(':')
   const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
-  assert(response.length >= 1)
+  if (!response.length) return null
   const { children, name, attributes: { type } } = response[response.length - 1]
   return type
 }

@@ -206,7 +206,7 @@ class Scanner {
           case 'lock:function': {
             name = 'nonReentrant'
             ops = source.slice(range[0], range[1])
-            ops = `${ops}${name}() `
+            ops = `${ops} ${name}() `
             check = ops
             break
           }

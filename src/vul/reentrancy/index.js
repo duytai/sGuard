@@ -36,14 +36,17 @@ class Reentrancy {
           const tree = new Tree(this.cache)
           tree.build(endPointIdx, epIdx, value)
           const dnodes = firstMeet(tree.root, ({ node: { me } }) => {
-            const reg = /EQ\([0-f]{8},/
+            const reg = /EQ\([0-f]{7,8},/
             return reg.test(formatSymbol(me))
           })
           dnodes.forEach(({ node: { me } }) => {
-            const [selector] = me.slice(2)
-            selectors.add(selector[1].toString(16))
+            let selector = me[2][1].toString(16)
+            while (selector.length < 8) selector = `0${selector}`
+            selectors.add(selector)
           })
           const resultType = findReturnType(pc, this.srcmap, this.ast)
+          // unsupport assembly block
+          if (!resultType) return
           const callSymbol = formatSymbol(stack.get(stack.size() - 1))
           if (resultType.startsWith('tuple(')) {
             let newS = s
