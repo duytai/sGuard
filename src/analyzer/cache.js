@@ -87,10 +87,12 @@ class Cache {
             links = [...links, ...t.links]
           } catch (e) {
             console.log(`>> Sload conversion`)
+            const subEpSize = symbol[4][1].toNumber()
+            const subEp = endPoint.sub(subEpSize)
             const { pc } = subEp.get(subEp.size() - 1)
             const { s, l } = this.srcmap.toSL(pc)
             console.log(this.srcmap.source.slice(s, s + l))
-            console.log([symbol[2]])
+            prettify([symbol[2]])
           }
           break
         }
