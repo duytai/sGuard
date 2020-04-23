@@ -4,7 +4,7 @@ const path = require('path')
 const shell = require('shelljs')
 const dotenv = require('dotenv')
 const { Evm } = require('./evm')
-const { logger, gb, prettify } = require('./shared')
+const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
 const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
@@ -29,14 +29,19 @@ const jsonOutput = JSON.parse(output)
 assert(jsonOutput.sourceList.length == 1)
 const sourceIndex = jsonOutput.sourceList[0]
 const { AST } = jsonOutput.sources[sourceIndex]
-forEach(jsonOutput.contracts, (contractJson, name) => {
+const { children } = AST
+const { attributes: { name } } = children[children.length - 1]
+addFunctionSelector(AST)
+forEach(jsonOutput.contracts, (contractJson, full) => {
+  const contractName = full.split(':')[1]
+  if (name != contractName) return
   const rawBin = contractJson['bin-runtime']
     .split('_').join('0')
     .split('$').join('0')
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  logger.info(`Start Analyzing Contract: ${gb(name.split(':')[1])}`)
+  logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
   const { endPoints, coverage } = evm.start()
   logger.info(`----------------------------------------------`)
   logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
@@ -46,8 +51,8 @@ forEach(jsonOutput.contracts, (contractJson, name) => {
     endPoints.forEach(ep => ep.showTrace(srcmap))
   } else {
     const condition = new Condition(endPoints)
-    const cache = new Cache(condition, endPoints)
-    const scanner = new Scanner(cache, srcmap, AST) 
+    const cache = new Cache(condition, endPoints, srcmap)
+    const scanner = new Scanner(cache, srcmap, AST)
     scanner.scan()
   }
 })

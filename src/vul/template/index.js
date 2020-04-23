@@ -13,7 +13,7 @@ class Template {
     const ret = []
     for (const idx in wrappers) {
       const wrapper = wrappers[idx]
-      const [name, type] = wrapper.split('_')
+      const [name, type = ''] = wrapper.split('_')
       const isUint = type.startsWith('uint')
       const isInt = type.startsWith('int')
       const view = {

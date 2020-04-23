@@ -70,3 +70,16 @@ function check_bool(bool x) internal pure returns(bool) {
 }
 {{/check}}
 
+{{#nonReentrant}}
+bool internal locked = false;
+modifier nonReentrant() {
+  require(!locked, "ReentrancyGuard: reentrant call");
+  locked = true;
+  _;
+  locked = false;
+}
+{{/nonReentrant}}
+
+{{#lock}}
+struct Lock_{{type}} { bool x; {{type}} y; bool z; }
+{{/lock}}
