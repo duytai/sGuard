@@ -144,7 +144,8 @@ const addFunctionSelector = (ast) => {
   const responses = jp.query(ast, `$..children[?(@.name=="FunctionDefinition")]`)
   responses.forEach(({ children, attributes }) => {
     const { name: functionName } = attributes
-    const [params] = children
+    const params = children.find(({ name }) => name == 'ParameterList')
+    assert(params)
     const d = params.children.map(c => c.attributes.type)
     const functionSignature = `${functionName}(${d.join(',')})`
     const functionSelector = functionName
