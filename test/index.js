@@ -58,10 +58,17 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
       logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
       logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
       logger.info(`|\tbytelen    : ${bin.length}`)
-      logger.info(`----------------------------------------------`)
       const condition = new Condition(endPoints)
       const cache = new Cache(condition, endPoints, srcmap)
-      console.log(cache.stats)
+      const labels = ['sloads', 'mloads', 'mstores', 'sstores']
+      let success = ['sloads', 'mloads', 'mstores', 'sstores']
+      let failed = ['sloads', 'mloads', 'mstores', 'sstores']
+      success = success.map(x => cache.stats.success[x])
+      failed = failed.map(x => cache.stats.failed[x])
+      logger.info(`|\tsuccess    : [${success}]`)
+      logger.info(`|\tfailed     : [${failed}]`)
+      logger.info(`|\tlabel      : [${labels}]`)
+      logger.info(`----------------------------------------------`)
       break
     }
     default: {
