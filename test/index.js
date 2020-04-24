@@ -10,7 +10,11 @@ const { Condition, Cache } = require('../src/analyzer')
 const { Scanner } = require('../src/vul')
 const SRCMap = require('../src/srcmap')
 
-const { SYM_CONTRACT_FILE: contractFile, SYM_JSON_FILE: jsonFile } = process.env
+const { 
+  SYM_CONTRACT_FILE: contractFile,
+  SYM_JSON_FILE: jsonFile,
+  SYM_STEP: step,
+} = process.env
 assert(contractFile)
 assert(jsonFile)
 assert(fs.existsSync(jsonFile), 'json must exist')
@@ -34,16 +38,36 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-  const { endPoints, njumpis, cjumpis } = evm.start()
-  logger.info(`----------------------------------------------`)
-  logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
-  logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
-  logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
-  logger.info(`|\tbytelen    : ${bin.length}`)
-  logger.info(`----------------------------------------------`)
-    // const condition = new Condition(endPoints)
-    // const cache = new Cache(condition, endPoints, srcmap)
+  switch (step) {
+    case '1': {
+      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+      const { endPoints, njumpis, cjumpis } = evm.start()
+      logger.info(`----------------------------------------------`)
+      logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
+      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
+      logger.info(`|\tbytelen    : ${bin.length}`)
+      logger.info(`----------------------------------------------`)
+      break
+    }
+    case '2': {
+      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+      const { endPoints, njumpis, cjumpis } = evm.start()
+      logger.info(`----------------------------------------------`)
+      logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
+      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
+      logger.info(`|\tbytelen    : ${bin.length}`)
+      logger.info(`----------------------------------------------`)
+      const condition = new Condition(endPoints)
+      const cache = new Cache(condition, endPoints, srcmap)
+      console.log(cache.stats)
+      break
+    }
+    default: {
+      assert(false)
+    }
+  }
     // const scanner = new Scanner(cache, srcmap, AST)
     // scanner.scan()
 })

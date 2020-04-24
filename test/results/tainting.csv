@@ -1,0 +1,4 @@
+address,contract_name,endpoints,covered_jumpis,total_jumpis,duration,bytelen,loop_bound
+0x0063a9c1480d8d667f6232976f3006d6a3edba31,TokenAuthority,11,8,8,261,897,20
+0x00813626695bd9cbab357eedd45e5083311edeaa,Zeropool,95,97,330,981,18575,20
+0x00bc3018d474990960145b7dfb10329464434cdc,ERC20Token,637,132,150,7648,13823,20

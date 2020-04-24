@@ -9,6 +9,20 @@ class Cache {
     this.condition = condition
     this.endPoints = endPoints
     this.srcmap = srcmap
+    this.stats = {
+      failed: {
+        sloads: 0,
+        mloads: 0,
+        mstores: 0,
+        sstores: 0,
+      },
+      success: {
+        sloads: 0,
+        mloads: 0,
+        mstores: 0,
+        sstores: 0,
+      },
+    }
     this.build()
   }
 
@@ -63,12 +77,14 @@ class Cache {
             mloads = [...mloads, ...t.mloads]
             sloads = [...sloads, ...t.sloads]
             links = [...links, ...t.links]
+            this.stats.success.mloads ++;
           } catch (e) {
-            console.log(`>> Mload conversion`)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
-            prettify([symbol[2]])
+            this.stats.failed.mloads ++
+            // console.log(`>> Mload conversion`)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
+            // prettify([symbol[2]])
           }
           break
         }
@@ -85,14 +101,16 @@ class Cache {
             mloads = [...mloads, ...t.mloads]
             sloads = [...sloads, ...t.sloads]
             links = [...links, ...t.links]
+            this.stats.success.sloads ++;
           } catch (e) {
-            console.log(`>> Sload conversion`)
-            const subEpSize = symbol[4][1].toNumber()
-            const subEp = endPoint.sub(subEpSize)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
-            prettify([symbol[2]])
+            this.stats.failed.sloads ++;
+            // console.log(`>> Sload conversion`)
+            // const subEpSize = symbol[4][1].toNumber()
+            // const subEp = endPoint.sub(subEpSize)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
+            // prettify([symbol[2]])
           }
           break
         }
@@ -137,12 +155,22 @@ class Cache {
             const variable = new Variable(loc, subEp)
             const expression = ['symbol', name, loc, value]
             store[epIdx] = { key: variable, sloads, mloads, links, expression }
+            if (name == 'MSTORE') {
+              this.stats.success.mstores ++
+            } else {
+              this.stats.success.sstores ++
+            }
           } catch (e) {
-            console.log(`>> Either conversion`)
-            const subEp = endPoint.sub(epIdx + 1)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
+            if (name == 'MSTORE') {
+              this.stats.failed.mstores ++
+            } else {
+              this.stats.failed.sstores ++
+            }
+            // console.log(`>> Either conversion`)
+            // const subEp = endPoint.sub(epIdx + 1)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
           }
         }
       })
