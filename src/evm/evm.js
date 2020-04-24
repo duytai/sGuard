@@ -51,7 +51,8 @@ class Evm {
       }
       return {
         endPoints: this.endPoints,
-        coverage: !njumpis ? 100 : Math.floor(this.jumpis.size / njumpis * 100),
+        njumpis: njumpis || 0,
+        cjumpis: this.jumpis.size,
       }
     }
   }
@@ -516,7 +517,7 @@ class Evm {
           break
         }
         default: {
-          logger.error(`Missing ${name}`)
+          // logger.error(`Missing ${name}`)
           const inputs = ins > 0 ? stack.popN(ins) : []
           assert(outs <= 1)
           if (outs) {

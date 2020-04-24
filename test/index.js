@@ -40,6 +40,7 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
   logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
   logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
+  logger.info(`|\tbytelen    : ${bin.length}`)
   logger.info(`----------------------------------------------`)
     // const condition = new Condition(endPoints)
     // const cache = new Cache(condition, endPoints, srcmap)
