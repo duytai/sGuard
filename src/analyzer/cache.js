@@ -130,7 +130,7 @@ class Cache {
 
   build() {
     this.mem = { branches: [], mstores: [], sstores: [], calls: [], ends: [] }
-    this.endPoints.forEach((endPoint) => {
+    this.endPoints.forEach((endPoint, idx) => {
       const branch = {}
       const mstore = {}
       const sstore = {}

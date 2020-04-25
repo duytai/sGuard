@@ -42,9 +42,12 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-  const { endPoints, coverage } = evm.start()
+  const { endPoints, njumpis, cjumpis } = evm.start()
+  const coverage = Math.round((cjumpis + 1) / (njumpis + 1) * 100)
   logger.info(`----------------------------------------------`)
   logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+  logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+  logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
   logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
   logger.info(`----------------------------------------------`)
   if (conversion) {
