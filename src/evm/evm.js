@@ -47,7 +47,7 @@ class Evm {
         mvb += parseInt(maxVisitedBlockStep);
         logger.info(`update maxVisitedBlock to ${mvb}`)
         if (mvb <= parseInt(maxVisitedBlockBound)) continue
-        logger.error(`reach maxVisitedBlock ${maxVisitedBlockBound} but can not find any checkpoints`)
+        logger.info(`reach maxVisitedBlock ${maxVisitedBlockBound} but can get ${expectCoverage * 100}%`)
       }
       return {
         endPoints: this.endPoints,

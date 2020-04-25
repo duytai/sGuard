@@ -1,2 +1,7 @@
 address,contract_name,endpoints,covered_jumpis,total_jumpis,bytelen,success_sloads,success_mloads,success_mstores,success_sstores,failed_sloads,failed_mloads,failed_mstores,failed_sstores,integer,disorder,frez,reentrancy,concolic_duration,tainting_duration,scanner_duration
-0x0063a9c1480d8d667f6232976f3006d6a3edba31,TokenAuthority,11,8,8,897,7,16,35,0,0,0,0,0,0,0,0,0,6,26,16
+0x0063a9c1480d8d667f6232976f3006d6a3edba31,TokenAuthority,11,8,8,897,7,16,35,0,0,0,0,0,0,0,0,0,6,25,15
+0x00813626695bd9cbab357eedd45e5083311edeaa,Zeropool,412,159,330,18575,122,25664,13012,3,148,687,0,86,1,0,0,1,376,26859,20589
+0x00e07c2c78695418d84485eee1ed293a3867d9c3,InstaIndex,150,84,87,7459,509,197,1105,100,0,2,0,0,1,0,0,0,167,836,3251
+0x01555d54940a84504e640b9ab9dc527c6b9d051b,TokenMintERC20Token,1116,50,50,4852,26217,26918,20886,19,0,554,554,0,0,0,1,0,237,46544,115
+0x015b6d3907710cda1dedc5c1fd82f3d776f05b92,TokenAuthority,11,8,8,897,7,16,35,0,0,0,0,0,0,0,0,0,6,36,22
+0x01a5c05a3131c30623d944cfb1213e1a34eceba9,hodlRich,250,71,73,7114,1440,5344,5513,137,0,87,87,0,1,0,0,1,87,9134,3790
