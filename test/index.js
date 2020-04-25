@@ -30,6 +30,8 @@ const { children } = AST
 const { attributes: { name } } = children[children.length - 1]
 addFunctionSelector(AST)
 forEach(jsonOutput.contracts, (contractJson, full) => {
+  let start_time = 0
+  let duration = 0
   const contractName = full.split(':')[1]
   if (name != contractName) return
   const rawBin = contractJson['bin-runtime']
@@ -39,14 +41,19 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+  start_time = Date.now()
   const { endPoints, njumpis, cjumpis } = evm.start()
+  duration = Date.now() - start_time
   logger.info(`----------------------------------------------`)
   logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
   logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
   logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
   logger.info(`|\tbytelen    : ${bin.length}`)
+  logger.info(`|\tconcolic   : ${duration}`)
+  start_time = Date.now()
   const condition = new Condition(endPoints)
   const cache = new Cache(condition, endPoints, srcmap)
+  duration = Date.now() - start_time
   const labels = ['sloads', 'mloads', 'mstores', 'sstores']
   let success = ['sloads', 'mloads', 'mstores', 'sstores']
   let failed = ['sloads', 'mloads', 'mstores', 'sstores']
@@ -55,13 +62,17 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   logger.info(`|\tsuccess    : [${success}]`)
   logger.info(`|\tfailed     : [${failed}]`)
   logger.info(`|\tlabel      : [${labels}]`)
+  logger.info(`|\ttainting   : ${duration}`)
+  start_time = Date.now()
   const scanner = new Scanner(cache, srcmap, AST)
   const uncheckOperands = scanner.scan()
+  duration = Date.now() - start_time
   const operators = uncheckOperands.map(op => op[1].operator)
   let integerBug = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
   let disorder = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
   let frez = !!operators.find(x => ['payable', 'msg:value'].includes(x))
   let reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
+  logger.info(`|\tscanner    : ${duration}`)
   logger.info(`|\tinteger    : ${integerBug}`)
   logger.info(`|\tdisorder   : ${disorder}`)
   logger.info(`|\tfrez       : ${frez}`)
