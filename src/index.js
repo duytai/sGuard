@@ -56,6 +56,8 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
     const condition = new Condition(endPoints)
     const cache = new Cache(condition, endPoints, srcmap)
     const scanner = new Scanner(cache, srcmap, AST)
-    scanner.scan()
+    const uncheckOperands = scanner.scan()
+    const bugFixes = scanner.generateBugFixes(uncheckOperands)
+    scanner.fix(bugFixes)
   }
 })

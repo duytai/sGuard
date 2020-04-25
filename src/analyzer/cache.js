@@ -205,7 +205,7 @@ class Cache {
               t.links.forEach(link => links.push(link))
               operands.push(symbol)
             })
-            const expression = ['symbol', 'CALL', ...operands]
+            const expression = ['symbol', name, ...operands]
             call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
             break
           }
