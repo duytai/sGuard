@@ -78,11 +78,18 @@ const findPayables = (srcmap, ast) => {
   for (const idx in response) {
     const func = response[idx]
     assert(func.name == 'FunctionDefinition')
+    let s = -1
     const block = func.children[func.children.length - 1]
-    assert(block.name == 'Block')
-    const blockSrc = block.src.split(':').map(x => parseInt(x))
-    const source = srcmap.source.slice(0, blockSrc[0])
-    const s = source.lastIndexOf('payable')
+    if (block.name == 'Block') {
+      const blockSrc = block.src.split(':').map(x => parseInt(x))
+      const source = srcmap.source.slice(0, blockSrc[0])
+      s = source.lastIndexOf('payable')
+    } else {
+      // Interface no block
+      const funcSrc = func.src.split(':').map(x => parseInt(x))
+      const source = srcmap.source.slice(0, funcSrc[0] + funcSrc[1])
+      s = source.lastIndexOf('payable')
+    }
     assert(s != -1)
     ret.push({
       range: [s, s + 'payable'.length],

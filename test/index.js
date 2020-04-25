@@ -74,6 +74,9 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
     case '3': {
       logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
       const { endPoints, njumpis, cjumpis } = evm.start()
+      logger.info(`----------------------------------------------`)
+      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
       const condition = new Condition(endPoints)
       const cache = new Cache(condition, endPoints, srcmap)
       const scanner = new Scanner(cache, srcmap, AST)
@@ -83,7 +86,6 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
       let disorder = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
       let frez = !!operators.find(x => ['payable', 'msg:value'].includes(x))
       let reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
-      logger.info(`----------------------------------------------`)
       logger.info(`|\tinteger    : ${integerBug}`)
       logger.info(`|\tdisorder   : ${disorder}`)
       logger.info(`|\tfrez       : ${frez}`)
