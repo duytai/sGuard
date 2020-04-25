@@ -71,10 +71,27 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
       logger.info(`----------------------------------------------`)
       break
     }
+    case '3': {
+      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+      const { endPoints, njumpis, cjumpis } = evm.start()
+      const condition = new Condition(endPoints)
+      const cache = new Cache(condition, endPoints, srcmap)
+      const scanner = new Scanner(cache, srcmap, AST)
+      const uncheckOperands = scanner.scan()
+      const operators = uncheckOperands.map(op => op[1].operator)
+      let integerBug = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
+      let disorder = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
+      let frez = !!operators.find(x => ['payable', 'msg:value'].includes(x))
+      let reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
+      logger.info(`----------------------------------------------`)
+      logger.info(`|\tinteger    : ${integerBug}`)
+      logger.info(`|\tdisorder   : ${disorder}`)
+      logger.info(`|\tfrez       : ${frez}`)
+      logger.info(`|\treentrancy : ${reentrancy}`)
+      break
+    }
     default: {
       assert(false)
     }
   }
-    // const scanner = new Scanner(cache, srcmap, AST)
-    // scanner.scan()
 })

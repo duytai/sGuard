@@ -36,8 +36,9 @@ class Scanner {
       ...uncheckOperands,
       ...toPairs(findInheritance(this.srcmap, this.ast)),
     ]
-    const bugFixes = this.generateBugFixes(uncheckOperands)
-    this.fix(bugFixes)
+    return uncheckOperands
+    // const bugFixes = this.generateBugFixes(uncheckOperands)
+    // this.fix(bugFixes)
   }
 
   fix({ bugFixes, source, wrappers }) {
