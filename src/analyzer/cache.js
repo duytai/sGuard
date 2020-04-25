@@ -184,19 +184,17 @@ class Cache {
             branch[epIdx] = { mloads, sloads, links, expression: symbol }
             break
           }
+          case 'DELEGATECALL':
+          case 'STATICCALL':
+          case 'CALLCODE':
           case 'CALL': {
             const sloads = []
             const mloads = []
             const links = []
-            const entries = [
-              stack.size() - 1,
-              stack.size() - 2,
-              stack.size() - 3,
-              stack.size() - 4,
-              stack.size() - 5,
-              stack.size() - 6,
-              stack.size() - 7,
-            ].map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
+            let entries = Array(['DELEGATECALL', 'STATICCALL'].includes(name) ? 6 : 7).fill(0)
+            entries = entries
+              .map((_, idx) => stack.size() - (idx + 1))
+              .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
             const operands = []
             entries.forEach(({ trackingPos, symbol }) => {
               const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
