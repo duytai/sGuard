@@ -220,6 +220,12 @@ class Scanner {
             check = `${ops} is SafeCheck` 
             break
           }
+          case 'number':
+          case 'timestamp':
+          case 'delegate': {
+            // Do nothing
+            break
+          }
           default: {
             assert(false, `Unknown operator: ${operator}`)
           }
