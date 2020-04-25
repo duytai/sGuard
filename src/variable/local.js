@@ -34,7 +34,7 @@ class LocalVariable extends Variable {
         return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
       }
       default: {
-        prettify([loc])
+        //prettify([loc])
         assert(false, `unknow: ${loc[1]}`)
       }
     }

@@ -38,64 +38,32 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  switch (step) {
-    case '1': {
-      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-      const { endPoints, njumpis, cjumpis } = evm.start()
-      logger.info(`----------------------------------------------`)
-      logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
-      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
-      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
-      logger.info(`|\tbytelen    : ${bin.length}`)
-      logger.info(`----------------------------------------------`)
-      break
-    }
-    case '2': {
-      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-      const { endPoints, njumpis, cjumpis } = evm.start()
-      logger.info(`----------------------------------------------`)
-      logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
-      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
-      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
-      logger.info(`|\tbytelen    : ${bin.length}`)
-      const condition = new Condition(endPoints)
-      const cache = new Cache(condition, endPoints, srcmap)
-      const labels = ['sloads', 'mloads', 'mstores', 'sstores']
-      let success = ['sloads', 'mloads', 'mstores', 'sstores']
-      let failed = ['sloads', 'mloads', 'mstores', 'sstores']
-      success = success.map(x => cache.stats.success[x])
-      failed = failed.map(x => cache.stats.failed[x])
-      logger.info(`|\tsuccess    : [${success}]`)
-      logger.info(`|\tfailed     : [${failed}]`)
-      logger.info(`|\tlabel      : [${labels}]`)
-      logger.info(`----------------------------------------------`)
-      break
-    }
-    case '3': {
-      logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-      const { endPoints, njumpis, cjumpis } = evm.start()
-      logger.info(`----------------------------------------------`)
-      logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
-      logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
-      logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
-      logger.info(`|\tbytelen    : ${bin.length}`)
-      const condition = new Condition(endPoints)
-      const cache = new Cache(condition, endPoints, srcmap)
-      const scanner = new Scanner(cache, srcmap, AST)
-      const uncheckOperands = scanner.scan()
-      const operators = uncheckOperands.map(op => op[1].operator)
-      let integerBug = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
-      let disorder = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
-      let frez = !!operators.find(x => ['payable', 'msg:value'].includes(x))
-      let reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
-      logger.info(`|\tinteger    : ${integerBug}`)
-      logger.info(`|\tdisorder   : ${disorder}`)
-      logger.info(`|\tfrez       : ${frez}`)
-      logger.info(`|\treentrancy : ${reentrancy}`)
-      break
-    }
-    default: {
-      assert(false)
-    }
-  }
+  logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+  const { endPoints, njumpis, cjumpis } = evm.start()
+  logger.info(`----------------------------------------------`)
+  logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
+  logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+  logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
+  logger.info(`|\tbytelen    : ${bin.length}`)
+  const condition = new Condition(endPoints)
+  const cache = new Cache(condition, endPoints, srcmap)
+  const labels = ['sloads', 'mloads', 'mstores', 'sstores']
+  let success = ['sloads', 'mloads', 'mstores', 'sstores']
+  let failed = ['sloads', 'mloads', 'mstores', 'sstores']
+  success = success.map(x => cache.stats.success[x])
+  failed = failed.map(x => cache.stats.failed[x])
+  logger.info(`|\tsuccess    : [${success}]`)
+  logger.info(`|\tfailed     : [${failed}]`)
+  logger.info(`|\tlabel      : [${labels}]`)
+  const scanner = new Scanner(cache, srcmap, AST)
+  const uncheckOperands = scanner.scan()
+  const operators = uncheckOperands.map(op => op[1].operator)
+  let integerBug = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
+  let disorder = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
+  let frez = !!operators.find(x => ['payable', 'msg:value'].includes(x))
+  let reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
+  logger.info(`|\tinteger    : ${integerBug}`)
+  logger.info(`|\tdisorder   : ${disorder}`)
+  logger.info(`|\tfrez       : ${frez}`)
+  logger.info(`|\treentrancy : ${reentrancy}`)
 })
