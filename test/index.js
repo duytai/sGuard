@@ -34,9 +34,11 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   let duration = 0
   const contractName = full.split(':')[1]
   if (name != contractName) return
-  const rawBin = contractJson['bin-runtime']
+  let rawBin = contractJson['bin-runtime']
     .split('_').join('0')
     .split('$').join('0')
+  const auxdata = contractJson['asm']['.data'][0]['.auxdata']
+  rawBin = rawBin.slice(0, -auxdata.length)
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)

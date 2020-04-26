@@ -20,7 +20,7 @@ const jsonFile = `${contractFile}.json`
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
 logger.info(`compile ${gb(contract)} by using env compiler`)
-shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast ${contractFile} > ${jsonFile}`)
+shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
 assert(fs.existsSync(jsonFile), 'json must exist')
 
 const source = fs.readFileSync(contractFile, 'utf8')
@@ -35,9 +35,11 @@ addFunctionSelector(AST)
 forEach(jsonOutput.contracts, (contractJson, full) => {
   const contractName = full.split(':')[1]
   if (name != contractName) return
-  const rawBin = contractJson['bin-runtime']
+  let rawBin = contractJson['bin-runtime']
     .split('_').join('0')
     .split('$').join('0')
+  const auxdata = contractJson['asm']['.data'][0]['.auxdata']
+  rawBin = rawBin.slice(0, -auxdata.length)
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
