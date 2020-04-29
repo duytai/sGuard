@@ -13,7 +13,6 @@ const SRCMap = require('../src/srcmap')
 const { 
   SYM_CONTRACT_FILE: contractFile,
   SYM_JSON_FILE: jsonFile,
-  SYM_STEP: step,
 } = process.env
 assert(contractFile)
 assert(jsonFile)
@@ -42,14 +41,14 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
+  logger.info(`Start Analyzing Contract: ${contractName}`)
   start_time = Date.now()
   const { endPoints, njumpis, cjumpis } = evm.start()
   duration = Date.now() - start_time
   logger.info(`----------------------------------------------`)
-  logger.info(`|\tendpoints  : ${gb(endPoints.length)}`)
-  logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
-  logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
+  logger.info(`|\tendpoints  : ${endPoints.length}`)
+  logger.info(`|\tcjumpis    : ${cjumpis}`)
+  logger.info(`|\tnjumpis    : ${njumpis}`)
   logger.info(`|\tbytelen    : ${bin.length}`)
   logger.info(`|\tconcolic   : ${duration}`)
   start_time = Date.now()
