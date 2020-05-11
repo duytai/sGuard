@@ -26,7 +26,11 @@ class Disorder {
           const { pc, stack, opcode: { name } } = endPoint.get(i)
           if (stack.size() == 0) continue
           const symbol = formatSymbol(stack.get(stack.size() - 1))
-          if (symbol == callSymbol) opcodes.push(name)
+          if (symbol == callSymbol) {
+            opcodes.push(name)
+            console.log(`name: ${name}`)
+            stack.prettify()
+          }
         }
         switch (opcodes.join(':')) {
           case 'SWAP:POP': {

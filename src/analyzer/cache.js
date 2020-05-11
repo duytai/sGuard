@@ -108,7 +108,7 @@ class Cache {
             // const subEpSize = symbol[4][1].toNumber()
             // const subEp = endPoint.sub(subEpSize)
             // const { pc } = subEp.get(subEp.size() - 1)
-            // const { s, l } = this.srcmap.toSL(pc)
+            // const { s, l } = this.srcmledap.toSL(pc)
             // console.log(this.srcmap.source.slice(s, s + l))
             // prettify([symbol[2]])
           }
