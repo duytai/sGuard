@@ -47,7 +47,7 @@ class Scanner {
     }
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
-    const safeCheck = ['contract SafeCheck {\n', lines, '\n}'].join('')
+    const safeCheck = ['contract sGuard{\n', lines, '\n}'].join('')
     const guard = [safeCheck, source].join('\n')
     logger.info('-----FIXED-----')
     console.log(guard)
@@ -212,12 +212,12 @@ class Scanner {
           }
           case 'inheritance:multiple': {
             ops = source.slice(range[0], range[1])
-            check = `${ops} SafeCheck,`
+            check = `${ops} sGuard,`
             break
           }
           case 'inheritance:single': {
             ops = source.slice(range[0], range[1])
-            check = `${ops} is SafeCheck` 
+            check = `${ops} is sGuard` 
             break
           }
           case 'number':
