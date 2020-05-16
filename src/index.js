@@ -10,10 +10,11 @@ const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
 
-const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
+const { parsed: { contract, conversion, vulnerabilities, fixed } } = dotenv.config()
 assert(contract, 'require contract in .env')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
+const fixedFile = path.join(pwd, fixed)
 assert(fs.existsSync(contractFile), 'contract must exist')
 const jsonFile = `${contractFile}.json`
 
@@ -60,6 +61,7 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
     const scanner = new Scanner(cache, srcmap, AST)
     const uncheckOperands = scanner.scan()
     const bugFixes = scanner.generateBugFixes(uncheckOperands)
-    scanner.fix(bugFixes)
+    const guard = scanner.fix(bugFixes)
+    fs.writeFileSync(fixedFile, guard, 'utf8')
   }
 })

@@ -49,8 +49,7 @@ class Scanner {
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
     const safeCheck = ['contract sGuard{\n', lines, '\n}'].join('')
     const guard = [safeCheck, source].join('\n')
-    logger.info('-----FIXED-----')
-    console.log(guard)
+    return guard
   }
 
   generateBugFixes(pairs) {
