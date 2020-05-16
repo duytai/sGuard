@@ -1,19 +1,28 @@
+contract sGuard{
+  bool internal locked = false;
+  modifier nonReentrant() {
+    require(!locked, "ReentrancyGuard: reentrant call");
+    locked = true;
+    _;
+    locked = false;
+  }
+}
 /// @notice Modified from DappHub (https://git.io/fpwrq)
 
 pragma solidity 0.6.1;
 
-abstract contract DSAuthority {
+abstract contract DSAuthority is sGuard {
     function canCall(
         address src, address dst, bytes4 sig
     ) public view virtual returns (bool);
 }
 
-contract DSAuthEvents {
+contract DSAuthEvents is sGuard {
     event LogSetAuthority (address indexed authority);
     event LogSetOwner     (address indexed owner);
 }
 
-contract DSAuth is DSAuthEvents {
+contract DSAuth is sGuard, DSAuthEvents {
     DSAuthority  public  authority;
     address      public  owner;
 
@@ -25,7 +34,7 @@ contract DSAuth is DSAuthEvents {
     function setOwner(address owner_)
         public
         auth
-    {
+     nonReentrant() {
         owner = owner_;
         emit LogSetOwner(owner);
     }
@@ -51,7 +60,9 @@ contract DSAuth is DSAuthEvents {
         } else if (authority == DSAuthority(0)) {
             return false;
         } else {
+            locked = true;
             return authority.canCall(src, address(this), sig);
+            locked = false;
         }
     }
 }
