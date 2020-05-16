@@ -66,7 +66,7 @@ class Scanner {
         for (const pidx in ranges) {
           if (idx == pidx) continue
           const range = ranges[pidx]
-          if (outerRange[0] < range[0] && range[1] < outerRange[1]) {
+          if (outerRange[0] <= range[0] && range[1] <= outerRange[1]) {
             containOtherRange = true
             break
           }
