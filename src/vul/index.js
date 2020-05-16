@@ -21,7 +21,7 @@ class Scanner {
   }
 
   keyByLen(len) {
-    return Array(len).fill(0).map(x => random(0, 9)).join('')
+    return Array(len).fill(0).map(x => String.fromCharCode(random(33, 126))).join('')
   }
 
   scan() {
