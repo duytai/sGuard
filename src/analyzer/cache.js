@@ -187,11 +187,19 @@ class Cache {
           case 'DELEGATECALL':
           case 'STATICCALL':
           case 'CALLCODE':
+          case 'CREATE':
+          case 'SELFDESTRUCT':
           case 'CALL': {
             const sloads = []
             const mloads = []
             const links = []
-            let entries = Array(['DELEGATECALL', 'STATICCALL'].includes(name) ? 6 : 7).fill(0)
+            let numEntries = 0
+            if (['DELEGATECALL', 'STATICCALL'].includes(name)) numEntries = 6
+            if (['CALL', 'CALLCODE'].includes(name)) numEntries = 7
+            if (['CREATE'].includes(name)) numEntries = 3
+            if (['SELFDESTRUCT'].includes(name)) numEntries = 1
+            assert(numEntries != 0)
+            let entries = Array(numEntries).fill(0)
             entries = entries
               .map((_, idx) => stack.size() - (idx + 1))
               .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))

@@ -506,6 +506,15 @@ class Evm {
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
+        case 'CREATE': {
+          const [
+            value,
+            inOffset,
+            inLength,
+          ] = stack.popN(ins)
+          stack.push(['symbol', name, value, inOffset, inLength])
+          break
+        }
         case 'RETURNDATACOPY': {
           const [memOffset, returnDataOffset, len] = stack.popN(ins)
           const data = ['symbol', 'RETURNDATA', returnDataOffset, len]
