@@ -31,6 +31,15 @@ const firstMeet = (dnode, cond) => {
     .reduce((all, next) => [...all, ...firstMeet(next, cond)], [])
 }
 
+
+const findLibRanges = (ast) => {
+  const responses = jp.query(ast, `$..children[?(@.attributes.contractKind=="library")]`)
+  return responses.map(({ src }) => {
+    const [s, l] = src.split(':').map(x => parseInt(x))
+    return [s, l]
+  })
+}
+/* We do not fix inside library */
 const findOperands = (pc, srcmap, ast) => {
   const { s, l } = srcmap.toSL(pc)
   const key = [s, l, 0].join(':')
@@ -43,6 +52,10 @@ const findOperands = (pc, srcmap, ast) => {
   const ret = { range: [s, s + l], operands: [], operator }
   if (!children) return { operator: null }
   if (children.length > 2) return { operator: null }
+  const libRanges = findLibRanges(ast)
+  /* in library */
+  const found = libRanges.find(([x, y]) => x <= s && s + l <= x + y)
+  if (found) return { operator: null }
   children.forEach(({ src, attributes }) => {
     const { type } = attributes 
     const [s, l] = src.split(':').map(x => parseInt(x))
