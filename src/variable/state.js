@@ -41,6 +41,7 @@ class StateVariable extends Variable {
   }
 
   eq(otherVariable) {
+    if (otherVariable.blind) return true
     if (this.locs.length != otherVariable.locs.length) return false
     const [[mySloc], ...locs] = this.locs
     const [[otherSloc], ...otherLocs] = otherVariable.locs 

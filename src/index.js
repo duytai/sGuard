@@ -63,5 +63,11 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
     const bugFixes = scanner.generateBugFixes(uncheckOperands)
     const guard = scanner.fix(bugFixes)
     fs.writeFileSync(fixedFile, guard, 'utf8')
+    const { code } = shell.exec(`solc ${fixedFile}`)
+    if (code) {
+      logger.error(`[*] Failed to compile fixed contract`)
+    } else {
+      logger.info(`[*] Compile fixed contract successfully`)
+    }
   }
 })

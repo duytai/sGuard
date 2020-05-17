@@ -34,7 +34,6 @@ class LocalVariable extends Variable {
         return subEp.trace.memValueAt(this.fetchMload(loc[2], subEp))
       }
       default: {
-        //prettify([loc])
         assert(false, `unknow: ${loc[1]}`)
       }
     }
@@ -75,6 +74,7 @@ class LocalVariable extends Variable {
   }
 
   eq(otherVariable) {
+    if (otherVariable.blind) return true
     for (let i = 0; i < this.locs.length; i++) {
       for (let j = 0; j < otherVariable.locs.length; j++) {
         if (!isConst(this.locs[i]) || !isConst(otherVariable.locs[j])) return false

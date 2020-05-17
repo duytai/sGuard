@@ -90,9 +90,10 @@ class Scanner {
         let check = ''
         let name = ''
         const pivot = operands.find(operand => {
+          const len = operand.type.split(' ').length
           const isUint = operand.type.startsWith('uint')
-          const isInt = operand.type.startsWith('int') 
-          return isUint || isInt
+          const isInt = operand.type.startsWith('int')
+          return len == 1 && (isUint || isInt)
         }) || {}
         const { type } = pivot
         switch (operator) {

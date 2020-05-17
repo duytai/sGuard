@@ -1,7 +1,7 @@
 const assert = require('assert')
 const hash = require('object-hash')
 const { prettify, findSymbol, formatSymbol } = require('../shared')
-const { LocalVariable, StateVariable } = require('../variable')
+const { LocalVariable, StateVariable, BlindVariable } = require('../variable')
 const LocalAssignment = require('./assignment')
 
 class Cache {
@@ -79,12 +79,16 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.mloads ++;
           } catch (e) {
+            const variable = new BlindVariable()
+            mloads.push(variable)
+            /// MLOAD Loc 
+            const trackingPos = subEp.stack.size() - 1
+            const epIdx = subEpSize - 1
+            const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+            mloads = [...mloads, ...t.mloads]
+            sloads = [...sloads, ...t.sloads]
+            links = [...links, ...t.links]
             this.stats.failed.mloads ++
-            // console.log(`>> Mload conversion`)
-            // const { pc } = subEp.get(subEp.size() - 1)
-            // const { s, l } = this.srcmap.toSL(pc)
-            // console.log(this.srcmap.source.slice(s, s + l))
-            // prettify([symbol[2]])
           }
           break
         }
@@ -103,14 +107,16 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.sloads ++;
           } catch (e) {
+            const variable = new BlindVariable()
+            sloads.push(variable)
+            /// SLOAD Loc
+            const trackingPos = subEp.stack.size() - 1
+            const epIdx = subEpSize - 1
+            const t = this.analyzeExp(symbol[2], trackingPos, endPoint, epIdx)
+            mloads = [...mloads, ...t.mloads]
+            sloads = [...sloads, ...t.sloads]
+            links = [...links, ...t.links]
             this.stats.failed.sloads ++;
-            // console.log(`>> Sload conversion`)
-            // const subEpSize = symbol[4][1].toNumber()
-            // const subEp = endPoint.sub(subEpSize)
-            // const { pc } = subEp.get(subEp.size() - 1)
-            // const { s, l } = this.srcmledap.toSL(pc)
-            // console.log(this.srcmap.source.slice(s, s + l))
-            // prettify([symbol[2]])
           }
           break
         }
