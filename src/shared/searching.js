@@ -78,11 +78,18 @@ const findPayables = (srcmap, ast) => {
   for (const idx in response) {
     const func = response[idx]
     assert(func.name == 'FunctionDefinition')
+    let s = -1
     const block = func.children[func.children.length - 1]
-    assert(block.name == 'Block')
-    const blockSrc = block.src.split(':').map(x => parseInt(x))
-    const source = srcmap.source.slice(0, blockSrc[0])
-    const s = source.lastIndexOf('payable')
+    if (block.name == 'Block') {
+      const blockSrc = block.src.split(':').map(x => parseInt(x))
+      const source = srcmap.source.slice(0, blockSrc[0])
+      s = source.lastIndexOf('payable')
+    } else {
+      // Interface no block
+      const funcSrc = func.src.split(':').map(x => parseInt(x))
+      const source = srcmap.source.slice(0, funcSrc[0] + funcSrc[1])
+      s = source.lastIndexOf('payable')
+    }
     assert(s != -1)
     ret.push({
       range: [s, s + 'payable'.length],
@@ -94,7 +101,7 @@ const findPayables = (srcmap, ast) => {
 }
 
 const findFunctions = (srcmap, ast, selectors) => {
-  const ret = []
+  const locks = []
   for (const idx in selectors) {
     const selector = selectors[idx]
     const responses = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
@@ -108,19 +115,10 @@ const findFunctions = (srcmap, ast, selectors) => {
     l = blockS - s
     const elems = srcmap.source.slice(s, s + l).split('returns(')
     l = l - (elems[1] ? elems[1].length + 'returns('.length : 0)
-    ret.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
+    locks.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
   }
-  return ret
+  return locks
 } 
-
-const findReturnType = (pc, srcmap, ast) => {
-  const { s, l } = srcmap.toSL(pc)
-  const key = [s, l, 0].join(':')
-  const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
-  if (!response.length) return null
-  const { children, name, attributes: { type } } = response[response.length - 1]
-  return type
-}
 
 const findInheritance = (srcmap, ast)  => {
   const ret = []
@@ -133,7 +131,7 @@ const findInheritance = (srcmap, ast)  => {
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
     } else {
       let l = 0
-      while (srcmap.source[s + l + 1] != '{') l++
+      while (srcmap.source[s + l] != '{') l++
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
     }
   })
@@ -144,7 +142,8 @@ const addFunctionSelector = (ast) => {
   const responses = jp.query(ast, `$..children[?(@.name=="FunctionDefinition")]`)
   responses.forEach(({ children, attributes }) => {
     const { name: functionName } = attributes
-    const [params] = children
+    const params = children.find(({ name }) => name == 'ParameterList')
+    assert(params)
     const d = params.children.map(c => c.attributes.type)
     const functionSignature = `${functionName}(${d.join(',')})`
     const functionSelector = functionName
@@ -162,7 +161,6 @@ module.exports = {
   findMsgValues,
   firstMeet,
   findFunctions,
-  findReturnType,
   findInheritance,
   addFunctionSelector,
 }

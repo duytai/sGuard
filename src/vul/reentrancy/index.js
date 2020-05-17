@@ -5,7 +5,6 @@ const {
   formatWithoutTrace: formatSymbol,
   firstMeet,
   findFunctions,
-  findReturnType,
 } = require('../../shared')
 
 class Reentrancy {
@@ -44,34 +43,19 @@ class Reentrancy {
             while (selector.length < 8) selector = `0${selector}`
             selectors.add(selector)
           })
-          const resultType = findReturnType(pc, this.srcmap, this.ast)
-          // unsupport assembly block
-          if (!resultType) return
           const callSymbol = formatSymbol(stack.get(stack.size() - 1))
-          if (resultType.startsWith('tuple(')) {
-            let newS = s
-            const seps = [';', '{']
-            while (!seps.includes(this.srcmap.source[newS - 1])) newS--; 
-            const indents = [' ', '\t', '\n']
-            while (indents.includes(this.srcmap.source[newS])) newS ++;
-            checkPoints[pc + callSymbol] = {
-              pc,
-              operands: {
-                range: [newS, s + l],
-                operands: [],
-                operator: 'lock:tuple'
-              },
-            }
-          } else {
-            checkPoints[pc + callSymbol] = {
-              pc,
-              operands: {
-                range: [s, s + l],
-                operands: [],
-                operator: 'lock:nontuple',
-                resultType
-              },
-            }
+          let newS = s
+          const seps = [';', '{']
+          while (!seps.includes(this.srcmap.source[newS - 1])) newS--; 
+          const indents = [' ', '\t', '\n']
+          while (indents.includes(this.srcmap.source[newS])) newS ++;
+          checkPoints[pc + callSymbol] = {
+            pc,
+            operands: {
+              range: [newS, s + l],
+              operands: [],
+              operator: 'lock:tuple'
+            },
           }
         }
       })
@@ -82,12 +66,9 @@ class Reentrancy {
       const { operands, pc } = checkPoints[t]
       locks = locks.concat(operands)
     }
-    locks = [
-      ...locks,
-      // lock:function
-      ...findFunctions(this.srcmap, this.ast, [...selectors])
-    ]
-    return toPairs(locks)
+    // lock:function
+    const funcs = findFunctions(this.srcmap, this.ast, [...selectors])
+    return toPairs([...locks, ...funcs])
   }
 } 
 

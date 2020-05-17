@@ -6,8 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "node --max-old-space-size=8192 src/index.js",
-    "download": "node stress/loader.js",
-    "stress": "node --max-old-space-size=8192 stress/index.js"
+    "download": "node test/loader.js"
   },
   "dependencies": {
     "bn.js": "^5.0.0",

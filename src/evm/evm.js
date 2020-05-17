@@ -47,11 +47,12 @@ class Evm {
         mvb += parseInt(maxVisitedBlockStep);
         logger.info(`update maxVisitedBlock to ${mvb}`)
         if (mvb <= parseInt(maxVisitedBlockBound)) continue
-        logger.error(`reach maxVisitedBlock ${maxVisitedBlockBound} but can not find any checkpoints`)
+        logger.info(`reach maxVisitedBlock ${maxVisitedBlockBound} but can get ${expectCoverage * 100}%`)
       }
       return {
         endPoints: this.endPoints,
-        coverage: !njumpis ? 100 : Math.floor(this.jumpis.size / njumpis * 100),
+        njumpis: njumpis || 0,
+        cjumpis: this.jumpis.size,
       }
     }
   }
@@ -505,6 +506,15 @@ class Evm {
           stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
           break
         }
+        case 'CREATE': {
+          const [
+            value,
+            inOffset,
+            inLength,
+          ] = stack.popN(ins)
+          stack.push(['symbol', name, value, inOffset, inLength])
+          break
+        }
         case 'RETURNDATACOPY': {
           const [memOffset, returnDataOffset, len] = stack.popN(ins)
           const data = ['symbol', 'RETURNDATA', returnDataOffset, len]
@@ -516,7 +526,7 @@ class Evm {
           break
         }
         default: {
-          logger.error(`Missing ${name}`)
+          // logger.error(`Missing ${name}`)
           const inputs = ins > 0 ? stack.popN(ins) : []
           assert(outs <= 1)
           if (outs) {

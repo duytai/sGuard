@@ -9,6 +9,20 @@ class Cache {
     this.condition = condition
     this.endPoints = endPoints
     this.srcmap = srcmap
+    this.stats = {
+      failed: {
+        sloads: 0,
+        mloads: 0,
+        mstores: 0,
+        sstores: 0,
+      },
+      success: {
+        sloads: 0,
+        mloads: 0,
+        mstores: 0,
+        sstores: 0,
+      },
+    }
     this.build()
   }
 
@@ -63,12 +77,14 @@ class Cache {
             mloads = [...mloads, ...t.mloads]
             sloads = [...sloads, ...t.sloads]
             links = [...links, ...t.links]
+            this.stats.success.mloads ++;
           } catch (e) {
-            console.log(`>> Mload conversion`)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
-            prettify([symbol[2]])
+            this.stats.failed.mloads ++
+            // console.log(`>> Mload conversion`)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
+            // prettify([symbol[2]])
           }
           break
         }
@@ -85,14 +101,16 @@ class Cache {
             mloads = [...mloads, ...t.mloads]
             sloads = [...sloads, ...t.sloads]
             links = [...links, ...t.links]
+            this.stats.success.sloads ++;
           } catch (e) {
-            console.log(`>> Sload conversion`)
-            const subEpSize = symbol[4][1].toNumber()
-            const subEp = endPoint.sub(subEpSize)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
-            prettify([symbol[2]])
+            this.stats.failed.sloads ++;
+            // console.log(`>> Sload conversion`)
+            // const subEpSize = symbol[4][1].toNumber()
+            // const subEp = endPoint.sub(subEpSize)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmledap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
+            // prettify([symbol[2]])
           }
           break
         }
@@ -112,7 +130,7 @@ class Cache {
 
   build() {
     this.mem = { branches: [], mstores: [], sstores: [], calls: [], ends: [] }
-    this.endPoints.forEach((endPoint) => {
+    this.endPoints.forEach((endPoint, idx) => {
       const branch = {}
       const mstore = {}
       const sstore = {}
@@ -137,12 +155,22 @@ class Cache {
             const variable = new Variable(loc, subEp)
             const expression = ['symbol', name, loc, value]
             store[epIdx] = { key: variable, sloads, mloads, links, expression }
+            if (name == 'MSTORE') {
+              this.stats.success.mstores ++
+            } else {
+              this.stats.success.sstores ++
+            }
           } catch (e) {
-            console.log(`>> Either conversion`)
-            const subEp = endPoint.sub(epIdx + 1)
-            const { pc } = subEp.get(subEp.size() - 1)
-            const { s, l } = this.srcmap.toSL(pc)
-            console.log(this.srcmap.source.slice(s, s + l))
+            if (name == 'MSTORE') {
+              this.stats.failed.mstores ++
+            } else {
+              this.stats.failed.sstores ++
+            }
+            // console.log(`>> Either conversion`)
+            // const subEp = endPoint.sub(epIdx + 1)
+            // const { pc } = subEp.get(subEp.size() - 1)
+            // const { s, l } = this.srcmap.toSL(pc)
+            // console.log(this.srcmap.source.slice(s, s + l))
           }
         }
       })
@@ -156,19 +184,24 @@ class Cache {
             branch[epIdx] = { mloads, sloads, links, expression: symbol }
             break
           }
+          case 'DELEGATECALL':
+          case 'CALLCODE':
+          case 'CREATE':
+          case 'SELFDESTRUCT':
           case 'CALL': {
             const sloads = []
             const mloads = []
             const links = []
-            const entries = [
-              stack.size() - 1,
-              stack.size() - 2,
-              stack.size() - 3,
-              stack.size() - 4,
-              stack.size() - 5,
-              stack.size() - 6,
-              stack.size() - 7,
-            ].map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
+            let numEntries = 0
+            if (['DELEGATECALL'].includes(name)) numEntries = 6
+            if (['CALL', 'CALLCODE'].includes(name)) numEntries = 7
+            if (['CREATE'].includes(name)) numEntries = 3
+            if (['SELFDESTRUCT'].includes(name)) numEntries = 1
+            assert(numEntries != 0)
+            let entries = Array(numEntries).fill(0)
+            entries = entries
+              .map((_, idx) => stack.size() - (idx + 1))
+              .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
             const operands = []
             entries.forEach(({ trackingPos, symbol }) => {
               const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
@@ -177,7 +210,7 @@ class Cache {
               t.links.forEach(link => links.push(link))
               operands.push(symbol)
             })
-            const expression = ['symbol', 'CALL', ...operands]
+            const expression = ['symbol', name, ...operands]
             call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
             break
           }

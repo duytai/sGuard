@@ -10,17 +10,18 @@ const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
 
-const { parsed: { contract, conversion, vulnerabilities } } = dotenv.config()
+const { parsed: { contract, conversion, vulnerabilities, fixed } } = dotenv.config()
 assert(contract, 'require contract in .env')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
+const fixedFile = path.join(pwd, fixed)
 assert(fs.existsSync(contractFile), 'contract must exist')
 const jsonFile = `${contractFile}.json`
 
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
 logger.info(`compile ${gb(contract)} by using env compiler`)
-shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast ${contractFile} > ${jsonFile}`)
+shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
 assert(fs.existsSync(jsonFile), 'json must exist')
 
 const source = fs.readFileSync(contractFile, 'utf8')
@@ -35,16 +36,21 @@ addFunctionSelector(AST)
 forEach(jsonOutput.contracts, (contractJson, full) => {
   const contractName = full.split(':')[1]
   if (name != contractName) return
-  const rawBin = contractJson['bin-runtime']
+  let rawBin = contractJson['bin-runtime']
     .split('_').join('0')
     .split('$').join('0')
+  const auxdata = contractJson['asm']['.data'][0]['.auxdata']
+  rawBin = rawBin.slice(0, -auxdata.length)
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   logger.info(`Start Analyzing Contract: ${gb(contractName)}`)
-  const { endPoints, coverage } = evm.start()
+  const { endPoints, njumpis, cjumpis } = evm.start()
+  const coverage = Math.round((cjumpis + 1) / (njumpis + 1) * 100)
   logger.info(`----------------------------------------------`)
   logger.info(`|\tEndpoints  : ${gb(endPoints.length)}`)
+  logger.info(`|\tcjumpis    : ${gb(cjumpis)}`)
+  logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
   logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
   logger.info(`----------------------------------------------`)
   if (conversion) {
@@ -53,6 +59,9 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
     const condition = new Condition(endPoints)
     const cache = new Cache(condition, endPoints, srcmap)
     const scanner = new Scanner(cache, srcmap, AST)
-    scanner.scan()
+    const uncheckOperands = scanner.scan()
+    const bugFixes = scanner.generateBugFixes(uncheckOperands)
+    const guard = scanner.fix(bugFixes)
+    fs.writeFileSync(fixedFile, guard, 'utf8')
   }
 })

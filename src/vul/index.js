@@ -21,7 +21,7 @@ class Scanner {
   }
 
   keyByLen(len) {
-    return Array(len).fill(0).map(x => random(0, 9)).join('')
+    return Array(len).fill(0).map(x => String.fromCharCode(random(33, 126))).join('')
   }
 
   scan() {
@@ -36,8 +36,7 @@ class Scanner {
       ...uncheckOperands,
       ...toPairs(findInheritance(this.srcmap, this.ast)),
     ]
-    const bugFixes = this.generateBugFixes(uncheckOperands)
-    this.fix(bugFixes)
+    return uncheckOperands
   }
 
   fix({ bugFixes, source, wrappers }) {
@@ -48,12 +47,13 @@ class Scanner {
     }
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
-    const safeCheck = ['contract SafeCheck {\n', lines, '\n}'].join('')
+    const safeCheck = ['contract sGuard{\n', lines, '\n}'].join('')
     const guard = [safeCheck, source].join('\n')
-    console.log(guard)
+    return guard
   }
 
   generateBugFixes(pairs) {
+    console.log(pairs)
     let source = this.srcmap.source
     const bugFixes = {}
     const wrappers = new Set()
@@ -66,7 +66,7 @@ class Scanner {
         for (const pidx in ranges) {
           if (idx == pidx) continue
           const range = ranges[pidx]
-          if (outerRange[0] < range[0] && range[1] < outerRange[1]) {
+          if (outerRange[0] <= range[0] && range[1] <= outerRange[1]) {
             containOtherRange = true
             break
           }
@@ -197,12 +197,6 @@ class Scanner {
             check = `locked = true;\n${distance}${ops};\n${distance}locked = false`
             break
           }
-          case 'lock:nontuple': {
-            name = `lock_${resultType}`
-            ops = source.slice(range[0], range[1])
-            check = `Lock_${resultType}(locked = true, ${ops}, locked = false).y` 
-            break
-          }
           case 'lock:function': {
             name = 'nonReentrant'
             ops = source.slice(range[0], range[1])
@@ -212,12 +206,18 @@ class Scanner {
           }
           case 'inheritance:multiple': {
             ops = source.slice(range[0], range[1])
-            check = `${ops} SafeCheck,`
+            check = `${ops} sGuard,`
             break
           }
           case 'inheritance:single': {
             ops = source.slice(range[0], range[1])
-            check = `${ops} is SafeCheck` 
+            check = `${ops} is sGuard` 
+            break
+          }
+          case 'number':
+          case 'timestamp':
+          case 'delegate': {
+            // Do nothing
             break
           }
           default: {
