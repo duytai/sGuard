@@ -101,7 +101,7 @@ const findPayables = (srcmap, ast) => {
 }
 
 const findFunctions = (srcmap, ast, selectors) => {
-  const ret = []
+  const locks = []
   for (const idx in selectors) {
     const selector = selectors[idx]
     const responses = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
@@ -115,19 +115,10 @@ const findFunctions = (srcmap, ast, selectors) => {
     l = blockS - s
     const elems = srcmap.source.slice(s, s + l).split('returns(')
     l = l - (elems[1] ? elems[1].length + 'returns('.length : 0)
-    ret.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
+    locks.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
   }
-  return ret
+  return locks
 } 
-
-const findReturnType = (pc, srcmap, ast) => {
-  const { s, l } = srcmap.toSL(pc)
-  const key = [s, l, 0].join(':')
-  const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
-  if (!response.length) return null
-  const { children, name, attributes: { type } } = response[response.length - 1]
-  return type
-}
 
 const findInheritance = (srcmap, ast)  => {
   const ret = []
@@ -170,7 +161,6 @@ module.exports = {
   findMsgValues,
   firstMeet,
   findFunctions,
-  findReturnType,
   findInheritance,
   addFunctionSelector,
 }

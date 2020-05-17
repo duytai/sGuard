@@ -185,7 +185,6 @@ class Cache {
             break
           }
           case 'DELEGATECALL':
-          case 'STATICCALL':
           case 'CALLCODE':
           case 'CREATE':
           case 'SELFDESTRUCT':
@@ -194,7 +193,7 @@ class Cache {
             const mloads = []
             const links = []
             let numEntries = 0
-            if (['DELEGATECALL', 'STATICCALL'].includes(name)) numEntries = 6
+            if (['DELEGATECALL'].includes(name)) numEntries = 6
             if (['CALL', 'CALLCODE'].includes(name)) numEntries = 7
             if (['CREATE'].includes(name)) numEntries = 3
             if (['SELFDESTRUCT'].includes(name)) numEntries = 1

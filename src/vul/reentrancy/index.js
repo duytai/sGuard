@@ -66,12 +66,9 @@ class Reentrancy {
       const { operands, pc } = checkPoints[t]
       locks = locks.concat(operands)
     }
-    locks = [
-      ...locks,
-      // lock:function
-      ...findFunctions(this.srcmap, this.ast, [...selectors])
-    ]
-    return toPairs(locks)
+    // lock:function
+    const funcs = findFunctions(this.srcmap, this.ast, [...selectors])
+    return toPairs([...locks, ...funcs])
   }
 } 
 
