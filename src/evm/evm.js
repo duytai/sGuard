@@ -515,6 +515,16 @@ class Evm {
           stack.push(['symbol', name, value, inOffset, inLength])
           break
         }
+        case 'CREATE2': {
+          const [
+            value,
+            inOffset,
+            inLength,
+            bitValue,
+          ] = stack.popN(ins)
+          stack.push(['symbol', name, value, inOffset, inLength, bitValue])
+          break
+        }
         case 'RETURNDATACOPY': {
           const [memOffset, returnDataOffset, len] = stack.popN(ins)
           const data = ['symbol', 'RETURNDATA', returnDataOffset, len]
