@@ -131,7 +131,7 @@ const findInheritance = (srcmap, ast)  => {
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
     } else {
       let l = 0
-      while (srcmap.source[s + l + 1] != '{') l++
+      while (srcmap.source[s + l] != '{') l++
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
     }
   })
