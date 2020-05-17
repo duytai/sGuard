@@ -79,6 +79,7 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.mloads ++;
           } catch (e) {
+            // console.log(e)
             const variable = new BlindVariable()
             mloads.push(variable)
             /// MLOAD Loc 
@@ -107,6 +108,9 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.sloads ++;
           } catch (e) {
+            // console.log(e)
+            const subEpSize = symbol[4][1].toNumber()
+            const subEp = endPoint.sub(subEpSize)
             const variable = new BlindVariable()
             sloads.push(variable)
             /// SLOAD Loc
@@ -167,16 +171,27 @@ class Cache {
               this.stats.success.sstores ++
             }
           } catch (e) {
+            // console.log(e)
+            const [ Variable, store ] = entries[name]
+            const storedKey = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
+            const storedValue = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
+            const sloads = [...storedKey.sloads, ...storedValue.sloads]
+            const mloads = [...storedKey.mloads, ...storedValue.mloads]
+            const links = [...new Set([...storedKey.links, ...storedValue.links])]
+            const subEp = endPoint.sub(epIdx + 1)
+            const variable = new BlindVariable(loc, subEp)
+            const expression = ['symbol', name, loc, value]
+            store[epIdx] = { key: variable, sloads, mloads, links, expression }
+            if (name == 'MSTORE') {
+              this.stats.success.mstores ++
+            } else {
+              this.stats.success.sstores ++
+            }
             if (name == 'MSTORE') {
               this.stats.failed.mstores ++
             } else {
               this.stats.failed.sstores ++
             }
-            // console.log(`>> Either conversion`)
-            // const subEp = endPoint.sub(epIdx + 1)
-            // const { pc } = subEp.get(subEp.size() - 1)
-            // const { s, l } = this.srcmap.toSL(pc)
-            // console.log(this.srcmap.source.slice(s, s + l))
           }
         }
       })
