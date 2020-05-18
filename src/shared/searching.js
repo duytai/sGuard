@@ -119,7 +119,8 @@ const findFunctions = (srcmap, ast, selectors) => {
     const selector = selectors[idx]
     const responses = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
     if (!responses.length) continue
-    const [response] = responses
+    const response = responses.find(({ attributes: { implemented } }) => implemented)
+    assert(response)
     const { src, children, attributes: { name } } = response
     const block = children[children.length - 1]
     assert(block.name == 'Block')
