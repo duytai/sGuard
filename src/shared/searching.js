@@ -129,7 +129,7 @@ const findFunctions = (srcmap, ast, selectors) => {
     l = blockS - s
     // Check if s to s + l has open bracket 
     // Check if s to s + l has has returns
-    const seps = ['{', 'returns(']
+    const seps = ['{', 'returns']
     seps.forEach(sep => {
       const elems = srcmap.source.slice(s, s + l).split(sep)
       l = l - (elems.length == 2 ? elems[1].length + sep.length : 0)
