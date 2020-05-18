@@ -45,14 +45,16 @@ class Reentrancy {
           })
           const callSymbol = formatSymbol(stack.get(stack.size() - 1))
           let newS = s
-          const seps = [';', '{']
+          const seps = [';', '{', '}']
           while (!seps.includes(this.srcmap.source[newS - 1])) newS--; 
           const indents = [' ', '\t', '\n']
           while (indents.includes(this.srcmap.source[newS])) newS ++;
+          let newL = s - newS + l
+          while (!seps.includes(this.srcmap.source[newS + newL])) newL ++;
           checkPoints[pc + callSymbol] = {
             pc,
             operands: {
-              range: [newS, s + l],
+              range: [newS, newS + newL],
               operands: [],
               operator: 'lock:tuple'
             },
