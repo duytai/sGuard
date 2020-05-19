@@ -6,6 +6,7 @@ const dotenv = require('dotenv')
 const { Evm } = require('./evm')
 const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
+const strip = require('strip-comments');
 const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
@@ -18,13 +19,19 @@ const fixedFile = path.join(pwd, fixed)
 assert(fs.existsSync(contractFile), 'contract must exist')
 const jsonFile = `${contractFile}.json`
 
+logger.info(`strip comments from contract`)
+let source = strip(fs.readFileSync(contractFile, 'utf8'))
+fs.writeFileSync(contractFile, source)
+
 logger.info(`display compiler version`)
 shell.exec(`solc --version`)
 logger.info(`compile ${gb(contract)} by using env compiler`)
-shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
-assert(fs.existsSync(jsonFile), 'json must exist')
-
-const source = fs.readFileSync(contractFile, 'utf8')
+const { code } = shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
+if (code != 0) {
+  logger.error(`failed to compile ${gb(contract)}`)
+  process.exit()
+}
+source = fs.readFileSync(contractFile, 'utf8')
 const output = fs.readFileSync(jsonFile, 'utf8')
 const jsonOutput = JSON.parse(output)
 assert(jsonOutput.sourceList.length == 1)
