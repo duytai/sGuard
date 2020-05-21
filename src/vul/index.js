@@ -53,7 +53,6 @@ class Scanner {
   }
 
   generateBugFixes(pairs) {
-    console.log(pairs)
     let source = this.srcmap.source
     const bugFixes = {}
     const wrappers = new Set()
