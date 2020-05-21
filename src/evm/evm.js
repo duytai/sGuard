@@ -1,7 +1,6 @@
 const BN = require('bn.js')
 const utils = require('ethereumjs-util')
 const assert = require('assert')
-const dotenv = require('dotenv')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
 const Decoder = require('./decoder')
@@ -9,16 +8,16 @@ const { logger } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
+
+const config = process.argv[2]
 const {
-  parsed: {
-    dataload,
-    allocatedRange,
-    maxVisitedBlock,
-    maxVisitedBlockBound,
-    maxVisitedBlockStep,
-    expectCoverage,
-  }
-} = dotenv.config()
+  dataload,
+  allocatedRange,
+  maxVisitedBlock,
+  maxVisitedBlockBound,
+  maxVisitedBlockStep,
+  expectCoverage,
+} = JSON.parse(config)
 
 assert(
   dataload

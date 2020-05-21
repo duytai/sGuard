@@ -2,7 +2,6 @@ const assert = require('assert')
 const fs = require('fs')
 const path = require('path')
 const shell = require('shelljs')
-const dotenv = require('dotenv')
 const { Evm } = require('./evm')
 const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
@@ -11,8 +10,9 @@ const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
 
-const { parsed: { contract, conversion, vulnerabilities, fixed } } = dotenv.config()
-assert(contract, 'require contract in .env')
+const config = process.argv[2]
+const { contract, fixed } = JSON.parse(config)
+assert(contract, 'require contract')
 const pwd = shell.pwd().toString()
 const contractFile = path.join(pwd, contract)
 const fixedFile = path.join(pwd, fixed)
@@ -60,22 +60,18 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   logger.info(`|\tnjumpis    : ${gb(njumpis)}`)
   logger.info(`|\tCoverage   : ${gb(coverage + '%')}`)
   logger.info(`----------------------------------------------`)
-  if (conversion) {
-    endPoints.forEach(ep => ep.showTrace(srcmap))
+  const condition = new Condition(endPoints)
+  const cache = new Cache(condition, endPoints, srcmap)
+  const scanner = new Scanner(cache, srcmap, AST)
+  const uncheckOperands = scanner.scan()
+  const bugFixes = scanner.generateBugFixes(uncheckOperands)
+  const guard = scanner.fix(bugFixes)
+  fs.writeFileSync(fixedFile, guard, 'utf8')
+  const result = shell.exec(`solc ${fixedFile}`)
+  const { code } = result
+  if (code) {
+    logger.error(`[*] Failed to compile fixed contract`)
   } else {
-    const condition = new Condition(endPoints)
-    const cache = new Cache(condition, endPoints, srcmap)
-    const scanner = new Scanner(cache, srcmap, AST)
-    const uncheckOperands = scanner.scan()
-    const bugFixes = scanner.generateBugFixes(uncheckOperands)
-    const guard = scanner.fix(bugFixes)
-    fs.writeFileSync(fixedFile, guard, 'utf8')
-    const result = shell.exec(`solc ${fixedFile}`)
-    const { code } = result
-    if (code) {
-      logger.error(`[*] Failed to compile fixed contract`)
-    } else {
-      logger.info(`[*] Compile fixed contract successfully`)
-    }
+    logger.info(`[*] Compile fixed contract successfully`)
   }
 })
