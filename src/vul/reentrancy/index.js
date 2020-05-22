@@ -21,6 +21,7 @@ class Reentrancy {
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
         const endPoint = endPoints[endPointIdx]
+        if (parseInt(epIdx) + 1 >= endPoint.size()) return
         const { stack, pc } = endPoint.get(parseInt(epIdx) + 1)
         let sstore = false
         for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
