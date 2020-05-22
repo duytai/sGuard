@@ -146,11 +146,19 @@ const findInheritance = (srcmap, ast)  => {
     const [s] = src.split(':').map(x => parseInt(x))
     if (attributes.linearizedBaseContracts.length > 1) {
       let l = 3
-      while (srcmap.source.slice(s + l - 3, s + l) != ' is') l++
+      let count = 0
+      while (srcmap.source.slice(s + l - 3, s + l) != ' is') {
+        if (count ++ > 50) break
+        l ++
+      }
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
     } else {
       let l = 0
-      while (srcmap.source[s + l] != '{') l++
+      let count = 0
+      while (srcmap.source[s + l] != '{') {
+        if (count ++ > 50) break
+        l ++
+      }
       ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
     }
   })
