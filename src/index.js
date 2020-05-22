@@ -14,6 +14,8 @@ const config = process.argv[2]
 const { contractFile, fixedFile, jsonFile } = JSON.parse(config)
 let source = strip(fs.readFileSync(contractFile, 'utf8'))
 fs.writeFileSync(contractFile, source)
+logger.info(contractFile)
+logger.error(contractFile)
 /* strip comments */
 source = fs.readFileSync(contractFile, 'utf8')
 const lines = source.split('\n').length

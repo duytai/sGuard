@@ -19,7 +19,8 @@ class Disorder {
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx]) => {
         const endPoint = endPoints[endPointIdx]
-        const { stack, pc } = endPoint.get(parseInt(epIdx) + 1)
+        if (parseInt(epIdx) + 1 >= endPoint.size()) return
+        const { stack, pc, opcode } = endPoint.get(parseInt(epIdx) + 1)
         const callSymbol = formatSymbol(stack.get(stack.size() - 1))
         const opcodes = []
         for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
