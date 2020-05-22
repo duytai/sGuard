@@ -12,11 +12,11 @@ const SRCMap = require('./srcmap')
 
 const config = process.argv[2]
 const { contractFile, fixedFile, jsonFile } = JSON.parse(config)
-process.send({ duration: { runAt: Date.now() }})
 let source = strip(fs.readFileSync(contractFile, 'utf8'))
 fs.writeFileSync(contractFile, source)
-
+/* strip comments */
 source = fs.readFileSync(contractFile, 'utf8')
+const lines = source.split('\n').length
 const output = fs.readFileSync(jsonFile, 'utf8')
 const jsonOutput = JSON.parse(output)
 assert(jsonOutput.sourceList.length == 1)
@@ -25,6 +25,7 @@ const { AST } = jsonOutput.sources[sourceIndex]
 const { children } = AST
 const { attributes: { name } } = children[children.length - 1]
 addFunctionSelector(AST)
+
 forEach(jsonOutput.contracts, (contractJson, full) => {
   const contractName = full.split(':')[1]
   if (name != contractName) return
@@ -36,10 +37,13 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
+  process.send({ duration: { runAt: Date.now() }})
   const { endPoints, njumpis, cjumpis, mvb } = evm.start()
   process.send({ 
+    contract: { name: contractName },
     sevm: { paths: endPoints.length, njumpis, cjumpis, loopbound: mvb },
     duration: { sevmAt: Date.now() },
+    patch : { origin: { bytecodes: rawBin.length, lines } } 
   })
   /* Dependency */
   const condition = new Condition(endPoints)
@@ -61,6 +65,5 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   process.send({ duration: { bugAt: Date.now() }})
   const guard = scanner.fix(bugFixes)
   fs.writeFileSync(fixedFile, guard, 'utf8')
-  const result = shell.exec(`solc ${fixedFile}`, { silent: true })
   process.send({ duration: { patchAt: Date.now() }})
 })
