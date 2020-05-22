@@ -52,6 +52,7 @@ class Evm {
         endPoints: this.endPoints,
         njumpis: njumpis || 0,
         cjumpis: this.jumpis.size,
+        mvb,
       }
     }
   }
