@@ -26,11 +26,15 @@ class Scanner {
 
   scan() {
     let uncheckOperands = []
+    let nvuls = Object.keys(this.vuls).length
+    let cvuls = 1
     for (const k in this.vuls) {
+      process.send({ bug: { nvuls, cvuls } })
       uncheckOperands = [
         ...uncheckOperands,
         ...(this.vuls[k].scan() || [])
       ]
+      cvuls ++
     }
     uncheckOperands = [
       ...uncheckOperands,

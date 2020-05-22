@@ -47,6 +47,16 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   process.send({ duration: { dependencyAt: Date.now() } })
   const scanner = new Scanner(cache, srcmap, AST)
   const uncheckOperands = scanner.scan()
+  /* Bug found */
+  const operators = uncheckOperands.map(op => op[1].operator)
+  const integer = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
+  const exception = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
+  const freezing = !!operators.find(x => ['payable', 'msg:value'].includes(x))
+  const reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
+  const block = !!operators.find(x => ['timestamp', 'number'].includes(x))
+  const delegate = !!operators.find(x => ['delegate'].includes(x))
+  process.send({ bug: { integer, exception, freezing, reentrancy, block, delegate }})
+  /* Patch */
   const bugFixes = scanner.generateBugFixes(uncheckOperands)
   process.send({ duration: { bugAt: Date.now() }})
   const guard = scanner.fix(bugFixes)
