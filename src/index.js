@@ -5,15 +5,12 @@ const shell = require('shelljs')
 const { Evm } = require('./evm')
 const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
-const strip = require('strip-comments')
 const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
 
 const config = process.argv[2]
 const { contractFile, fixedFile, jsonFile } = JSON.parse(config)
-let source = strip(fs.readFileSync(contractFile, 'utf8'))
-fs.writeFileSync(contractFile, source)
 console.log(contractFile)
 console.error(contractFile)
 /* strip comments */
