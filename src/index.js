@@ -36,7 +36,10 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const evm = new Evm(bin)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  process.send({ duration: { runAt: Date.now() }})
+  process.send({
+    contract: { name },
+    duration: { runAt: Date.now() },
+  })
   const { endPoints, njumpis, cjumpis, mvb } = evm.start()
   process.send({ 
     contract: { name: contractName },
