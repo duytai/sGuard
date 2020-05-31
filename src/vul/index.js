@@ -44,11 +44,14 @@ class Scanner {
   }
 
   fix({ bugFixes, source, wrappers }) {
+    let noFix = true
     for (const _ in bugFixes) {
       for (const key in bugFixes) {
+        noFix = noFix && ((key == '' && bugFixes[key] == '') || bugFixes[key].startsWith('contract'))
         source = source.replace(key, bugFixes[key])
       }
     }
+    if (noFix) return this.srcmap.source
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
     const safeCheck = ['contract sGuard{\n', lines, '\n}'].join('')
