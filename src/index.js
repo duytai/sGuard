@@ -2,7 +2,7 @@ const assert = require('assert')
 const fs = require('fs')
 const path = require('path')
 const shell = require('shelljs')
-const { Evm } = require('./evm')
+const { Evm, Decoder } = require('./evm')
 const { logger, gb, prettify, addFunctionSelector } = require('./shared')
 const { forEach } = require('lodash')
 const { Condition, Cache } = require('./analyzer')
@@ -34,7 +34,10 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const auxdata = contractJson['asm']['.data'][0]['.auxdata']
   rawBin = rawBin.slice(0, -auxdata.length)
   const bin = Buffer.from(rawBin, 'hex')
-  const evm = new Evm(bin)
+  const decoder = new Decoder(bin)
+  const { sum: { nexts } } = decoder
+  if (nexts == 0) process.exit() 
+  const evm = new Evm(bin, decoder)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   process.send({
     contract: { name },

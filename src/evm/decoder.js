@@ -3,22 +3,23 @@ const opcodes = require('./opcodes')
 
 class Decoder {
   constructor(bin) {
-    this.bin = bin
-  }
-
-  summarize(opcodeName) {
+    const exts = [
+      'DELEGATECALL',
+      'CALLCODE',
+      'CREATE',
+      'SELFDESTRUCT',
+    ]
+    const sum = { njumpis: 0, nexts: 0, nexts: 0 }
     let pc = 0;
-    const sum = {
-      njumpis: 0,
-    }
-    while (pc < this.bin.length) {
-      const opcode = opcodes[this.bin[pc]]
+    while (pc < bin.length) {
+      const opcode = opcodes[bin[pc]]
       if (!opcode) break
-      if (opcode.name === 'PUSH') pc += this.bin[pc] - 0x5f
+      if (opcode.name === 'PUSH') pc += bin[pc] - 0x5f
       sum.njumpis += opcode.name == 'JUMPI' ? 1 : 0
+      sum.nexts += exts.includes(opcode.name) ? 1 : 0
       pc ++
     }
-    return sum
+    this.sum = sum
   }
 }
 

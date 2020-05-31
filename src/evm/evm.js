@@ -3,7 +3,6 @@ const utils = require('ethereumjs-util')
 const assert = require('assert')
 const opcodes = require('./opcodes')
 const Ep = require('./ep')
-const Decoder = require('./decoder')
 const { logger } = require('../shared')
 
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
@@ -27,15 +26,15 @@ assert(
   && maxVisitedBlockBound, 'update .evn file')
 
 class Evm {
-  constructor(bin) {
+  constructor(bin, decoder) {
     this.bin = bin
+    this.decoder = decoder
     this.endPoints = []
-    this.decoder = new Decoder(bin)
     this.jumpis = new Set()
   }
 
   start() {
-    const { njumpis } = this.decoder.summarize()
+    const { sum: { njumpis } } = this.decoder
     let mvb = parseInt(maxVisitedBlock)
     while (true) {
       this.endPoints.length = 0

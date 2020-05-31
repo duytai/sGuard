@@ -4,10 +4,6 @@
   "main": "index.js",
   "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
   "license": "MIT",
-  "scripts": {
-    "dev": "node --max-old-space-size=8192 src/index.js",
-    "download": "node test/loader.js"
-  },
   "dependencies": {
     "bn.js": "^5.0.0",
     "chalk": "^3.0.0",
