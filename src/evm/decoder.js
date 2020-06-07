@@ -7,7 +7,9 @@ class Decoder {
       'DELEGATECALL',
       'CALLCODE',
       'CREATE',
+      'CREATE2',
       'SELFDESTRUCT',
+      'CALL',
     ]
     const sum = { njumpis: 0, nexts: 0, nexts: 0 }
     let pc = 0;
