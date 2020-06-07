@@ -216,6 +216,7 @@ class Cache {
           case 'DELEGATECALL':
           case 'CALLCODE':
           case 'CREATE':
+          case 'CREATE2':
           case 'SELFDESTRUCT':
           case 'CALL': {
             const sloads = []
@@ -225,6 +226,7 @@ class Cache {
             if (['DELEGATECALL'].includes(name)) numEntries = 6
             if (['CALL', 'CALLCODE'].includes(name)) numEntries = 7
             if (['CREATE'].includes(name)) numEntries = 3
+            if (['CREATE2'].includes(name)) numEntries = 4
             if (['SELFDESTRUCT'].includes(name)) numEntries = 1
             assert(numEntries != 0)
             let entries = Array(numEntries).fill(0)

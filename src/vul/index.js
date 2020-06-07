@@ -194,16 +194,17 @@ class Scanner {
             check = '0'
             break
           }
-          case 'lock:tuple': {
-            let preRange = range[0]
-            while (source[preRange - 1] == ' ') {
-              preRange --
-            }
-            const distance = Array(range[0] - preRange).fill(0).map(x => ' ').join('')
-            ops = source.slice(range[0], range[1])
-            check = `locked = true;\n${distance}${ops};\n${distance}locked = false`
-            break
-          }
+          /* Dont need to lock tuple */
+          // case 'lock:tuple': {
+            // let preRange = range[0]
+            // while (source[preRange - 1] == ' ') {
+              // preRange --
+            // }
+            // const distance = Array(range[0] - preRange).fill(0).map(x => ' ').join('')
+            // ops = source.slice(range[0], range[1])
+            // check = `locked = true;\n${distance}${ops};\n${distance}locked = false`
+            // break
+          // }
           case 'lock:function': {
             name = 'nonReentrant'
             ops = source.slice(range[0], range[1])
