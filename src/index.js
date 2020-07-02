@@ -9,10 +9,19 @@ const { Condition, Cache } = require('./analyzer')
 const { Scanner } = require('./vul')
 const SRCMap = require('./srcmap')
 
-const config = process.argv[2]
-const { contractFile, fixedFile, jsonFile } = JSON.parse(config)
-console.log(contractFile)
-console.error(contractFile)
+let contractFile = 'contracts/sample.sol'
+let fixedFile = 'contracts/fixed.sol'
+let jsonFile = 'contracts/sample.sol.json'
+
+if (process.send) {
+  const d = JSON.parse(process.argv[2])
+  contractFile = d.contractFile
+  fixedFile = d.fixedFile
+  jsonFile = d.jsonFile
+} else {
+  const { code } = shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
+  if (code != 0) return
+}
 /* strip comments */
 source = fs.readFileSync(contractFile, 'utf8')
 const lines = source.split('\n').length
@@ -36,24 +45,24 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const bin = Buffer.from(rawBin, 'hex')
   const decoder = new Decoder(bin)
   const { sum: { nexts } } = decoder
-  process.send({
+  process.send && process.send({
     contract: { name },
     duration: { runAt: Date.now() },
   })
-  if (nexts == 0) process.exit() 
+  if (nexts == 0) process.send && process.exit() 
   const evm = new Evm(bin, decoder)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
-  const { endPoints, njumpis, cjumpis, mvb } = evm.start()
-  process.send({ 
+  const { endPoints, njumpis, cjumpis } = evm.start()
+  process.send && process.send({ 
     contract: { name: contractName },
-    sevm: { paths: endPoints.length, njumpis, cjumpis, loopbound: mvb },
+    sevm: { paths: endPoints.length, njumpis, cjumpis, loopbound: 0 },
     duration: { sevmAt: Date.now() },
     patch : { origin: { bytecodes: rawBin.length, lines } } 
   })
   /* Dependency */
   const condition = new Condition(endPoints)
   const cache = new Cache(condition, endPoints, srcmap)
-  process.send({ duration: { dependencyAt: Date.now() } })
+  process.send && process.send({ duration: { dependencyAt: Date.now() } })
   const scanner = new Scanner(cache, srcmap, AST)
   const uncheckOperands = scanner.scan()
   /* Bug found */
@@ -64,11 +73,11 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const reentrancy = !!operators.find(x => ['lock:tuple', 'lock:nontuple', 'lock:function'].includes(x))
   const block = !!operators.find(x => ['timestamp', 'number'].includes(x))
   const delegate = !!operators.find(x => ['delegate'].includes(x))
-  process.send({ bug: { integer, exception, freezing, reentrancy, block, delegate }})
+  process.send && process.send({ bug: { integer, exception, freezing, reentrancy, block, delegate }})
   /* Patch */
   const bugFixes = scanner.generateBugFixes(uncheckOperands)
-  process.send({ duration: { bugAt: Date.now() }})
+  process.send && process.send({ duration: { bugAt: Date.now() }})
   const guard = scanner.fix(bugFixes)
   fs.writeFileSync(fixedFile, guard, 'utf8')
-  process.send({ duration: { patchAt: Date.now() }})
+  process.send && process.send({ duration: { patchAt: Date.now() }})
 })

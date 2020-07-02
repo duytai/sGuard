@@ -7,9 +7,8 @@ const Stack = require('./stack')
 const Trace = require('./trace')
 
 class Ep {
-  constructor(maxVisitedBlock) {
+  constructor() {
     this.ep = []
-    this.maxVisitedBlock = maxVisitedBlock
     this.stack = new Stack() 
     this.trace = new Trace()
   }
@@ -27,7 +26,7 @@ class Ep {
   }
 
   clone() {
-    const ep = new Ep(this.maxVisitedBlock)
+    const ep = new Ep()
     ep.ep = [...this.ep]
     ep.trace = this.trace.clone()
     ep.stack = this.stack.clone()
@@ -37,21 +36,12 @@ class Ep {
   sub(epSize) {
     assert(epSize >= 0)
     assert(epSize <= this.ep.length)
-    const ep = new Ep(this.maxVisitedBlock)
+    const ep = new Ep()
     ep.ep = this.ep.slice(0, epSize)
     const { stack, trace } = ep.ep[ep.ep.length - 1]
     ep.stack = stack.clone()
     ep.trace = trace.clone()
     return ep
-  }
-
-  isForbidden(jumpdest) {
-    const forbiddenJumpdests = new Set() 
-    const pcs = [
-      ...this.ep.filter(({ opcode: { name } }) => name == 'JUMPDEST').map(({ pc }) => pc),
-      jumpdest,
-    ]
-    return pcs.length >= this.maxVisitedBlock
   }
 
   filter(cond) {

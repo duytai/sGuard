@@ -4,6 +4,9 @@
   "main": "index.js",
   "author": "Tai Duy Nguyen <duytai.cse@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "node src/index.js"
+  },
   "dependencies": {
     "bn.js": "^5.0.0",
     "chalk": "^3.0.0",

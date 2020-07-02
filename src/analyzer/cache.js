@@ -141,7 +141,7 @@ class Cache {
   build() {
     this.mem = { branches: [], mstores: [], sstores: [], calls: [], ends: [] }
     this.endPoints.forEach((endPoint, idx) => {
-      process.send({
+      process.send && process.send({
         dep: {
           paths: this.endPoints.length,
           cpath: idx + 1,
@@ -243,7 +243,7 @@ class Cache {
             })
             const expression = ['symbol', name, ...operands]
             call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
-            process.send({ dep: { external: true } })
+            process.send && process.send({ dep: { external: true } })
             break
           }
         }

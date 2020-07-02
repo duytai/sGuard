@@ -8,23 +8,6 @@ const { logger } = require('../shared')
 const TWO_POW256 = new BN('10000000000000000000000000000000000000000000000000000000000000000', 16)
 const MAX_INTEGER = new BN('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 16)
 
-const config = process.argv[2]
-const {
-  dataload,
-  allocatedRange,
-  maxVisitedBlock,
-  maxVisitedBlockBound,
-  maxVisitedBlockStep,
-  expectCoverage,
-} = JSON.parse(config)
-
-assert(
-  dataload
-  && allocatedRange
-  && maxVisitedBlock
-  && expectCoverage
-  && maxVisitedBlockBound, 'update .evn file')
-
 class Evm {
   constructor(bin, decoder) {
     this.bin = bin
@@ -35,24 +18,12 @@ class Evm {
 
   start() {
     const { sum: { njumpis } } = this.decoder
-    let mvb = parseInt(maxVisitedBlock)
-    while (true) {
-      this.endPoints.length = 0
-      this.jumpis.clear()
-      const ep = new Ep(mvb)
-      this.execute(0, ep)
-      if (this.jumpis.size < parseFloat(expectCoverage) * njumpis) {
-        mvb += parseInt(maxVisitedBlockStep);
-        logger.info(`update maxVisitedBlock to ${mvb}`)
-        if (mvb <= parseInt(maxVisitedBlockBound)) continue
-        logger.info(`reach maxVisitedBlock ${maxVisitedBlockBound} but can get ${expectCoverage * 100}%`)
-      }
-      return {
-        endPoints: this.endPoints,
-        njumpis: njumpis || 0,
-        cjumpis: this.jumpis.size,
-        mvb,
-      }
+    const ep = new Ep()
+    this.execute(0, ep)
+    return {
+      endPoints: this.endPoints,
+      njumpis: njumpis || 0,
+      cjumpis: this.jumpis.size,
     }
   }
 
@@ -84,30 +55,15 @@ class Evm {
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
           this.jumpis.add(pc)
-          if (cond[0] == 'const') {
-            if (!cond[1].isZero()) {
-              assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-              this.execute(jumpdest, ep.clone())
-            } else {
-              this.execute(pc + 1, ep.clone())
-            }
-          } else {
-            this.execute(pc + 1, ep.clone())
-            if (!ep.isForbidden(jumpdest)) {
-              assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-              this.execute(jumpdest, ep.clone())
-            }
-          }
+          this.execute(jumpdest, ep.clone())
+          this.execute(pc + 1, ep.clone())
           return
         }
         case 'JUMP': {
           const label = stack.pop()
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
-          if (!ep.isForbidden(jumpdest)) {
-            assert(this.bin[jumpdest] && opcodes[this.bin[jumpdest]].name == 'JUMPDEST')
-            this.execute(jumpdest, ep.clone())
-          }
+          this.execute(jumpdest, ep.clone())
           return
         }
         case 'SWAP': {
@@ -161,7 +117,7 @@ class Evm {
               break
             }
           }
-          stack.push(['const', new BN(dataload, 16)])
+          stack.push(['const', new BN('02', 16)])
           break
         }
         case 'CALLDATACOPY': {
@@ -184,7 +140,7 @@ class Evm {
             if (memValue[0] != 'const') {
               const lastValue = trace.memValueAt(memLoc) 
               assert(lastValue[0] == 'const')
-              const v = ['const', new BN(lastValue[1].add(new BN(allocatedRange, 16)))]
+              const v = ['const', new BN(lastValue[1].add(new BN('a0', 16)))]
               const t = ['symbol', name, memLoc, v, size]
               trace.add({ t, pc, epIdx, vTrackingPos, kTrackingPos })
               break
