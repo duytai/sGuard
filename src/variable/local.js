@@ -63,6 +63,8 @@ class LocalVariable extends Variable {
       }
       case 'MLOAD': {
         const [loc, loadSize, traceSize, epSize] = t.slice(2)
+        assert(loadSize[0] == 'const')
+        assert(loadSize[1].toNumber() == 0x20)
         const subEp = ep.sub(epSize[1].toNumber())
         const values = this.convert(loc, ep)
         return values.map(v => subEp.trace.memValueAt(v))

@@ -14,8 +14,6 @@ class Scanner {
     this.ast = ast
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
-      // disorder: new Disorder(cache, srcmap, ast),
-      // freezing: new Freezing(cache, srcmap, ast),
       reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }

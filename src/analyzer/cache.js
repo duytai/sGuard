@@ -68,6 +68,8 @@ class Cache {
           const subEpSize = symbol[5][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
           try {
+            assert(symbol[3][0] == 'const')
+            assert(symbol[3][1].toNumber() == 0x20)
             const variable = new LocalVariable(symbol[2], subEp)
             mloads.push(variable)
             /// MLOAD Loc 
