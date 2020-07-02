@@ -16,9 +16,9 @@ class Integer {
     this.ast = ast
   }
 
-  scan() {
+  scan(bug) {
     const { mem: { calls }, endPoints } = this.cache
-    const tree = new Tree(this.cache)
+    const tree = new Tree(this.cache, bug)
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
         tree.build(endPointIdx, epIdx, value)
@@ -33,13 +33,13 @@ class Integer {
     const block = new Block(this.cache, this.srcmap, this.ast)
     const pow = new Pow(this.cache, this.srcmap, this.ast)
     return [
-      ...subtract.scan(tree),
-      ...addition.scan(tree),
-      ...multiply.scan(tree),
-      ...division.scan(tree),
-      ...pow.scan(tree),
-      ...delegate.scan(tree),
-      ...block.scan(tree),
+      ...subtract.scan(tree, bug),
+      ...addition.scan(tree, bug),
+      ...multiply.scan(tree, bug),
+      ...division.scan(tree, bug),
+      ...pow.scan(tree, bug),
+      // ...delegate.scan(tree),
+      // ...block.scan(tree),
     ]
   }
 } 

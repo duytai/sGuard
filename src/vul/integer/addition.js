@@ -49,7 +49,9 @@ class Addition {
     return uncheckOperands
   }
 
-  scan(tree) {
+  scan(tree, bug) {
+    bug.cvuls ++
+    process.send && process.send({ bug })
     const uncheckOperands = this.findUncheckOperands(tree)
     return toPairs(uncheckOperands)
   }

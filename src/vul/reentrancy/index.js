@@ -14,7 +14,9 @@ class Reentrancy {
     this.ast = ast
   }
 
-  scan() {
+  scan(bug) {
+    bug.cvuls ++
+    process.send && process.send({ bug })
     const selectors = new Set()
     const checkPoints = {}
     const { mem: { calls }, endPoints } = this.cache

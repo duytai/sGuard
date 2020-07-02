@@ -14,6 +14,8 @@ class Scanner {
     this.ast = ast
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
+      // disorder: new Disorder(cache, srcmap, ast),
+      // freezing: new Freezing(cache, srcmap, ast),
       reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }
@@ -25,14 +27,13 @@ class Scanner {
   scan() {
     let uncheckOperands = []
     let nvuls = Object.keys(this.vuls).length
-    let cvuls = 1
+    const bug = { nvuls: 6, cvuls: 0 }
+    process.send && process.send({ bug })
     for (const k in this.vuls) {
-      process.send && process.send({ bug: { nvuls, cvuls } })
       uncheckOperands = [
         ...uncheckOperands,
-        ...(this.vuls[k].scan() || [])
+        ...(this.vuls[k].scan(bug) || [])
       ]
-      cvuls ++
     }
     uncheckOperands = [
       ...uncheckOperands,
