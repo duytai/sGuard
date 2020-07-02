@@ -445,7 +445,10 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, gasLimit, toAddress, inOffset, inLength, outOffset, outLength])
+          const traceSize = ['const', new BN(trace.size())]
+          const epSize = ['const', new BN(ep.size())]
+          const mload = ['symbol', 'MLOAD', inOffset, inLength, traceSize, epSize]
+          stack.push(['symbol', name, gasLimit, toAddress, mload, outOffset, outLength])
           break
         }
         case 'CALLCODE':
@@ -459,7 +462,10 @@ class Evm {
             outOffset,
             outLength,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, gasLimit, toAddress, value, inOffset, inLength, outOffset, outLength])
+          const traceSize = ['const', new BN(trace.size())]
+          const epSize = ['const', new BN(ep.size())]
+          const mload = ['symbol', 'MLOAD', inOffset, inLength, traceSize, epSize]
+          stack.push(['symbol', name, gasLimit, toAddress, value, mload, outOffset, outLength])
           break
         }
         case 'CREATE': {
@@ -468,7 +474,10 @@ class Evm {
             inOffset,
             inLength,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, value, inOffset, inLength])
+          const traceSize = ['const', new BN(trace.size())]
+          const epSize = ['const', new BN(ep.size())]
+          const mload = ['symbol', 'MLOAD', inOffset, inLength, traceSize, epSize]
+          stack.push(['symbol', name, value, mload])
           break
         }
         case 'CREATE2': {
@@ -478,7 +487,10 @@ class Evm {
             inLength,
             bitValue,
           ] = stack.popN(ins)
-          stack.push(['symbol', name, value, inOffset, inLength, bitValue])
+          const traceSize = ['const', new BN(trace.size())]
+          const epSize = ['const', new BN(ep.size())]
+          const mload = ['symbol', 'MLOAD', inOffset, inLength, traceSize, epSize]
+          stack.push(['symbol', name, value, mload, bitValue])
           break
         }
         case 'RETURNDATACOPY': {

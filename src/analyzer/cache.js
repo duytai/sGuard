@@ -222,27 +222,14 @@ class Cache {
             const sloads = []
             const mloads = []
             const links = []
-            let numEntries = 0
-            if (['DELEGATECALL'].includes(name)) numEntries = 6
-            if (['CALL', 'CALLCODE'].includes(name)) numEntries = 7
-            if (['CREATE'].includes(name)) numEntries = 3
-            if (['CREATE2'].includes(name)) numEntries = 4
-            if (['SELFDESTRUCT'].includes(name)) numEntries = 1
-            assert(numEntries != 0)
-            let entries = Array(numEntries).fill(0)
-            entries = entries
-              .map((_, idx) => stack.size() - (idx + 1))
-              .map(trackingPos => ({ trackingPos, symbol: stack.get(trackingPos)}))
-            const operands = []
-            entries.forEach(({ trackingPos, symbol }) => {
-              const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
-              t.sloads.forEach(sload => sloads.push(sload))
-              t.mloads.forEach(mload => mloads.push(mload))
-              t.links.forEach(link => links.push(link))
-              operands.push(symbol)
-            })
-            const expression = ['symbol', name, ...operands]
-            call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression }
+            const { stack: st } = ep[epIdx + 1]
+            const trackingPos = st.size() - 1
+            const symbol = st.get(trackingPos)
+            const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx + 1)
+            t.sloads.forEach(sload => sloads.push(sload))
+            t.mloads.forEach(mload => mloads.push(mload))
+            t.links.forEach(link => links.push(link))
+            call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression: symbol }
             process.send && process.send({ dep: { external: true } })
             break
           }
