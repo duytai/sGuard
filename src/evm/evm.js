@@ -54,17 +54,10 @@ class Evm {
           const [label, cond] = stack.popN(ins)
           assert(label[0] == 'const')
           const jumpdest = label[1].toNumber()
+          if (!ep.isAllowed(pc)) return
           this.jumpis.add(pc)
-          if (cond[0] == 'const') {
-            if (!cond[1].isZero()) {
-              this.execute(jumpdest, ep.clone())
-            } else {
-              this.execute(pc + 1, ep.clone())
-            }
-          } else {
-            this.execute(pc + 1, ep.clone())
-            this.execute(jumpdest, ep.clone())
-          }
+          this.execute(jumpdest, ep.clone())
+          this.execute(pc + 1, ep.clone())
           return
         }
         case 'JUMP': {

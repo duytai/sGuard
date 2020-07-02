@@ -1,6 +1,6 @@
 const assert = require('assert')
 const chalk = require('chalk')
-const { reverse } = require('lodash')
+const { reverse, clone } = require('lodash')
 const { logger, prettify, isConst, formatSymbol } = require('../shared')
 const { StateVariable, LocalVariable } = require('../variable')
 const Stack = require('./stack')
@@ -9,6 +9,7 @@ const Trace = require('./trace')
 class Ep {
   constructor() {
     this.ep = []
+    this.boundary = {}
     this.stack = new Stack() 
     this.trace = new Trace()
   }
@@ -30,6 +31,7 @@ class Ep {
     ep.ep = [...this.ep]
     ep.trace = this.trace.clone()
     ep.stack = this.stack.clone()
+    ep.boundary = clone(this.boundary)
     return ep
   }
 
@@ -42,6 +44,47 @@ class Ep {
     ep.stack = stack.clone()
     ep.trace = trace.clone()
     return ep
+  }
+
+  isAllowed(pc) {
+    let jp = 0 // jumpi
+    let ams = new Set() // assignment
+    let coveredJp = new Set([pc]) // nested jumpi
+
+    // default boundary = 2
+    if (!this.boundary[pc]) this.boundary[pc] = 2
+
+    // count assignments between two jumpi
+    for (let i = this.ep.length - 2; i >= 0; i--) {
+      const { pc: coveredPc, opcode: { name } } = this.ep[i];
+      if (pc == coveredPc) jp ++
+      if (!jp) {
+        switch (name) {
+          case 'MSTORE':
+          case 'SSTORE':
+          case 'SWAP': {
+            ams.add(coveredPc)
+            break
+          }
+          case 'JUMPI': {
+            coveredJp.add(coveredPc)
+            break
+          }
+        }
+      }
+    }
+
+    if (jp) {
+      // set new boundary for coveredJp
+      for (let pc of coveredJp.values()) {
+        // set new boundary for JUMPI at pc
+        if (this.boundary[pc] < ams.size) {
+          this.boundary[pc] = ams.size
+        }
+      }
+    }
+
+    return jp <= this.boundary[pc]
   }
 
   filter(cond) {
