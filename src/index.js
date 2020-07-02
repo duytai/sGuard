@@ -20,7 +20,10 @@ if (process.send) {
   jsonFile = d.jsonFile
 } else {
   const { code } = shell.exec(`solc --combined-json bin-runtime,srcmap-runtime,ast,asm ${contractFile} > ${jsonFile}`)
-  if (code != 0) return
+  if (code != 0) {
+    console.log(`[+] Failed to compile`)
+    return
+  } 
 }
 /* strip comments */
 source = fs.readFileSync(contractFile, 'utf8')
