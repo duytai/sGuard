@@ -73,8 +73,10 @@ class Scanner {
 
   fix({ bugFixes, source, wrappers }) {
     if (isEmpty(bugFixes)) return this.srcmap.source
-    for (const key in bugFixes) {
-      source = source.replace(key, bugFixes[key])
+    for (const _ in bugFixes) {
+      for (const key in bugFixes) {
+        source = source.replace(key, bugFixes[key])
+      }
     }
     const check = this.template.loads([...wrappers]).join('\n\n')
     const lines = check.split('\n').map(l => `  ${l}`).join('\n')
