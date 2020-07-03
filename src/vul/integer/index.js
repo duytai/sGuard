@@ -43,11 +43,17 @@ class Integer {
       })
     })
     tree.root.prettify()
-    const dnodes = tree.root
-      .traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
+    const targets = ['ADD', 'SUB', 'MUL', 'POW', 'DIV']
+    const dnodes = tree.root.traverse(({ node: { me } }) => {
+      const sy = formatSymbol(me)
+      for (let i = 0; i < targets.length; i++) {
+        if (sy.includes(`${targets[i]}(`)) return true
+      }
+      return false
+    })
     dnodes.forEach(dnode => {
       const { node: { me, endPointIdx } } = dnode
-      const nodes = findSymbols(me, ([_, name]) => name == 'ADD')
+      const nodes = findSymbols(me, ([_, name]) => targets.includes(name))
       nodes.forEach(node => {
         const epIdx = node[4][1].toNumber() - 1
         const endPoint = endPoints[endPointIdx]
