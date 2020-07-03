@@ -1,10 +1,8 @@
 const assert = require('assert')
-const { prettify, logger, gb, findInheritance } = require('../shared')
+const { findInheritance } = require('../shared')
 const { random, uniqBy, sortBy, toPairs } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
-const Disorder = require('./disorder')
-const Freezing = require('./freezing')
 const Reentrancy = require('./reentrancy')
 
 class Scanner {
@@ -14,9 +12,7 @@ class Scanner {
     this.ast = ast
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
-      // disorder: new Disorder(cache, srcmap, ast),
-      // freezing: new Freezing(cache, srcmap, ast),
-      reentrancy: new Reentrancy(cache, srcmap, ast),
+      // reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }
 
@@ -37,7 +33,7 @@ class Scanner {
     }
     uncheckOperands = [
       ...uncheckOperands,
-      ...toPairs(findInheritance(this.srcmap, this.ast)),
+      // ...toPairs(findInheritance(this.srcmap, this.ast)),
     ]
     return uncheckOperands
   }
@@ -62,7 +58,7 @@ class Scanner {
     let source = this.srcmap.source
     const bugFixes = {}
     const wrappers = new Set()
-    const ranges = uniqBy(pairs.map(pair => pair[1].range), x => x.join(':'))
+    const ranges = uniqBy(pairs.map(({ range })=> range), x => x.join(':'))
     const sortedRanges = []
     while (ranges.length) {
       for (const idx in ranges) {
@@ -83,14 +79,9 @@ class Scanner {
       }
     }
     sortedRanges.forEach(range => {
-      let sortedPairs = pairs.filter(x => x[1].range.join(':') == range.join(':'))
-      sortedPairs = sortBy(sortedPairs, x => {
-        if (x[1].operator.startsWith('lock:')) return 2
-        if (x[1].operator.endsWith(':disorder')) return 1
-        return 0
-      })
+      let sortedPairs = pairs.filter(x => x.range.join(':') == range.join(':'))
       sortedPairs.forEach(pair => {
-        const [pc, { range, operands, operator, resultType }] = pair
+        const { range, operands, operator, resultType } = pair
         let ops = []
         let check = ''
         let name = ''
@@ -168,42 +159,6 @@ class Scanner {
             check = `${name}(${ops.join(', ')})`
             break
           }
-          case 'single:disorder': {
-            name = `check_bool`
-            ops = source.slice(range[0], range[1])
-            check = `${name}(${ops})`
-            break
-          }
-          case 'double:disorder': {
-            name = `check_bool`
-            let preRange = range[0]
-            while (source[preRange - 1] == ' ') {
-              preRange --
-            }
-            const distance = Array(range[0] - preRange).fill(0).map(x => ' ').join('')
-            ops = source.slice(range[0], range[1])
-            check = `(bool _, ) = ${ops};\n${distance}${name}(_)`
-            break
-          }
-          case 'payable': {
-            check = ''
-            break
-          }
-          case 'msg:value': {
-            check = '0'
-            break
-          }
-          /* Dont need to lock tuple */
-          // case 'lock:tuple': {
-            // let preRange = range[0]
-            // while (source[preRange - 1] == ' ') {
-              // preRange --
-            // }
-            // const distance = Array(range[0] - preRange).fill(0).map(x => ' ').join('')
-            // ops = source.slice(range[0], range[1])
-            // check = `locked = true;\n${distance}${ops};\n${distance}locked = false`
-            // break
-          // }
           case 'lock:function': {
             name = 'nonReentrant'
             ops = source.slice(range[0], range[1])
@@ -219,12 +174,6 @@ class Scanner {
           case 'inheritance:single': {
             ops = source.slice(range[0], range[1])
             check = `${ops} is sGuard` 
-            break
-          }
-          case 'number':
-          case 'timestamp':
-          case 'delegate': {
-            // Do nothing
             break
           }
           default: {

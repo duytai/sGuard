@@ -1,19 +1,38 @@
 const assert = require('assert')
 const { toPairs } = require('lodash')
 const Tree = require('../tree')
-const Subtract = require('./subtract')
-const Addition = require('./addition')
-const Multiply = require('./multiply')
-const Division = require('./division')
-const Delegate = require('./delegate')
-const Block = require('./block')
-const Pow = require('./pow')
+const { formatSymbol, findSymbols } = require('../../shared')
 
 class Integer {
   constructor(cache, srcmap, ast) {
     this.cache = cache
     this.srcmap = srcmap
     this.ast = ast
+    this.fragments = this.findOperands()
+  }
+
+  findOperands() {
+    // TODO const found = libRanges.find(([x, y]) => x <= s && s + l <= x + y)
+    const stack = [this.ast]
+    const operators = ['--', '-=', '-', '++', '+=', '+', '*', '*=', '/', '/=', '**']
+    const fragments = {}
+    while (stack.length) {
+      const item = stack.pop()
+      const children = item.children || []
+      const operator = item.attributes ? item.attributes.operator || '' : ''
+      if (operators.includes(operator)) {
+        const [s, l] = item.src.split(':').map(x => parseInt(x))
+        const frag = { range: [s, s + l], operands: [], operator }
+        item.children.forEach(({ src, attributes }) => {
+          const { type } = attributes
+          const [s, l] = src.split(':').map(x => parseInt(x))
+          frag.operands.push({ type, range: [s, s + l]})
+        })
+        fragments[`${s}:${l}`] = frag
+      }
+      children.forEach(c => stack.push(c))
+    }
+    return fragments
   }
 
   scan(bug) {
@@ -25,22 +44,25 @@ class Integer {
       })
     })
     tree.root.prettify()
-    const subtract = new Subtract(this.cache, this.srcmap, this.ast)
-    const addition = new Addition(this.cache, this.srcmap, this.ast)
-    const multiply = new Multiply(this.cache, this.srcmap, this.ast)
-    const division = new Division(this.cache, this.srcmap, this.ast)
-    const delegate = new Delegate(this.cache, this.srcmap, this.ast)
-    const block = new Block(this.cache, this.srcmap, this.ast)
-    const pow = new Pow(this.cache, this.srcmap, this.ast)
-    return [
-      ...subtract.scan(tree, bug),
-      ...addition.scan(tree, bug),
-      ...multiply.scan(tree, bug),
-      ...division.scan(tree, bug),
-      ...pow.scan(tree, bug),
-      // ...delegate.scan(tree),
-      // ...block.scan(tree),
-    ]
+    const dnodes = tree.root
+      .traverse(({ node: { me } }) => formatSymbol(me).includes('ADD('))
+    dnodes.forEach(dnode => {
+      const { node: { me, endPointIdx } } = dnode
+      const nodes = findSymbols(me, ([_, name]) => name == 'ADD')
+      nodes.forEach(node => {
+        const epIdx = node[4][1].toNumber() - 1
+        const endPoint = endPoints[endPointIdx]
+        const { pc, opcode } = endPoint.get(epIdx)
+        const { s, l } = this.srcmap.toSL(pc)
+        const id = `${s}:${l}`
+        if (this.fragments[id]) {
+          this.fragments[id].selected = true
+        }
+      })
+    })
+    const fragments = Object.values(this.fragments)
+      .filter(({ selected }) => selected)
+    return fragments
   }
 } 
 

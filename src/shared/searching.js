@@ -39,32 +39,6 @@ const findLibRanges = (ast) => {
     return [s, l]
   })
 }
-/* We do not fix inside library */
-const findOperands = (pc, srcmap, ast) => {
-  const { s, l } = srcmap.toSL(pc)
-  const key = [s, l, 0].join(':')
-  const response = jp.query(ast, `$..children[?(@.src=="${key}")]`)
-  if (!response.length) return { operator: null }
-  const { children, name, attributes } = response[response.length - 1]
-  const { operator } = attributes
-  const validOperators = ['--', '-=', '-', '++', '+=', '+', '*', '*=', '/', '/=', '**']
-  if (!validOperators.includes(operator)) return { operator: null }
-  const ret = { range: [s, s + l], operands: [], operator }
-  if (!children) return { operator: null }
-  if (children.length > 2) return { operator: null }
-  const libRanges = findLibRanges(ast)
-  /* in library */
-  const found = libRanges.find(([x, y]) => x <= s && s + l <= x + y)
-  if (found) return { operator: null }
-  children.forEach(({ src, attributes }) => {
-    const { type } = attributes 
-    const [s, l] = src.split(':').map(x => parseInt(x))
-    const id = srcmap.source.slice(s, s + l)
-    ret.operands.push({ id, type, range: [s, s + l]})
-  })
-  return ret
-}
-
 const findMsgValues = (srcmap, ast) => {
   const selector = `$..children[?(@.name=="MemberAccess" && @.attributes.member_name=="value")]`
   const response = jp.query(ast, selector)
@@ -183,7 +157,6 @@ const addFunctionSelector = (ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  findOperands,
   findPayables,
   findMsgValues,
   firstMeet,

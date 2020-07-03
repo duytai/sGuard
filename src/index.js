@@ -69,7 +69,7 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const scanner = new Scanner(cache, srcmap, AST)
   const uncheckOperands = scanner.scan()
   /* Bug found */
-  const operators = uncheckOperands.map(op => op[1].operator)
+  const operators = uncheckOperands.map(({ operator }) => operator)
   const integer = !!operators.find(x => ['--', '-=', '-', '+', '++', '+=', '*', '*=', '/', '/=', '**'].includes(x))
   const exception = !!operators.find(x => ['single:disorder', 'double:disorder'].includes(x))
   const freezing = !!operators.find(x => ['payable', 'msg:value'].includes(x))
