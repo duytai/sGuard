@@ -58,11 +58,13 @@ class Scanner {
   scan() {
     let operands = []
     let nvuls = Object.keys(this.vuls).length
-    const bug = { nvuls: 6, cvuls: 0 }
-    process.send && process.send({ bug })
+    const bug = { nvuls: 3, cvuls: 1 }
     for (const k in this.vuls) {
+      process.send && process.send({ bug })
       operands = operands.concat(this.vuls[k].scan(bug))
+      bug.cvuls ++
     }
+    process.send && process.send({ bug })
     if (operands.length) {
       operands = operands.concat(this.findInheritance())
     }
