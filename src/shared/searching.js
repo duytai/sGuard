@@ -31,62 +31,6 @@ const firstMeet = (dnode, cond) => {
     .reduce((all, next) => [...all, ...firstMeet(next, cond)], [])
 }
 
-
-const findLibRanges = (ast) => {
-  const responses = jp.query(ast, `$..children[?(@.attributes.contractKind=="library")]`)
-  return responses.map(({ src }) => {
-    const [s, l] = src.split(':').map(x => parseInt(x))
-    return [s, l]
-  })
-}
-const findMsgValues = (srcmap, ast) => {
-  const selector = `$..children[?(@.name=="MemberAccess" && @.attributes.member_name=="value")]`
-  const response = jp.query(ast, selector)
-  const ret = []
-  for (const idx in response) {
-    const ma = response[idx]
-    const maSrc = ma.src.split(':').map(x => parseInt(x))
-    const snippet = srcmap.source.slice(maSrc[0], maSrc[0] + maSrc[1])
-    if (snippet == 'msg.value') {
-      ret.push({
-        range: [maSrc[0], maSrc[0] + maSrc[1]],
-        operands: [],
-        operator: 'msg:value',
-      })
-    }
-  }
-  return ret
-}
-
-const findPayables = (srcmap, ast) => {
-  const selector = `$..children[?(@.name=="FunctionDefinition" && @.attributes.stateMutability=="payable")]`
-  const response = jp.query(ast, selector)
-  const ret = []
-  for (const idx in response) {
-    const func = response[idx]
-    assert(func.name == 'FunctionDefinition')
-    let s = -1
-    const block = func.children[func.children.length - 1]
-    if (block.name == 'Block') {
-      const blockSrc = block.src.split(':').map(x => parseInt(x))
-      const source = srcmap.source.slice(0, blockSrc[0])
-      s = source.lastIndexOf('payable')
-    } else {
-      // Interface no block
-      const funcSrc = func.src.split(':').map(x => parseInt(x))
-      const source = srcmap.source.slice(0, funcSrc[0] + funcSrc[1])
-      s = source.lastIndexOf('payable')
-    }
-    assert(s != -1)
-    ret.push({
-      range: [s, s + 'payable'.length],
-      operands: [],
-      operator: 'payable'
-    })
-  }
-  return ret
-}
-
 const findFunctions = (srcmap, ast, selectors) => {
   const locks = []
   for (const idx in selectors) {
@@ -157,8 +101,6 @@ const addFunctionSelector = (ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  findPayables,
-  findMsgValues,
   firstMeet,
   findFunctions,
   findInheritance,

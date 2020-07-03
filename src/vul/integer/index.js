@@ -12,7 +12,6 @@ class Integer {
   }
 
   findOperands() {
-    // TODO const found = libRanges.find(([x, y]) => x <= s && s + l <= x + y)
     const stack = [this.ast]
     const operators = ['--', '-=', '-', '++', '+=', '+', '*', '*=', '/', '/=', '**']
     const fragments = {}
