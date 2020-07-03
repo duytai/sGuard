@@ -9,6 +9,13 @@ function mul_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
 }
 {{/mul}}
 
+{{#pow}}
+function pow_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
+  // TODO
+  return 0;
+}
+{{/pow}}
+
 {{#div}}
 function div_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
   {{type}} c = a / b;

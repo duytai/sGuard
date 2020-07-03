@@ -43,7 +43,7 @@ class Integer {
       })
     })
     tree.root.prettify()
-    const targets = ['ADD', 'SUB', 'MUL', 'POW', 'DIV']
+    const targets = ['ADD', 'SUB', 'MUL', 'EXP', 'DIV']
     const dnodes = tree.root.traverse(({ node: { me } }) => {
       const sy = formatSymbol(me)
       for (let i = 0; i < targets.length; i++) {
