@@ -32,32 +32,6 @@ const firstMeet = (dnode, cond) => {
 }
 
 
-const findInheritance = (srcmap, ast)  => {
-  const ret = []
-  const responses = jp.query(ast, `$..children[?(@.attributes.contractKind=="contract")]`)
-  responses.forEach(({ src, attributes }) => {
-    const [s] = src.split(':').map(x => parseInt(x))
-    if (attributes.linearizedBaseContracts.length > 1) {
-      let l = 3
-      let count = 0
-      while (srcmap.source.slice(s + l - 3, s + l) != ' is') {
-        if (count ++ > 50) break
-        l ++
-      }
-      ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:multiple' })
-    } else {
-      let l = 0
-      let count = 0
-      while (srcmap.source[s + l] != '{') {
-        if (count ++ > 50) break
-        l ++
-      }
-      ret.push({ range: [s, s + l], operands: [], operator: 'inheritance:single' })
-    }
-  })
-  return ret
-}
-
 const addFunctionSelector = (ast) => {
   const responses = jp.query(ast, `$..children[?(@.name=="FunctionDefinition")]`)
   responses.forEach(({ children, attributes }) => {
@@ -77,7 +51,6 @@ module.exports = {
   findSymbol,
   findSymbols,
   firstMeet,
-  findInheritance,
   addFunctionSelector,
 }
 

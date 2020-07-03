@@ -1,5 +1,4 @@
 const assert = require('assert')
-const { findInheritance } = require('../shared')
 const { random } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
@@ -20,21 +19,53 @@ class Scanner {
     return Array(len).fill(0).map(x => String.fromCharCode(random(33, 126))).join('')
   }
 
+  findInheritance() {
+    const stack = [this.ast]
+    const fragments = [] 
+    while (stack.length) {
+      const item = stack.pop()
+      const children = item.children || []
+      if (item.name == 'ContractDefinition') {
+        if (item.attributes.contractKind == 'contract') {
+          const [s, l] = item.src.split(':').map(x => parseInt(x))
+          const code = this.srcmap.source.slice(s, s + l).split('{')[0]
+          const parts = code.trim().split(' ')
+          let frag = {}
+          if (parts[2] == 'is') {
+            // multiple
+            const len = parts[0].length + parts[1].length + parts[2].length + 2
+            frag = {
+              range: [s, s + len],
+              operands: [],
+              operator: 'inheritance:multiple'
+            }
+          } else {
+            // single
+            frag = {
+              range: [s, s + code.length],
+              operands: [],
+              operator: 'inheritance:single'
+            }
+          }
+          fragments.push(frag)
+        }
+      }
+      children.forEach(c => stack.push(c))
+    }
+    return fragments
+  }
+
   scan() {
     let operands = []
     let nvuls = Object.keys(this.vuls).length
     const bug = { nvuls: 6, cvuls: 0 }
     process.send && process.send({ bug })
     for (const k in this.vuls) {
-      operands = [
-        ...operands,
-        ...(this.vuls[k].scan(bug) || [])
-      ]
+      operands = operands.concat(this.vuls[k].scan(bug))
     }
-    operands = [
-      ...operands,
-      // ...toPairs(findInheritance(this.srcmap, this.ast)),
-    ]
+    if (operands.length) {
+      operands = operands.concat(this.findInheritance())
+    }
     return operands
   }
 
@@ -165,12 +196,12 @@ class Scanner {
         }
         case 'inheritance:multiple': {
           ops = source.slice(range[0], range[1])
-          check = `${ops} sGuard,`
+          check = `${ops} sGuard, `
           break
         }
         case 'inheritance:single': {
           ops = source.slice(range[0], range[1])
-          check = `${ops} is sGuard` 
+          check = `${ops} is sGuard ` 
           break
         }
         default: {
