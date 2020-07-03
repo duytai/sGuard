@@ -31,31 +31,6 @@ const firstMeet = (dnode, cond) => {
     .reduce((all, next) => [...all, ...firstMeet(next, cond)], [])
 }
 
-const findFunctions = (srcmap, ast, selectors) => {
-  const locks = []
-  for (const idx in selectors) {
-    const selector = selectors[idx]
-    const responses = jp.query(ast, `$..children[?(@.attributes.functionSelector=="${selector}")]`)
-    if (!responses.length) continue
-    const response = responses.find(({ attributes: { implemented } }) => implemented)
-    assert(response)
-    const { src, children, attributes: { name } } = response
-    const block = children[children.length - 1]
-    assert(block.name == 'Block')
-    let [s, l] = src.split(':').map(x => parseInt(x))
-    const [blockS, blockL] = block.src.split(':').map(x => parseInt(x))
-    l = blockS - s
-    // Check if s to s + l has open bracket 
-    // Check if s to s + l has has returns
-    const seps = ['{', 'returns']
-    seps.forEach(sep => {
-      const elems = srcmap.source.slice(s, s + l).split(sep)
-      l = l - (elems.length == 2 ? elems[1].length + sep.length : 0)
-    })
-    locks.push({ range: [s, s + l], operands: [], operator: 'lock:function' })
-  }
-  return locks
-} 
 
 const findInheritance = (srcmap, ast)  => {
   const ret = []
@@ -102,7 +77,6 @@ module.exports = {
   findSymbol,
   findSymbols,
   firstMeet,
-  findFunctions,
   findInheritance,
   addFunctionSelector,
 }

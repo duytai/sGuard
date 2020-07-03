@@ -2,7 +2,7 @@ const assert = require('assert')
 const { toPairs } = require('lodash')
 const Tree = require('../tree')
 const { 
-  formatWithoutTrace: formatSymbol,
+  formatSymbol,
   firstMeet,
   findFunctions,
 } = require('../../shared')
@@ -14,9 +14,32 @@ class Reentrancy {
     this.ast = ast
   }
 
-  scan(bug) {
-    bug.cvuls ++
-    process.send && process.send({ bug })
+  findFunctions() {
+    const stack = [this.ast]
+    const fragments = {}
+    while (stack.length) {
+      const item = stack.pop()
+      if (item.name == 'FunctionDefinition') {
+        const { constant, functionSelector } = item.attributes
+        if (!constant) {
+          const [s, l] = item.src.split(':').map(x => parseInt(x))
+          const code = this.srcmap.source.slice(s, s + l)
+          const open = code.split('{')[0].split(')')[0]
+          const frag = {
+            range: [s, s + open.length + 1],
+            operands: [],
+            operator: 'lock:function',
+          }
+          fragments[functionSelector] = frag
+        }
+      }
+      const children = item.children || []
+      children.forEach(c => stack.push(c))
+    }
+    return fragments
+  } 
+
+  scan() {
     const selectors = new Set()
     const checkPoints = {}
     const { mem: { calls }, endPoints } = this.cache
@@ -46,35 +69,15 @@ class Reentrancy {
             while (selector.length < 8) selector = `0${selector}`
             selectors.add(selector)
           })
-          /* Dont need to lock tuple */
-          // const callSymbol = formatSymbol(stack.get(stack.size() - 1))
-          // let newS = s
-          // const seps = [';', '{', '}']
-          // while (!seps.includes(this.srcmap.source[newS - 1])) newS--;
-          // const indents = [' ', '\t', '\n']
-          // while (indents.includes(this.srcmap.source[newS])) newS ++;
-          // let newL = s - newS + l
-          // while (!seps.includes(this.srcmap.source[newS + newL])) newL ++;
-          // checkPoints[pc + callSymbol] = {
-            // pc,
-            // operands: {
-              // range: [newS, newS + newL],
-              // operands: [],
-              // operator: 'lock:tuple'
-            // },
-          // }
         }
       })
     })
-    let locks = []
-    // lock:tuple
-    for (const t in checkPoints) {
-      const { operands, pc } = checkPoints[t]
-      locks = locks.concat(operands)
+    const ret = []
+    const funcs = this.findFunctions()
+    for (let sel of selectors.values()) {
+      funcs[sel] && ret.push(funcs[sel])
     }
-    // lock:function
-    const funcs = findFunctions(this.srcmap, this.ast, [...selectors])
-    return toPairs([...locks, ...funcs])
+    return ret
   }
 } 
 

@@ -12,7 +12,7 @@ class Scanner {
     this.ast = ast
     this.vuls = {
       integer: new Integer(cache, srcmap, ast),
-      // reentrancy: new Reentrancy(cache, srcmap, ast),
+      reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }
 
@@ -21,21 +21,21 @@ class Scanner {
   }
 
   scan() {
-    let uncheckOperands = []
+    let operands = []
     let nvuls = Object.keys(this.vuls).length
     const bug = { nvuls: 6, cvuls: 0 }
     process.send && process.send({ bug })
     for (const k in this.vuls) {
-      uncheckOperands = [
-        ...uncheckOperands,
+      operands = [
+        ...operands,
         ...(this.vuls[k].scan(bug) || [])
       ]
     }
-    uncheckOperands = [
-      ...uncheckOperands,
+    operands = [
+      ...operands,
       // ...toPairs(findInheritance(this.srcmap, this.ast)),
     ]
-    return uncheckOperands
+    return operands
   }
 
   fix({ bugFixes, source, wrappers }) {
@@ -159,7 +159,7 @@ class Scanner {
         case 'lock:function': {
           name = 'nonReentrant'
           ops = source.slice(range[0], range[1])
-          ops = `${ops} ${name}() `
+          ops = ` ${ops} ${name} `
           check = ops
           break
         }
