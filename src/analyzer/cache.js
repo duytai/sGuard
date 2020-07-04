@@ -219,7 +219,6 @@ class Cache {
           case 'CALLCODE':
           case 'CREATE':
           case 'CREATE2':
-          case 'SELFDESTRUCT':
           case 'CALL': {
             const sloads = []
             const mloads = []
@@ -228,6 +227,21 @@ class Cache {
             const trackingPos = st.size() - 1
             const symbol = st.get(trackingPos)
             const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx + 1)
+            t.sloads.forEach(sload => sloads.push(sload))
+            t.mloads.forEach(mload => mloads.push(mload))
+            t.links.forEach(link => links.push(link))
+            call[epIdx] = { sloads, mloads, links: [...new Set(links)], expression: symbol }
+            process.send && process.send({ dep: { external: true } })
+            break
+          }
+          case 'SELFDESTRUCT': {
+            const sloads = []
+            const mloads = []
+            const links = []
+            const { stack: st } = ep[epIdx]
+            const trackingPos = st.size() - 1
+            const symbol = st.get(trackingPos)
+            const t = this.analyzeExp(symbol, trackingPos, endPoint, epIdx)
             t.sloads.forEach(sload => sloads.push(sload))
             t.mloads.forEach(mload => mloads.push(mload))
             t.links.forEach(link => links.push(link))
