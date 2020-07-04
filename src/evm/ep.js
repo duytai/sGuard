@@ -56,13 +56,19 @@ class Ep {
 
     // count assignments between two jumpi
     for (let i = this.ep.length - 2; i >= 0; i--) {
-      const { pc: coveredPc, opcode: { name } } = this.ep[i];
+      const { pc: coveredPc, opcode: { name }, stack } = this.ep[i];
       if (pc == coveredPc) jp ++
       if (!jp) {
         switch (name) {
-          case 'MSTORE':
+          case 'SWAP':
           case 'SSTORE':
-          case 'SWAP': {
+          case 'MSTORE': {
+            const topmost = stack.get(stack.size() - 1)
+            if (
+              name == 'MSTORE'
+              && topmost[0] == 'const'
+              && topmost[1].toNumber() < 0x80
+            ) break
             ams.add(coveredPc)
             break
           }

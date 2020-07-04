@@ -33,8 +33,6 @@ class Evm {
       let { pc, ep } = execStack.pop()
       let { stack, trace } = ep
       let isReturned = false
-      console.log(execStack.length)
-      console.log(ep.boundary)
 
       while (true && !isReturned) {
         const opcode = opcodes[this.bin[pc]]
