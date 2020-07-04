@@ -6,7 +6,6 @@ class Tree {
 
   constructor(cache) {
     this.root = new DNode(['symbol', 'root'], 0, 0, 0)
-    this.visited = new Set()
     this.cache = cache
   }
 
@@ -27,22 +26,25 @@ class Tree {
     const visited = new Set()
     while (stack.length) {
       const { directParent, endPointIdx, epIdx, value } = stack.pop()
-      const key = this.toKey(endPointIdx, epIdx)
-      if (visited.has(key)) continue 
-      visited.add(key)
       const { expression, sloads, mloads, links } = value
       const { mem: { branches, mstores, sstores } } = this.cache
       const { pc } = this.cache.endPoints[endPointIdx].ep[epIdx]
       const dnode = new DNode(expression, pc, endPointIdx, epIdx)
       const branch = branches[endPointIdx]
+      const bug = { stack: stack.length, visited: visited.size }
+      process.send && process.send({ bug })
       directParent.node.childs.push(dnode)
       links.forEach(epIdx => {
-        stack.push({ 
-          directParent: dnode,
-          endPointIdx,
-          epIdx,
-          value: branch[epIdx],
-        })
+        const key = this.toKey(endPointIdx, epIdx)
+        if (!visited.has(key)) {
+          visited.add(key)
+          stack.push({ 
+            directParent: dnode,
+            endPointIdx,
+            epIdx,
+            value: branch[epIdx],
+          })
+        }
       })
       const mstore = mstores[endPointIdx]
       const mloadStack = [...mloads]
@@ -53,12 +55,16 @@ class Tree {
           const [mstoreEpIdx, value] = pairs[i]
           if (parseInt(mstoreEpIdx) < parseInt(epIdx)) {
             if (mload.eq(value.key)) {
-              stack.push({ 
-                directParent: dnode,
-                endPointIdx,
-                epIdx: mstoreEpIdx,
-                value,
-              })
+              const key = this.toKey(endPointIdx, mstoreEpIdx)
+              if (!visited.has(key)) {
+                visited.add(key)
+                stack.push({ 
+                  directParent: dnode,
+                  endPointIdx,
+                  epIdx: mstoreEpIdx,
+                  value,
+                })
+              }
               if (
                 mload.locs.length == 1
                 && value.key.locs.length == 1
@@ -71,12 +77,16 @@ class Tree {
         toPairs(sstore).forEach(([sstoreEpIdx, value]) => {
           sloads.forEach(sload => {
             if (sload.eq(value.key)) {
-              stack.push({ 
-                directParent: dnode,
-                endPointIdx,
-                epIdx: sstoreEpIdx,
-                value,
-              })
+              const key = this.toKey(endPointIdx, sstoreEpIdx)
+              if (!visited.has(key)) {
+                visited.add(key)
+                stack.push({ 
+                  directParent: dnode,
+                  endPointIdx,
+                  epIdx: sstoreEpIdx,
+                  value,
+                })
+              }
             }
           })
         })
