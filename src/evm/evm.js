@@ -1,4 +1,5 @@
 const BN = require('bn.js')
+const { isEmpty } = require('lodash')
 const utils = require('ethereumjs-util')
 const assert = require('assert')
 const opcodes = require('./opcodes')
@@ -28,11 +29,18 @@ class Evm {
 
   execute() {
     const execStack = [ { pc: 0, ep: new Ep() } ]
-
     while (execStack.length) {
       let { pc, ep } = execStack.pop()
       let { stack, trace } = ep
       let isReturned = false
+
+      let iters = 0
+      if (!isEmpty(ep.boundary)) {
+        iters = Math.max.apply(null, Object.values(ep.boundary))
+      }
+      if (process.send) {
+        process.send({ sevm: { stack: execStack.length, iters } })
+      }
 
       while (true && !isReturned) {
         const opcode = opcodes[this.bin[pc]]
