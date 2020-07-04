@@ -188,7 +188,7 @@ class Scanner {
           break
         }
         case 'lock:function': {
-          name = 'nonReentrant'
+          name = '_nonReentrant'
           ops = source.slice(range[0], range[1])
           ops = ` ${ops} ${name} `
           check = ops
