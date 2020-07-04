@@ -58,7 +58,7 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   const { endPoints, njumpis, cjumpis } = evm.start()
   process.send && process.send({ 
     contract: { name: contractName },
-    sevm: { paths: endPoints.length, njumpis, cjumpis, loopbound: 0 },
+    sevm: { paths: endPoints.length, njumpis, cjumpis },
     duration: { sevmAt: Date.now() },
     patch : { origin: { bytecodes: rawBin.length, lines } } 
   })
