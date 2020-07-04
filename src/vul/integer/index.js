@@ -51,7 +51,7 @@ class Integer {
         ctrees ++
       })
     })
-    tree.root.prettify()
+    // tree.root.prettify()
     const targets = ['ADD', 'SUB', 'MUL', 'EXP', 'DIV']
     const dnodes = tree.root.traverse(({ node: { me } }) => {
       const sy = formatSymbol(me)

@@ -60,15 +60,23 @@ class Ep {
       if (pc == coveredPc) jp ++
       if (!jp) {
         switch (name) {
-          case 'SWAP':
-          case 'SSTORE':
+          case 'SWAP': {
+            const value = stack.get(stack.size() - 1)
+            if (value[0] == 'const') break
+            ams.add(coveredPc)
+            break
+          }
+          case 'SSTORE': {
+            const value = stack.get(stack.size() - 2)
+            if (value[0] == 'const') break 
+            ams.add(coveredPc)
+            break
+          }
           case 'MSTORE': {
-            const topmost = stack.get(stack.size() - 1)
-            if (
-              name == 'MSTORE'
-              && topmost[0] == 'const'
-              && topmost[1].toNumber() < 0x80
-            ) break
+            const loc = stack.get(stack.size() - 1)
+            const value = stack.get(stack.size() - 2)
+            if (loc[0] == 'const' && loc[1].toNumber() < 0x80) break
+            if (value[0] == 'const') break
             ams.add(coveredPc)
             break
           }
