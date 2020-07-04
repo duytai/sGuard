@@ -18,6 +18,9 @@ class Integer {
     while (stack.length) {
       const item = stack.pop()
       const children = item.children || []
+      if (item.attributes && item.attributes.contractKind == 'library') {
+        continue
+      }
       const operator = item.attributes ? item.attributes.operator || '' : ''
       if (operators.includes(operator)) {
         const [s, l] = item.src.split(':').map(x => parseInt(x))
