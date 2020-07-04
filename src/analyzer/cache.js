@@ -68,8 +68,8 @@ class Cache {
           const subEpSize = symbol[5][1].toNumber()
           const subEp = endPoint.sub(subEpSize)
           try {
-            assert(symbol[3][0] == 'const')
-            assert(symbol[3][1].toNumber() == 0x20)
+            // Optimize load size
+            assert(symbol[3][1].toNumber() % 0x20 == 0)
             const variable = new LocalVariable(symbol[2], subEp)
             mloads.push(variable)
             /// MLOAD Loc 
@@ -81,7 +81,7 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.mloads ++;
           } catch (e) {
-            // console.log(e)
+            // console.error(e)
             const variable = new BlindVariable()
             mloads.push(variable)
             /// MLOAD Loc 
@@ -110,7 +110,7 @@ class Cache {
             links = [...links, ...t.links]
             this.stats.success.sloads ++;
           } catch (e) {
-            // console.log(e)
+            // console.error(e)
             const subEpSize = symbol[4][1].toNumber()
             const subEp = endPoint.sub(subEpSize)
             const variable = new BlindVariable()
@@ -181,7 +181,7 @@ class Cache {
               this.stats.success.sstores ++
             }
           } catch (e) {
-            // console.log(e)
+            // console.error(e)
             const [ Variable, store ] = entries[name]
             const storedKey = this.analyzeExp(loc, kTrackingPos, endPoint, epIdx)
             const storedValue = this.analyzeExp(value, vTrackingPos, endPoint, epIdx)
