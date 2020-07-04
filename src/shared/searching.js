@@ -23,15 +23,6 @@ const findSymbols = (symbol, cond) => {
   )
 } 
 
-const firstMeet = (dnode, cond) => {
-  assert(dnode && cond)
-  if (cond(dnode)) return [dnode]
-  return dnode.node
-    .childs
-    .reduce((all, next) => [...all, ...firstMeet(next, cond)], [])
-}
-
-
 const addFunctionSelector = (ast) => {
   const responses = jp.query(ast, `$..children[?(@.name=="FunctionDefinition")]`)
   responses.forEach(({ children, attributes }) => {
@@ -50,7 +41,6 @@ const addFunctionSelector = (ast) => {
 module.exports = {
   findSymbol,
   findSymbols,
-  firstMeet,
   addFunctionSelector,
 }
 

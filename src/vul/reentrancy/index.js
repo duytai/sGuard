@@ -3,7 +3,6 @@ const { toPairs } = require('lodash')
 const Tree = require('../tree')
 const { 
   formatSymbol,
-  firstMeet,
   findFunctions,
 } = require('../../shared')
 
@@ -14,14 +13,22 @@ class Reentrancy {
     this.ast = ast
   }
 
+  firstMeet(dnode, cond) {
+    assert(dnode && cond)
+    if (cond(dnode)) return [dnode]
+    return dnode.node
+      .childs
+      .reduce((all, next) => [...all, ...this.firstMeet(next, cond)], [])
+  }
+
   findFunctions() {
     const stack = [this.ast]
     const fragments = {}
     while (stack.length) {
       const item = stack.pop()
       if (item.name == 'FunctionDefinition') {
-        const { constant, functionSelector } = item.attributes
-        if (!constant) {
+        const { stateMutability, functionSelector } = item.attributes
+        if (['payable', 'nonpayable'].includes(stateMutability)) {
           const [s, l] = item.src.split(':').map(x => parseInt(x))
           const code = this.srcmap.source.slice(s, s + l)
           const open = code.split('{')[0].split(')')[0]
@@ -65,14 +72,19 @@ class Reentrancy {
           const { s, l } = this.srcmap.toSL(pc)
           const tree = new Tree(this.cache)
           tree.build(endPointIdx, epIdx, value)
-          const dnodes = firstMeet(tree.root, ({ node: { me } }) => {
-            const reg = /EQ\([0-f]{7,8},/
-            return reg.test(formatSymbol(me))
+          const dnodes = this.firstMeet(tree.root, ({ node: { me } }) => {
+            const eqReg = /EQ\([0-f]{7,8},/
+            const sym = formatSymbol(me)
+            return eqReg.test(sym) || sym == 'LT(CALLDATASIZE,4)' 
           })
           dnodes.forEach(({ node: { me } }) => {
-            let selector = me[2][1].toString(16)
-            while (selector.length < 8) selector = `0${selector}`
-            selectors.add(selector)
+            if (me[1] == 'EQ') {
+              let selector = me[2][1].toString(16)
+              while (selector.length < 8) selector = `0${selector}`
+              selectors.add(selector)
+              return
+            }
+            selectors.add('fallback')
           })
         }
         ctrees ++
