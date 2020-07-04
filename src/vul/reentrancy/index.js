@@ -43,8 +43,13 @@ class Reentrancy {
     const selectors = new Set()
     const checkPoints = {}
     const { mem: { calls }, endPoints } = this.cache
+    let ctrees = 0
+    let ntrees = calls.reduce((prev, call) => {
+      return prev + toPairs(call).length
+    }, 0)
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
+        process.send && process.send({ bug: { ctrees, ntrees }})
         const endPoint = endPoints[endPointIdx]
         if (parseInt(epIdx) + 1 >= endPoint.size()) return
         const { stack, pc } = endPoint.get(parseInt(epIdx) + 1)
@@ -70,6 +75,7 @@ class Reentrancy {
             selectors.add(selector)
           })
         }
+        ctrees ++
       })
     })
     const ret = []

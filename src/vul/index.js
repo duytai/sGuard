@@ -10,7 +10,7 @@ class Scanner {
     this.template = new Template() 
     this.ast = ast
     this.vuls = {
-      integer: new Integer(cache, srcmap, ast),
+      // integer: new Integer(cache, srcmap, ast),
       reentrancy: new Reentrancy(cache, srcmap, ast),
     }
   }

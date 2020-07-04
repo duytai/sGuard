@@ -37,9 +37,15 @@ class Integer {
   scan(bug) {
     const { mem: { calls }, endPoints } = this.cache
     const tree = new Tree(this.cache, bug)
+    let ctrees = 0
+    let ntrees = calls.reduce((prev, call) => {
+      return prev + toPairs(call).length
+    }, 0)
     calls.forEach((call, endPointIdx) => {
       toPairs(call).forEach(([epIdx, value]) => {
+        process.send && process.send({ bug: { ctrees, ntrees }})
         tree.build(endPointIdx, epIdx, value)
+        ctrees ++
       })
     })
     tree.root.prettify()
