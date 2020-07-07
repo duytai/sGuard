@@ -54,11 +54,11 @@ class Ep {
     // default boundary = 2
     if (!this.boundary[pc]) this.boundary[pc] = 2
 
-    // count assignments between two jumpi
-    for (let i = this.ep.length - 2; i >= 0; i--) {
+    // count assignments between two jumpis
+    for (let i = 0; i < this.ep.length - 1; i ++) {
       const { pc: coveredPc, opcode: { name }, stack } = this.ep[i];
       if (pc == coveredPc) jp ++
-      if (!jp) {
+      if (jp > 0) {
         switch (name) {
           case 'SWAP': {
             const value = stack.get(stack.size() - 1)
@@ -68,7 +68,7 @@ class Ep {
           }
           case 'SSTORE': {
             const value = stack.get(stack.size() - 2)
-            if (value[0] == 'const') break 
+            if (value[0] == 'const') break
             ams.add(coveredPc)
             break
           }
