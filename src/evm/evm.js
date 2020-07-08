@@ -68,57 +68,9 @@ class Evm {
             assert(label[0] == 'const')
             const jumpdest = label[1].toNumber()
             this.jumpis.add(pc)
-
-            let isWhile = false
-            let isDoWhile = false
-
-            if (jumpdest > pc) {
-              /* While, For, If, IfElse */
-              let opcode = opcodes[this.bin[jumpdest - 1]]
-              if (opcode.name == 'JUMP') {
-                /* Push2 */
-                opcode = opcodes[this.bin[jumpdest - 4]]
-                if (opcode.name == 'PUSH') {
-                  const data = this.bin.slice(jumpdest - 3, jumpdest - 1).toString('hex')
-                  const loc = parseInt(data, 16)
-                  isWhile = loc < pc
-                }
-                /* Push1 */
-                opcode = opcodes[this.bin[jumpdest - 3]]
-                if (opcode.name == 'PUSH') {
-                  const data = this.bin.slice(jumpdest - 2, jumpdest - 1).toString('hex')
-                  const loc = parseInt(data, 16)
-                  isWhile = loc < pc
-                }
-              }
-            } else {
-              /* Do while */
-              isDoWhile = true
-            }
-
-            if (isWhile) {
-              /* Execute true branch until reaching boundary */
-              if (ep.distance(pc) >= 0) {
-                execStack.push({ pc: pc + 1, ep: ep.clone() })
-              }
-              /* Exit true branch */
-              if (ep.distance(pc) < 0) {
-                execStack.push({ pc: jumpdest, ep: ep.clone() })
-              }
-            } else if (isDoWhile) {
-              /* Execute true branch until reaching boundary */
-              if (ep.distance(pc) > 0) {
-                execStack.push({ pc: jumpdest, ep: ep.clone() })
-              }
-              /* Exit true branch */
-              if (ep.distance(pc) <= 0) {
-                execStack.push({ pc: pc + 1, ep: ep.clone() })
-              }
-            } else {
-              if (ep.distance(pc) >= 0) {
-                execStack.push({ pc: jumpdest, ep: ep.clone() })
-                execStack.push({ pc: pc + 1, ep: ep.clone() })
-              }
+            if (ep.distance(pc) >= 0) {
+              execStack.push({ pc: jumpdest, ep: ep.clone() })
+              execStack.push({ pc: pc + 1, ep: ep.clone() })
             }
             isReturned = true
             break
