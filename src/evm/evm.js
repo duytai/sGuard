@@ -68,9 +68,30 @@ class Evm {
             assert(label[0] == 'const')
             const jumpdest = label[1].toNumber()
             this.jumpis.add(pc)
-            if (ep.distance(pc) >= 0) {
-              execStack.push({ pc: jumpdest, ep: ep.clone() })
-              execStack.push({ pc: pc + 1, ep: ep.clone() })
+            const { doWhile, whileDo } = this.decoder.stats
+            if (whileDo.has(pc)) {
+              /* Execute true branch until reaching boundary */
+              if (ep.distance(pc) >= 0) {
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
+              }
+              /* Exit true branch */
+              if (ep.distance(pc) < 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+              }
+            } else if (doWhile.has(pc)) {
+              /* Execute true branch until reaching boundary */
+              if (ep.distance(pc) > 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+              }
+              /* Exit true branch */
+              if (ep.distance(pc) <= 0) {
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
+              }
+            } else {
+              if (ep.distance(pc) >= 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
+              }
             }
             isReturned = true
             break

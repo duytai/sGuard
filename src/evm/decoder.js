@@ -28,34 +28,39 @@ class Decoder {
           assert(this.stats.data)
           const jumpdest = parseInt(this.stats.data, 16)
           if (jumpdest < this.stats.pc) {
+            // DoWhile
             this.stats.doWhile.add(this.stats.pc)
           } else {
-            let opcode = opcodes[bin[jumpdest - 1]]
+            // If, IfElse, While
+            const opcode = opcodes[bin[jumpdest - 1]]
+            let isWhileDo = false
             if (opcode.name == 'JUMP') {
               /* Push2 */
-              opcode = opcodes[bin[jumpdest - 4]]
-              if (opcode.name == 'PUSH') {
+              const { name: n0 } = opcodes[bin[jumpdest - 4]]
+              if (n0 == 'PUSH') {
                 const data = bin.slice(
                   jumpdest - 3,
                   jumpdest - 1
                 ).toString('hex')
                 const loc = parseInt(data, 16)
-                if (loc < this.stats.pc) {
-                  this.stats.whileDo.add(this.stats.pc)
-                }
+                isWhileDo = loc < this.stats.pc
               }
               /* Push1 */
-              opcode = opcodes[bin[jumpdest - 3]]
-              if (opcode.name == 'PUSH') {
+              const { name: n1 } = opcodes[bin[jumpdest - 3]]
+              if (n1 == 'PUSH') {
                 const data = bin.slice(
                   jumpdest - 2,
                   jumpdest - 1
                 ).toString('hex')
                 const loc = parseInt(data, 16)
-                if (loc < this.stats.pc) {
-                  this.stats.whileDo.add(this.stats.pc)
-                }
+                isWhileDo = loc < this.stats.pc
               }
+            }
+            if (isWhileDo) {
+              // While
+              this.stats.whileDo.add(this.stats.pc)
+            } else {
+              // If, IfElse
             }
           }
           this.stats.njumpis ++
