@@ -68,40 +68,51 @@ class Evm {
             assert(label[0] == 'const')
             const jumpdest = label[1].toNumber()
             this.jumpis.add(pc)
-            /* 
-             * Detect While loop 
-             * + opcode before JUMPDEST is JUMP
-             * + jump back address is less than pc
-             * */
-            let isLoop = false
-            let isIf = false
-            let opcode = opcodes[this.bin[jumpdest - 1]]
-            if (opcode.name == 'JUMP') {
-              /* PUSH2 */
-              opcode = opcodes[this.bin[jumpdest - 4]]
-              if (opcode.name == 'PUSH') {
-                const data = this.bin.slice(jumpdest - 3, jumpdest - 1).toString('hex')
-                const loc = parseInt(data, 16)
-                isLoop = loc < pc
-              }
-              /* PUSH1 */
-              opcode = opcodes[this.bin[jumpdest - 3]]
-              if (opcode.name == 'PUSH') {
-                const data = this.bin.slice(jumpdest - 2, jumpdest - 1).toString('hex')
-                const loc = parseInt(data, 16)
-                isLoop = loc < pc
+
+            let isWhile = false
+            let isDoWhile = false
+
+            if (jumpdest > pc) {
+              /* While, For, If, IfElse */
+              let opcode = opcodes[this.bin[jumpdest - 1]]
+              if (opcode.name == 'JUMP') {
+                /* Push2 */
+                opcode = opcodes[this.bin[jumpdest - 4]]
+                if (opcode.name == 'PUSH') {
+                  const data = this.bin.slice(jumpdest - 3, jumpdest - 1).toString('hex')
+                  const loc = parseInt(data, 16)
+                  isWhile = loc < pc
+                }
+                /* Push1 */
+                opcode = opcodes[this.bin[jumpdest - 3]]
+                if (opcode.name == 'PUSH') {
+                  const data = this.bin.slice(jumpdest - 2, jumpdest - 1).toString('hex')
+                  const loc = parseInt(data, 16)
+                  isWhile = loc < pc
+                }
               }
             } else {
-              isIf = true
+              /* Do while */
+              isDoWhile = true
             }
-            if (isLoop) {
-              /* Execute true branch until reaching boundary*/
+
+            if (isWhile) {
+              /* Execute true branch until reaching boundary */
               if (ep.distance(pc) >= 0) {
                 execStack.push({ pc: pc + 1, ep: ep.clone() })
               }
               /* Exit true branch */
               if (ep.distance(pc) < 0) {
                 execStack.push({ pc: jumpdest, ep: ep.clone() })
+              }
+            } else if (isDoWhile) {
+              /* Execute true branch until reaching boundary */
+              if (ep.distance(pc) > 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+              }
+              /* Exit true branch */
+              if (ep.distance(pc) <= 0) {
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
               }
             } else {
               if (ep.distance(pc) >= 0) {
