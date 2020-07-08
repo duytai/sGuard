@@ -5,7 +5,7 @@ class Decoder {
   constructor(bin) {
     let pc = 0;
     let data = null
-    this.sum = { njumpis: 0, nexts: 0, nexts: 0 }
+    this.stats = { njumpis: 0, nexts: 0, nexts: 0 }
     this.doWhile = new Set()
     this.whileDo = new Set()
     while (pc < bin.length) {
@@ -45,7 +45,7 @@ class Decoder {
               }
             }
           }
-          this.sum.njumpis ++
+          this.stats.njumpis ++
           break
         }
         case 'DELEGATECALL':
@@ -54,13 +54,13 @@ class Decoder {
         case 'CREATE2':
         case 'SELFDESTRUCT':
         case 'CALL': {
-          this.sum.nexts ++
+          this.stats.nexts ++
           break
         }
       }
       pc ++
     }
-    console.log(this.sum)
+    console.log(this.stats)
     console.log(this.doWhile)
     console.log(this.whileDo)
   }

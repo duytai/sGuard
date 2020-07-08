@@ -47,12 +47,12 @@ forEach(jsonOutput.contracts, (contractJson, full) => {
   rawBin = rawBin.slice(0, -auxdata.length)
   const bin = Buffer.from(rawBin, 'hex')
   const decoder = new Decoder(bin)
-  const { sum: { nexts } } = decoder
+  const { stats: { nexts } } = decoder
   process.send && process.send({
     contract: { name },
     duration: { runAt: Date.now() },
   })
-  if (nexts == 0) process.send && process.exit() 
+  if (nexts == 0) process.exit() 
   const evm = new Evm(bin, decoder)
   const srcmap = new SRCMap(contractJson['srcmap-runtime'] || '0:0:0:0', source, bin)
   const { endPoints, njumpis, cjumpis } = evm.start()

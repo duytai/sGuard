@@ -18,7 +18,7 @@ class Evm {
   }
 
   start() {
-    const { sum: { njumpis } } = this.decoder
+    const { stats: { njumpis } } = this.decoder
     this.execute()
     return {
       endPoints: this.endPoints,
