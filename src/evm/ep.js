@@ -46,7 +46,7 @@ class Ep {
     return ep
   }
 
-  isAllowed(pc) {
+  distance(pc) {
     let jp = 0 // jumpi
     let ams = new Set() // assignment
     let coveredJp = new Set([pc]) // nested jumpi
@@ -97,8 +97,8 @@ class Ep {
         }
       }
     }
-
-    return jp <= this.boundary[pc]
+    
+    return this.boundary[pc] - jp
   }
 
   filter(cond) {

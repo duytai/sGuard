@@ -67,12 +67,49 @@ class Evm {
             const [label, cond] = stack.popN(ins)
             assert(label[0] == 'const')
             const jumpdest = label[1].toNumber()
-            isReturned = true
-            if (ep.isAllowed(pc)) {
-              this.jumpis.add(pc)
-              execStack.push({ pc: jumpdest, ep: ep.clone() })
-              execStack.push({ pc: pc + 1, ep: ep.clone() })
+            this.jumpis.add(pc)
+            /* 
+             * Detect While loop 
+             * + opcode before JUMPDEST is JUMP
+             * + jump back address is less than pc
+             * */
+            let isLoop = false
+            let isIf = false
+            let opcode = opcodes[this.bin[jumpdest - 1]]
+            if (opcode.name == 'JUMP') {
+              /* PUSH2 */
+              opcode = opcodes[this.bin[jumpdest - 4]]
+              if (opcode.name == 'PUSH') {
+                const data = this.bin.slice(jumpdest - 3, jumpdest - 1).toString('hex')
+                const loc = parseInt(data, 16)
+                isLoop = loc < pc
+              }
+              /* PUSH1 */
+              opcode = opcodes[this.bin[jumpdest - 3]]
+              if (opcode.name == 'PUSH') {
+                const data = this.bin.slice(jumpdest - 2, jumpdest - 1).toString('hex')
+                const loc = parseInt(data, 16)
+                isLoop = loc < pc
+              }
+            } else {
+              isIf = true
             }
+            if (isLoop) {
+              /* Execute true branch until reaching boundary*/
+              if (ep.distance(pc) >= 0) {
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
+              }
+              /* Exit true branch */
+              if (ep.distance(pc) < 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+              }
+            } else {
+              if (ep.distance(pc) >= 0) {
+                execStack.push({ pc: jumpdest, ep: ep.clone() })
+                execStack.push({ pc: pc + 1, ep: ep.clone() })
+              }
+            }
+            isReturned = true
             break
           }
           case 'JUMP': {
