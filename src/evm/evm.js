@@ -69,7 +69,7 @@ class Evm {
             const jumpdest = label[1].toNumber()
             this.jumpis.add(pc)
             const { doWhile, whileDo, ifStatements } = this.decoder.stats
-            if (whileDo.has(pc)) {
+            if (whileDo.has(pc) || ifStatements.has(pc)) {
               /* Execute true branch until reaching boundary */
               if (ep.distance(pc) >= 0) {
                 execStack.push({ pc: pc + 1, ep: ep.clone() })
