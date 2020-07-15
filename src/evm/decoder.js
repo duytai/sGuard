@@ -8,67 +8,13 @@ class Decoder {
       nexts: 0,
       nexts: 0,
       pc: 0,
-      data: null,
-      doWhile: new Set(),
-      whileDo: new Set(),
-      ifStatements: new Set(),
     }
     while (this.stats.pc < bin.length) {
       const opcode = opcodes[bin[this.stats.pc]]
       if (!opcode) break
       switch (opcode.name) {
-        case 'PUSH': {
-          this.stats.data = bin.slice(
-            this.stats.pc + 1,
-            this.stats.pc + 1 + bin[this.stats.pc] - 0x5f
-          ).toString('hex')
-          this.stats.pc += bin[this.stats.pc] - 0x5f
-          break
-        }
         case 'JUMPI': {
           assert(this.stats.data)
-          const jumpdest = parseInt(this.stats.data, 16)
-          if (jumpdest < this.stats.pc) {
-            // DoWhile
-            this.stats.doWhile.add(this.stats.pc)
-          } else {
-            // If, IfElse, While
-            const opcode = opcodes[bin[jumpdest - 1]]
-            switch (opcode.name) {
-              // WhileDo and IfElse
-              case 'JUMP': {
-                let isWhileDo = false
-                /* Push2 */
-                const { name: n0 } = opcodes[bin[jumpdest - 4]]
-                if (n0 == 'PUSH') {
-                  const data = bin.slice(
-                    jumpdest - 3,
-                    jumpdest - 1
-                  ).toString('hex')
-                  const loc = parseInt(data, 16)
-                  isWhileDo = loc < this.stats.pc
-                }
-                /* Push1 */
-                const { name: n1 } = opcodes[bin[jumpdest - 3]]
-                if (n1 == 'PUSH') {
-                  const data = bin.slice(
-                    jumpdest - 2,
-                    jumpdest - 1
-                  ).toString('hex')
-                  const loc = parseInt(data, 16)
-                  isWhileDo = loc < this.stats.pc
-                }
-                if (isWhileDo) {
-                  this.stats.whileDo.add(this.stats.pc)
-                }
-                break
-              }
-              case 'POP': {
-                this.stats.ifStatements.add(this.stats.pc)
-                break
-              }
-            }
-          }
           this.stats.njumpis ++
           break
         }
@@ -84,7 +30,6 @@ class Decoder {
       }
       this.stats.pc ++
     }
-    console.log(this.stats)
   }
 }
 
