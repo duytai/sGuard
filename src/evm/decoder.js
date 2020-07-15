@@ -13,8 +13,11 @@ class Decoder {
       const opcode = opcodes[bin[this.stats.pc]]
       if (!opcode) break
       switch (opcode.name) {
+        case 'PUSH': {
+          this.stats.pc += bin[this.stats.pc] - 0x5f
+          break
+        }
         case 'JUMPI': {
-          assert(this.stats.data)
           this.stats.njumpis ++
           break
         }
