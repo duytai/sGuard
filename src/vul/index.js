@@ -3,6 +3,7 @@ const { random, isEmpty, toPairs } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
 const Reentrancy = require('./reentrancy')
+const TxOrigin = require('./txOrigin')
 const Tree = require('./tree')
 
 class Scanner {
@@ -14,6 +15,7 @@ class Scanner {
     this.vuls = {
       integer: new Integer(srcmap, ast),
       reentrancy: new Reentrancy(srcmap, ast),
+      txOrigin: new TxOrigin(srcmap, ast),
     }
   }
 
@@ -58,7 +60,7 @@ class Scanner {
   }
 
   scan() {
-    let operands = []
+    let ret = []
     let nvuls = Object.keys(this.vuls).length
     const bug = { nvuls: 3, cvuls: 1 }
 
@@ -80,14 +82,14 @@ class Scanner {
     // Scan for bugs 
     for (const k in this.vuls) {
       process.send && process.send({ bug })
-      operands = operands.concat(this.vuls[k].scan(tree, endPoints))
+      ret = ret.concat(this.vuls[k].scan(tree, endPoints))
       bug.cvuls ++
     }
     process.send && process.send({ bug })
-    if (operands.length) {
-      operands = operands.concat(this.findInheritance())
+    if (ret.length) {
+      ret = ret.concat(this.findInheritance())
     }
-    return operands
+    return ret 
   }
 
   fix({ bugFixes, source, wrappers }) {
@@ -221,6 +223,11 @@ class Scanner {
         case 'inheritance:single': {
           ops = source.slice(range[0], range[1])
           check = `${ops} is sGuard ` 
+          break
+        }
+        case 'fix:origin': {
+          ops = source.slice(range[0], range[1])
+          check = `msg.sender`
           break
         }
         default: {

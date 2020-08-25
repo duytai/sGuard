@@ -115,14 +115,16 @@ class Evm {
           case 'CALLDATASIZE':
           case 'SELFBALANCE':
           case 'RETURNDATASIZE': {
-            stack.push(['symbol', name])
+            const epSize = ['const', new BN(ep.size())]
+            stack.push(['symbol', name, epSize])
             break
           }
           case 'BALANCE':
           case 'EXTCODESIZE':
           case 'EXTCODEHASH':
           case 'BLOCKHASH': {
-            stack.push(['symbol', name, stack.pop()])
+            const epSize = ['const', new BN(ep.size())]
+            stack.push(['symbol', name, stack.pop(), epSize])
             break
           }
           case 'CALLDATALOAD': {
