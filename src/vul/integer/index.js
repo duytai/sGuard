@@ -1,11 +1,8 @@
 const assert = require('assert')
-const { toPairs } = require('lodash')
-const Tree = require('../tree')
 const { formatSymbol, findSymbols } = require('../../shared')
 
 class Integer {
-  constructor(cache, srcmap, ast) {
-    this.cache = cache
+  constructor(srcmap, ast) {
     this.srcmap = srcmap
     this.ast = ast
     this.fragments = this.findOperands()
@@ -37,21 +34,7 @@ class Integer {
     return fragments
   }
 
-  scan(bug) {
-    const { mem: { calls }, endPoints } = this.cache
-    const tree = new Tree(this.cache, bug)
-    let ctrees = 0
-    let ntrees = calls.reduce((prev, call) => {
-      return prev + toPairs(call).length
-    }, 0)
-    calls.forEach((call, endPointIdx) => {
-      toPairs(call).forEach(([epIdx, value]) => {
-        process.send && process.send({ bug: { ctrees, ntrees }})
-        tree.build(endPointIdx, epIdx, value)
-        ctrees ++
-      })
-    })
-    // tree.root.prettify()
+  scan(tree, endPoints) {
     const targets = ['ADD', 'SUB', 'MUL', 'EXP', 'DIV']
     const dnodes = tree.root.traverse(({ node: { me } }) => {
       const sy = formatSymbol(me)

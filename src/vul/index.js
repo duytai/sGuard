@@ -1,17 +1,19 @@
 const assert = require('assert')
-const { random, isEmpty } = require('lodash')
+const { random, isEmpty, toPairs } = require('lodash')
 const Template = require('./template')
 const Integer = require('./integer')
 const Reentrancy = require('./reentrancy')
+const Tree = require('./tree')
 
 class Scanner {
   constructor(cache, srcmap, ast) {
     this.srcmap = srcmap
     this.template = new Template() 
     this.ast = ast
+    this.cache = cache
     this.vuls = {
-      integer: new Integer(cache, srcmap, ast),
-      reentrancy: new Reentrancy(cache, srcmap, ast),
+      integer: new Integer(srcmap, ast),
+      // reentrancy: new Reentrancy(srcmap, ast),
     }
   }
 
@@ -59,9 +61,26 @@ class Scanner {
     let operands = []
     let nvuls = Object.keys(this.vuls).length
     const bug = { nvuls: 3, cvuls: 1 }
+
+    // Build tree here and pass to bug detector 
+    const { mem: { calls }, endPoints } = this.cache
+    const tree = new Tree(this.cache)
+    let ctrees = 0
+    let ntrees = calls.reduce((prev, call) => {
+      return prev + toPairs(call).length
+    }, 0)
+    calls.forEach((call, endPointIdx) => {
+      toPairs(call).forEach(([epIdx, value]) => {
+        process.send && process.send({ bug: { ctrees, ntrees }})
+        tree.build(endPointIdx, epIdx, value)
+        ctrees ++
+      })
+    })
+
+    // Scan for bugs 
     for (const k in this.vuls) {
       process.send && process.send({ bug })
-      operands = operands.concat(this.vuls[k].scan(bug))
+      operands = operands.concat(this.vuls[k].scan(tree, endPoints))
       bug.cvuls ++
     }
     process.send && process.send({ bug })
