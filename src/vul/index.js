@@ -13,7 +13,7 @@ class Scanner {
     this.cache = cache
     this.vuls = {
       integer: new Integer(srcmap, ast),
-      // reentrancy: new Reentrancy(srcmap, ast),
+      reentrancy: new Reentrancy(srcmap, ast),
     }
   }
 

@@ -46,47 +46,31 @@ class Reentrancy {
   scan(tree, endPoints) {
     const selectors = new Set()
     const checkPoints = {}
-    // const { mem: { calls }, endPoints } = this.cache
-    // let ctrees = 0
-    // let ntrees = calls.reduce((prev, call) => {
-      // return prev + toPairs(call).length
-    // }, 0)
-    // calls.forEach((call, endPointIdx) => {
-      // toPairs(call).forEach(([epIdx, value]) => {
-        // process.send && process.send({ bug: { ctrees, ntrees }})
-        // const endPoint = endPoints[endPointIdx]
-        // if (parseInt(epIdx) + 1 >= endPoint.size()) return
-        // const { stack, pc } = endPoint.get(parseInt(epIdx) + 1)
-        // let sstore = false
-        // for (let i = parseInt(epIdx); i < endPoint.size(); i++) {
-          // const { opcode: { name } } = endPoint.get(i)
-          // if (name == 'SSTORE') {
-            // sstore = true
-            // break
-          // }
-        // }
-        // if (sstore) {
-          // const { s, l } = this.srcmap.toSL(pc)
-          // const tree = new Tree(this.cache)
-          // tree.build(endPointIdx, epIdx, value)
-          // const dnodes = this.firstMeet(tree.root, ({ node: { me } }) => {
-            // const eqReg = /EQ\([0-f]{7,8},/
-            // const sym = formatSymbol(me)
-            // return eqReg.test(sym) || sym == 'LT(CALLDATASIZE,4)'
-          // })
-          // dnodes.forEach(({ node: { me } }) => {
-            // if (me[1] == 'EQ') {
-              // let selector = me[2][1].toString(16)
-              // while (selector.length < 8) selector = `0${selector}`
-              // selectors.add(selector)
-              // return
-            // }
-            // selectors.add('fallback')
-          // })
-        // }
-        // ctrees ++
-      // })
-    // })
+    const targets = ['ADD', 'SUB', 'MUL', 'EXP', 'DIV']
+    tree.root.node.childs.forEach(call => {
+      const dnodes = call.traverse(({ node: { me } }) => formatSymbol(me).includes('SSTORE'))
+      const found = dnodes.find(dnode => {
+        if (dnode.node.endPointIdx != call.node.endPointIdx) return false
+        if (dnode.node.epIdx < call.node.endPointIdx) return false
+        return true
+      })
+      if (found) {
+        const dnodes = this.firstMeet(call, ({ node: { me } }) => {
+          const eqReg = /EQ\([0-f]{7,8},/
+          const sym = formatSymbol(me)
+          return eqReg.test(sym) || sym == 'LT(CALLDATASIZE,4)'
+        })
+        dnodes.forEach(({ node: { me } }) => {
+          if (me[1] == 'EQ') {
+            let selector = me[2][1].toString(16)
+            while (selector.length < 8) selector = `0${selector}`
+            selectors.add(selector)
+            return
+          }
+          selectors.add('fallback')
+        })
+      }
+    })
     const ret = []
     const funcs = this.findFunctions()
     for (let sel of selectors.values()) {
