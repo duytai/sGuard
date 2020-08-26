@@ -24,8 +24,8 @@ class Reentrancy {
     while (stack.length) {
       const item = stack.pop()
       if (item.name == 'FunctionDefinition') {
-        const { stateMutability, functionSelector } = item.attributes
-        if (['payable', 'nonpayable'].includes(stateMutability)) {
+        const { stateMutability, functionSelector, implemented } = item.attributes
+        if (['payable', 'nonpayable'].includes(stateMutability) && implemented) {
           const [s, l] = item.src.split(':').map(x => parseInt(x))
           const code = this.srcmap.source.slice(s, s + l)
           const open = code.split('{')[0].split(')')[0]
