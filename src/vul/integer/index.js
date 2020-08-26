@@ -19,6 +19,9 @@ class Integer {
         continue
       }
       const operator = item.attributes ? item.attributes.operator || '' : ''
+      if (['+', '-'].includes(operator) && item.name == 'UnaryOperation') {
+        continue
+      }
       if (operators.includes(operator)) {
         const [s, l] = item.src.split(':').map(x => parseInt(x))
         const frag = { range: [s, s + l], operands: [], operator }

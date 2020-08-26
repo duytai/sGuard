@@ -12,7 +12,7 @@ function mul_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
 {{#pow}}
 function pow_{{type}}({{type}} a, {{type}} b) internal pure returns ({{type}}) {
   // TODO
-  return 0;
+  return a ** b;
 }
 {{/pow}}
 
