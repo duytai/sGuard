@@ -33,7 +33,7 @@ class Scanner {
         if (item.attributes.contractKind == 'contract') {
           const [s, l] = item.src.split(':').map(x => parseInt(x))
           const code = this.srcmap.source.slice(s, s + l).split('{')[0]
-          const parts = code.trim().split(' ')
+          const parts = code.trim().split(/\s/)
           let frag = {}
           if (parts[2] == 'is') {
             // multiple
