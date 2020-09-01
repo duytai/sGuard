@@ -51,7 +51,7 @@ class Reentrancy {
       const dnodes = call.traverse(({ node: { me } }) => formatSymbol(me).includes('SSTORE'))
       const found = dnodes.find(dnode => {
         if (dnode.node.endPointIdx != call.node.endPointIdx) return false
-        if (dnode.node.epIdx < call.node.endPointIdx) return false
+        if (parseInt(dnode.node.epIdx) < parseInt(call.node.epIdx)) return false
         return true
       })
       if (found) {
