@@ -193,11 +193,6 @@ class Cache {
             const expression = ['symbol', name, loc, value]
             store[epIdx] = { key: variable, sloads, mloads, links, expression }
             if (name == 'MSTORE') {
-              this.stats.success.mstores ++
-            } else {
-              this.stats.success.sstores ++
-            }
-            if (name == 'MSTORE') {
               this.stats.failed.mstores ++
             } else {
               this.stats.failed.sstores ++
