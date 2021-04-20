@@ -66,3 +66,4 @@ contract Fund  is sGuard {
   }
 }
 ```
+## Note: the source code is currently not well-structed. We will refactor and update soon
