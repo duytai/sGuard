@@ -56,7 +56,7 @@ class Reentrancy {
       })
       if (found) {
         const dnodes = this.firstMeet(call, ({ node: { me } }) => {
-          const eqReg = /EQ\([0-f]{7,8},/
+          const eqReg = /EQ\([0-f]{6,8},/
           const sym = formatSymbol(me)
           return eqReg.test(sym) || sym == 'LT(CALLDATASIZE,4)'
         })
